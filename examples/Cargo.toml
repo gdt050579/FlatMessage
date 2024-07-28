@@ -1,0 +1,14 @@
+[package]
+name = "examples"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[dev-dependencies]
+KeyValueStruct = { version = "1.0.0", path = "../keyvaluestruct" }
+KeyValueStructProcMacro = { version = "1.0.0", path = "../keyvaluestruct-proc-macro"}
+
+
+[[example]]
+name = "serialize"
+path = "serialize/main.rs"

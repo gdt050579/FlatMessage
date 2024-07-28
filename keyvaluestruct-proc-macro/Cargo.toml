@@ -1,0 +1,17 @@
+[package]
+name = "KeyValueStructProcMacro"
+version = "1.0.0"
+edition = "2021"
+authors = ["gavrilut.dragos@gmail.com"]
+description = "..."
+license = "MIT"
+#repository = ""
+#readme = "README.md"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+
+[lints]
+workspace = true
