@@ -1,14 +1,18 @@
-pub struct KeyValueStruct {
-    buf: &[u8]
+use super::Error;
+
+pub struct KeyValueStruct<'a> {
+    buf: &'a [u8]
 }
 
-impl TryFrom<&[u8]> for KeyValueStruct {
+impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
     type Error = Error;
 
-    fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buf: &'a [u8]) -> Result<Self, Self::Error> {
         // validate buf
         if buf.len() < 8 {
-            return Err(Error::InvalidBufferLength);
+            return Err(Error::InvalidBufferLength(buf.len()));
         }
+
+        Ok(KeyValueStruct { buf })
     }
 }
