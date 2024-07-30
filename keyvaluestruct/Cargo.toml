@@ -12,6 +12,7 @@ KeyValueStructProcMacro = {path = "../keyvaluestruct-proc-macro"}
 
 [features]
 default = []
+VALIDATE_CRC32 = []
 
 [lints]
 workspace = true

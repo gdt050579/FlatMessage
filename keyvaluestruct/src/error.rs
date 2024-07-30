@@ -6,6 +6,8 @@ pub enum Error {
     InvalidMagic,
     InvalidSize((u32,u32)),
     InvalidOffsetSize,
+    InvalidSizeToStoreMetaData((u32, u32)),
+    InvalidHash((u32, u32)),
 }
 
 impl fmt::Display for Error {
@@ -23,6 +25,16 @@ impl fmt::Display for Error {
                 expected, actual
             ),
             Error::InvalidOffsetSize => write!(f, "Invalid offset size (only 0, 1, 2 representing U8, U16 and U32 are allowed)"),
+            Error::InvalidSizeToStoreMetaData((actual, expected)) => write!(
+                f,
+                "Invalid buffer size to store meta data (expected at least {} bytes - but found: {})",
+                expected, actual
+            ),
+            Error::InvalidHash((actual, expected)) => write!(
+                f,
+                "Invalid CRC32 hash (expected: 0x{:08X} - but found: 0x{:08X})",
+                expected, actual
+            ),
         }
     }
 }
