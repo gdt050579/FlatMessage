@@ -34,7 +34,7 @@ fn build_serialization_code(ast: &syn::DeriveInput) -> TokenStream {
 
     let gen = quote! {
         impl StructSerializationTrait for #name {
-            pub fn serialize_to(&self,output: &mut Vec<u8>) {
+            fn serialize_to(&self,output: &mut Vec<u8>) {
                 output.clear();
                 let size = 1024;
                 output.resize(size, 0);
