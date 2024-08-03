@@ -1,5 +1,8 @@
+#[cfg(feature = "VALIDATE_CRC32")]
 use super::crc32;
 use super::Error;
+use super::Key;
+use super::StructValue;
 use std::num::{NonZeroU32, NonZeroU64};
 
 macro_rules! READ_VALUE {
@@ -9,6 +12,16 @@ macro_rules! READ_VALUE {
             std::ptr::read_unaligned(ptr)
         }
     }};
+}
+
+macro_rules! READ_OFFSET {
+    ($bytes:expr, $pos:expr, $ofs_type:expr) => {
+        match $ofs_type {
+            OffsetSize::U8 => $bytes[$pos] as u32,
+            OffsetSize::U16 => READ_VALUE!($bytes, $pos, u16) as u32,
+            OffsetSize::U32 => READ_VALUE!($bytes, $pos, u32),
+        }
+    };
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -25,6 +38,8 @@ pub struct KeyValueStruct<'a> {
     version: Option<NonZeroU32>,
     buf: &'a [u8],
     offset_size: OffsetSize,
+    field_table_offset: u32,
+    fields_count: u32,
 }
 
 impl KeyValueStruct<'_> {
@@ -46,6 +61,76 @@ impl KeyValueStruct<'_> {
     #[inline(always)]
     pub fn unique_id(&self) -> Option<u64> {
         self.unique_id.map(|v| v.get())
+    }
+    #[inline(always)]
+    pub fn get<'a, T>(&'a self, key: Key) -> Option<T>
+    where
+        T: StructValue<'a>,
+    {
+        if self.fields_count == 0 {
+            return None;
+        }
+        let type_id = (key.value & 0x7F) as u8;
+        if T::supported_type() as u8 != type_id {
+            return None;
+        }
+        // valid type --> check if the key actually exists
+        let start = self.field_table_offset as usize;
+        let end = start + self.fields_count as usize * 4;
+        match self.fields_count {
+            1 => {
+                let k = READ_VALUE!(self.buf, start, u32);
+                if k != key.value {
+                    None
+                } else {
+                    let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
+                    Some(T::from_buffer(self.buf, ofs as usize, self.buf.len()))
+                }
+            }
+            2 => {
+                let k = READ_VALUE!(self.buf, start, u32);
+                if k != key.value {
+                    let k = READ_VALUE!(self.buf, start + 4, u32);
+                    if k != key.value {
+                        None
+                    } else {
+                        let ofs = READ_OFFSET!(self.buf, end + 4, self.offset_size);
+                        Some(T::from_buffer(self.buf, ofs as usize, self.buf.len()))
+                    }
+                } else {
+                    let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
+                    let next = READ_OFFSET!(self.buf, end + 4, self.offset_size);
+                    Some(T::from_buffer(self.buf, ofs as usize, next as usize))
+                }
+            }
+            _ => {
+                let mut left = 0;
+                let mut right = (self.fields_count as usize) - 1;
+                let last = right;
+                while left <= right {
+                    let mid = left + (right - left) / 2;
+                    let k = READ_VALUE!(self.buf, start + mid * 4, u32);
+                    if k == key.value {
+                        let mid_pos = end + mid * 4;
+                        let ofs = READ_OFFSET!(self.buf, mid_pos, self.offset_size);
+                        if mid == last {
+                            return Some(T::from_buffer(self.buf, ofs as usize, self.buf.len()));
+                        } else {
+                            let next = READ_OFFSET!(self.buf, mid_pos + 4, self.offset_size);
+                            return Some(T::from_buffer(self.buf, ofs as usize, next as usize));
+                        }
+                    } else if k < key.value {
+                        left = mid + 1;
+                    } else {
+                        if mid == 0 {
+                            return None;
+                        }
+                        right = mid - 1;
+                    }
+                }
+                None
+            }
+        }
     }
 }
 
@@ -135,10 +220,21 @@ impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
         };
         let unique_id = if flags & KeyValueStruct::FLAG_HAS_UNIQUEID != 0 {
             let value = READ_VALUE!(buf, offset, u64);
+            offset += 8;
             NonZeroU64::new(value)
         } else {
             None
         };
+
+        // validate there is space for fields table
+        // now at offset the param table starts
+        if offset + (4 + offset_size as usize) * field_count > buf.len() {
+            return Err(Error::InvalidSizeToStoreFieldsTable((
+                buf.len() as u32,
+                (offset + (4 + offset_size as usize) * field_count) as u32,
+            )));
+        }
+        let fields_table_offset = offset;
 
         Ok(KeyValueStruct {
             buf,
@@ -147,6 +243,8 @@ impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
             unique_id,
             version,
             offset_size,
+            field_table_offset: fields_table_offset as u32,
+            fields_count: field_count as u32,
         })
     }
 }

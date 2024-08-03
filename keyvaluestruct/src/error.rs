@@ -8,6 +8,7 @@ pub enum Error {
     InvalidOffsetSize,
     InvalidSizeToStoreMetaData((u32, u32)),
     InvalidHash((u32, u32)),
+    InvalidSizeToStoreFieldsTable((u32, u32)),
 }
 
 impl fmt::Display for Error {
@@ -33,6 +34,11 @@ impl fmt::Display for Error {
             Error::InvalidHash((actual, expected)) => write!(
                 f,
                 "Invalid CRC32 hash (expected: 0x{:08X} - but found: 0x{:08X})",
+                expected, actual
+            ),
+            Error::InvalidSizeToStoreFieldsTable((actual, expected)) => write!(
+                f,
+                "Invalid buffer size to store fields table (expected at least {} bytes - but found: {})",
                 expected, actual
             ),
         }

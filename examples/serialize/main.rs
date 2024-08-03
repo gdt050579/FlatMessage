@@ -1,4 +1,12 @@
 use ::KeyValueStruct::*;
+use ::KeyValueStructProcMacro::Serialized;
+
+#[derive(Serialized)]
+struct MyStruct {
+    a: i32,
+    b: bool,
+    c: String,
+}
 
 fn main() {
     let buf = [0u8; 5];

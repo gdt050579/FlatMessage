@@ -1,0 +1,25 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SupportedTypes {
+    U8 = 1,
+    U16,
+    U32,
+    U64,
+    U128,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
+    F32,
+    F64,
+    Bool,
+    Enum8,
+    Enum16,
+    Flags8,
+    Flags16,
+    Flags32,
+    Flags64,
+    Flags128,
+    String,
+}
+
