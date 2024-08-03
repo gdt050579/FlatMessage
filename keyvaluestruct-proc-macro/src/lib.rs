@@ -25,7 +25,7 @@ fn build_serialization_code(ast: &syn::DeriveInput) -> TokenStream {
     let serialize_fields = fields.iter().filter_map(|field| {
         if let Some(name) = &field.ident {
             Some(quote! {
-                pos = self.#name.serialize_into_vec(output, pos);
+                pos = BufferWriter::write(&self.#name, buffer, pos);
             })    
         } else {
             panic!("Fields without a name can not be serialized (e.g. tuples) !");
@@ -36,8 +36,13 @@ fn build_serialization_code(ast: &syn::DeriveInput) -> TokenStream {
         impl StructSerializationTrait for #name {
             pub fn serialize_to(&self,output: &mut Vec<u8>) {
                 output.clear();
+                let size = 1024;
+                output.resize(size, 0);
+                let buffer: *mut u8 = output.as_mut_ptr();
                 let mut pos = 0;
-                #(#serialize_fields)*
+                unsafe {
+                    #(#serialize_fields)*
+                }
             }
         }
     };

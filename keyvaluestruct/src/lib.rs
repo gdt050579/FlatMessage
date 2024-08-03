@@ -10,7 +10,8 @@ pub use error::Error;
 pub use key::Key;
 pub use key::StructValue;
 pub use supported_types::SupportedTypes;
+pub use key::BufferWriter;
 
 pub trait StructSerializationTrait {
-    fn serialize_to(&self, output: Vec<u8>);
+    fn serialize_to(&self, output: &mut Vec<u8>);
 }
