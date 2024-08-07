@@ -1,4 +1,5 @@
-use super::SupportedTypes;
+use common::supported_types::SupportedTypes;
+use std::ptr;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Key {
@@ -32,8 +33,7 @@ macro_rules! IMPLEMENT_FOR_TYPE {
             #[inline(always)]
             fn write(&self, p: *mut u8, pos: usize) -> usize {
                 unsafe {
-                    let ptr = p.add(pos) as *mut $t;
-                    *ptr = *self;
+                    ptr::write_unaligned(p.add(pos) as *mut $t, *self);
                     pos + std::mem::size_of::<$t>()
                 }
             }

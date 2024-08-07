@@ -2,6 +2,7 @@
 resolver = "2"
 
 members = [
+  "common",
   "keyvaluestruct",
   "keyvaluestruct-proc-macro",
   "examples",

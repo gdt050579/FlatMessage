@@ -1,5 +1,5 @@
 #[cfg(feature = "VALIDATE_CRC32")]
-use super::crc32;
+use super::hashes;
 use super::Error;
 use super::Key;
 use super::StructValue;
@@ -189,7 +189,7 @@ impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
             #[cfg(feature = "VALIDATE_CRC32")]
             {
                 let crc = READ_VALUE!(buf, offset, u32);
-                let calculated_crc = crc32::compute(buf);
+                let calculated_crc = hashes::crc32(buf);
                 if crc != calculated_crc {
                     return Err(Error::InvalidHash((crc, calculated_crc)));
                 }
