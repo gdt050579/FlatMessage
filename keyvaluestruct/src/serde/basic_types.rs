@@ -1,0 +1,54 @@
+use super::SerDe;
+use common::data_format::DataFormat;
+use std::ptr;
+
+
+
+macro_rules! IMPLEMENT_SERDE_FOR_BASIC_TYPE {
+    ($t:ty, $data_format:ident) => {
+        unsafe impl<'a> SerDe<'a> for $t {
+            fn data_format() -> DataFormat {
+                DataFormat::$data_format
+            }
+            #[inline(always)]
+            fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
+                unsafe {
+                    let ptr = buf.as_ptr().add(pos) as *const $t;
+                    Some(std::ptr::read_unaligned(ptr))
+                }
+            }
+            #[inline(always)]
+            fn write(&self, p: *mut u8, pos: usize) -> usize {
+                unsafe {
+                    ptr::write_unaligned(p.add(pos) as *mut $t, *self);
+                    pos + std::mem::size_of::<$t>()
+                }
+            }
+            #[inline(always)]
+            fn size(&self) -> usize {
+                std::mem::size_of::<$t>()
+            }
+            #[inline(always)]
+            fn align_offset(&self, offset: usize) -> usize {
+                offset
+            }
+        }
+    };
+}
+
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(u8, U8);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(u16, U16);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(u32, U32);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(u64, U64);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(u128, U128);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(i8, I8);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(i16, I16);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(i32, I32);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(i64, I64);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(i128, I128);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(f32, F32);
+IMPLEMENT_SERDE_FOR_BASIC_TYPE!(f64, F64);
+
+
+
+

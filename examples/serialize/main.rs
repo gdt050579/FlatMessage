@@ -1,6 +1,10 @@
 use ::KeyValueStruct::*;
 use ::KeyValueStructProcMacro::Serialized;
 
+// create an alias for String
+type MyString = String;
+
+
 #[derive(Serialized)]
 struct MyStruct {
     a: i32,

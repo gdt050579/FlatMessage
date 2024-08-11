@@ -12,10 +12,12 @@ pub trait StructValue<'a> {
 }
 
 pub unsafe trait BufferWriter {
-    fn write(&self, p: *mut u8, pos: usize)-> usize;
+    fn write(&self, p: *mut u8, pos: usize) -> usize;
+    fn size(&self) -> usize;
+    fn align_offset(&self, offset: usize) -> usize;
 }
 
-macro_rules! IMPLEMENT_FOR_TYPE {
+macro_rules! IMPLEMENT_FOR_BASIC_TYPE {
     ($t:ty, $s:ident) => {
         impl<'a> StructValue<'a> for $t {
             fn supported_type() -> SupportedTypes {
@@ -37,23 +39,31 @@ macro_rules! IMPLEMENT_FOR_TYPE {
                     pos + std::mem::size_of::<$t>()
                 }
             }
+            #[inline(always)]
+            fn size(&self) -> usize {
+                std::mem::size_of::<$t>()
+            }
+            #[inline(always)]
+            fn align_offset(&self, offset: usize) -> usize {
+                offset
+            }            
         }
     };
 }
 
-IMPLEMENT_FOR_TYPE!(u8, U8);
-IMPLEMENT_FOR_TYPE!(u16, U16);
-IMPLEMENT_FOR_TYPE!(u32, U32);
-IMPLEMENT_FOR_TYPE!(u64, U64);
-IMPLEMENT_FOR_TYPE!(u128, U128);
-IMPLEMENT_FOR_TYPE!(i8, I8);
-IMPLEMENT_FOR_TYPE!(i16, I16);
-IMPLEMENT_FOR_TYPE!(i32, I32);
-IMPLEMENT_FOR_TYPE!(i64, I64);
-IMPLEMENT_FOR_TYPE!(i128, I128);
-IMPLEMENT_FOR_TYPE!(f32, F32);
-IMPLEMENT_FOR_TYPE!(f64, F64);
-IMPLEMENT_FOR_TYPE!(bool, Bool);
+IMPLEMENT_FOR_BASIC_TYPE!(u8, U8);
+IMPLEMENT_FOR_BASIC_TYPE!(u16, U16);
+IMPLEMENT_FOR_BASIC_TYPE!(u32, U32);
+IMPLEMENT_FOR_BASIC_TYPE!(u64, U64);
+IMPLEMENT_FOR_BASIC_TYPE!(u128, U128);
+IMPLEMENT_FOR_BASIC_TYPE!(i8, I8);
+IMPLEMENT_FOR_BASIC_TYPE!(i16, I16);
+IMPLEMENT_FOR_BASIC_TYPE!(i32, I32);
+IMPLEMENT_FOR_BASIC_TYPE!(i64, I64);
+IMPLEMENT_FOR_BASIC_TYPE!(i128, I128);
+IMPLEMENT_FOR_BASIC_TYPE!(f32, F32);
+IMPLEMENT_FOR_BASIC_TYPE!(f64, F64);
+IMPLEMENT_FOR_BASIC_TYPE!(bool, Bool);
 
 impl<'a> StructValue<'a> for &'a str {
     fn supported_type() -> SupportedTypes {
@@ -74,6 +84,14 @@ unsafe impl BufferWriter for &str {
         }
         pos + len
     }
+    #[inline(always)]
+    fn align_offset(&self, offset: usize) -> usize {
+        offset
+    }
+    #[inline(always)]
+    fn size(&self) -> usize {
+        self.len()
+    }
 }
 unsafe impl BufferWriter for String {
     #[inline(always)]
@@ -84,5 +102,13 @@ unsafe impl BufferWriter for String {
             std::ptr::copy_nonoverlapping(self.as_ptr(), ptr, len);
         }
         pos + len
+    }
+    #[inline(always)]
+    fn align_offset(&self, offset: usize) -> usize {
+        offset
+    }
+    #[inline(always)]
+    fn size(&self) -> usize {
+        self.len()
     }
 }
