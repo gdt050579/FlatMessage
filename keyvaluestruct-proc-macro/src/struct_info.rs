@@ -2,10 +2,6 @@ use common::hashes;
 use common::supported_types::SupportedTypes;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use std::{
-    any::{Any, TypeId},
-    usize,
-};
 use syn::{DataStruct, Field};
 
 struct FieldInfo {
@@ -40,6 +36,9 @@ impl TryFrom<&Field> for FieldInfo {
 }
 pub(crate) struct StructInfo {
     name: String,
+    unique_id: Option<String>,
+    timestamp: Option<String>,
+    version: Option<String>,
     fields: Vec<FieldInfo>,
 }
 
@@ -78,7 +77,7 @@ impl StructInfo {
                     let mut size = 8;
                     let mut flags = 0u8;
                     #(#compute_size_code)*
-                    
+
                     output.resize(size, 0);
                     let buffer: *mut u8 = output.as_mut_ptr();
                     unsafe {
@@ -105,16 +104,51 @@ impl StructInfo {
 impl StructInfo {
     pub(crate) fn new(name: String, d: &DataStruct) -> Result<Self, String> {
         if let syn::Fields::Named(fields) = &d.fields {
-            let mut fields = fields
-                .named
-                .iter()
-                .map(|field| FieldInfo::try_from(field))
-                .collect::<Result<Vec<_>, _>>()?;
-            fields.sort_by_key(|field_info| field_info.hash);
-            if fields.len() > 255 {
-                return Err(format!("Structs with more than 255 fields are not supported ! (Current structure has {} fields)", fields.len()));
+            let mut data_members: Vec<FieldInfo> = Vec::with_capacity(32);
+            let mut unique_id = None;
+            let mut timestamp = None;
+            let mut version = None;
+            for field in fields.named.iter() {
+                let mut regular_field = true;
+                for attr in &field.attrs {
+                    if attr.path().is_ident("unique_id") {
+                        if field.ty.to_token_stream().to_string() != "u64" {
+                            return Err("unique_id field must be u64 !".to_string());
+                        }
+                        unique_id = Some(field.ident.as_ref().unwrap().to_string());
+                        regular_field = false;
+                    }
+                    if attr.path().is_ident("timestamp") {
+                        if field.ty.to_token_stream().to_string() != "u64" {
+                            return Err("timestamp field must be u64 !".to_string());
+                        }
+                        timestamp = Some(field.ident.as_ref().unwrap().to_string());
+                        regular_field = false;
+                    }
+                    if attr.path().is_ident("version") {
+                        if field.ty.to_token_stream().to_string() != "u8" {
+                            return Err("version field must be u8 !".to_string());
+                        }
+                        version = Some(field.ident.as_ref().unwrap().to_string());
+                        regular_field = false;
+                    }
+                }
+                if regular_field {
+                    data_members.push(FieldInfo::try_from(field)?);
+                }
             }
-            Ok(StructInfo { name, fields })
+
+            data_members.sort_by_key(|field_info| field_info.hash);
+            if data_members.len() > 0xFFFF {
+                return Err(format!("Structs with more than 65535 fields are not supported ! (Current structure has {} fields)", data_members.len()));
+            }
+            Ok(StructInfo {
+                name,
+                unique_id,
+                timestamp,
+                version,
+                fields: data_members,
+            })
         } else {
             Err("Can not read fields from the structure !".to_string())
         }
