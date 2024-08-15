@@ -1,16 +1,31 @@
 /// KeyValueStruct format
 /// ---------------------------------------------------------------------------
 /// 
+/// |--------|-------------|------|----------------------------------------------------------|
 /// | Offset | Name        | Type | Observation                                              |
 /// |--------|-------------|------|----------------------------------------------------------|
-/// | +0     | Magic       | u16  | always KV                                                |
-/// | +2     | FieldsCount | u8   | Can not be more than 255                                 |
-/// | +3     | Flags       | u8   | Flags for the structure as follows                       |
-/// |        |             |      | 
-/// | +?     | CRC32       | u32  | CRC32 of the buffer                                      |
-/// | +?     | Version     | u32  | Version of the structure                                 |
-/// | +?     | Name Hash   | u32  | Hash of the structure name                               |
-/// 
+/// | +0     | Magic       | u32  | always KVS+ver  (KVS\1)                                  |
+/// | +4     | FieldsCount | u16  | Can not be more than 0xFFFF                              |
+/// | +6     | Struct Ver  | u8   | Version of the structure                                 |
+/// | +7     | Flags       | u8   | Flags for the structure as follows                       |
+/// |        |             |      | xx...... -> Offset type (1,2,4) bytes                    |
+/// |        |             |      | ..x..... -> CRC32 (4 bytes value)                        |
+/// |        |             |      | ...x.... -> Name hash (4 bytes value)                    |
+/// |        |             |      | ....x... -> TimeStamp (8 bytes)                          |
+/// |        |             |      | .....x.. -> UniqueID (8 bytes)                           |
+/// |--------|-------------|------|----------------------------------------------------------|
+/// | +?     | TimeStamp   | u64  | TimeStamp (only if TimeStamp flag is set)                |
+/// | +?     | UniquID     | u64  | UniqueID (only if UniqueID flag is set)                  |
+/// | +?     | Name Hash   | u32  | Hash of the structure name (only if NameHash flag is set)|
+/// |--------|-------------|------|----------------------------------------------------------|
+/// | +?     | Hash Table  | u32* | 4 bytes x FieldsCount                                    |
+/// | +?     | Offsets     | ?    | 1/2/4 bytes x FieldsCount depending on Offset Type flag  |
+/// |--------|-------------|------|----------------------------------------------------------|
+/// | +?     | Actual data | ?    | Data for all fields                                      |
+/// |--------|-------------|------|----------------------------------------------------------|
+/// | Last   | CRC32 value | u32  | Last 4 bytes, only if CRC32 flags is set                 |
+/// |--------|-------------|------|----------------------------------------------------------|
+
 /// Hash1, Hash2, ... Hash_n
 /// Ofs1, Ofs2, ... Ofs_n (16 bits)
 /// Data
@@ -22,13 +37,14 @@
 /// - String
 /// - Vector of basic types
 /// - Vector of String
-/// - 
+/// - Other objects: --> ref leads to [Object Type Hash (32 bits) + value]
 
 
 mod keyvaluestruct;
 mod error;
 mod key;
 mod serde;
+mod buffer;
 
 pub use keyvaluestruct::KeyValueStruct;
 pub use error::Error;

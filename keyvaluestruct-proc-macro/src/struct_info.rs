@@ -45,7 +45,7 @@ pub(crate) struct StructInfo {
 
 impl StructInfo {
     pub(crate) fn create_serialization_to_code(&self) -> TokenStream {
-        let fields_count = self.fields.len() as u8;
+        let fields_count = self.fields.len() as u16;
         let name = syn::Ident::new(self.name.as_str(), proc_macro2::Span::call_site());
         // serialize fields
         let serialize_code = self.fields.iter().map(|field| {
@@ -74,17 +74,24 @@ impl StructInfo {
             impl StructSerializationTrait for #name {
                 fn serialize_to(&self,output: &mut Vec<u8>) {
                     output.clear();
-                    let mut size = 4;
+                    // basic header (magic + fields count + flags + version)
+                    let mut size = 8;
+                    let mut flags = 0u8;
                     #(#compute_size_code)*
+                    
                     output.resize(size, 0);
                     let buffer: *mut u8 = output.as_mut_ptr();
                     unsafe {
                         // write magic
-                        ptr::write_unaligned(buffer as *mut u16, 0x564B); // b'K' b'V'
-                        ptr::write_unaligned(buffer.add(2) as *mut u8, #fields_count);
-                        ptr::write_unaligned(buffer.add(3) as *mut u32, 0);
+                        ptr::write_unaligned(buffer as *mut u32, 0x564B); // b'K' b'V'
+                        // write number of field
+                        ptr::write_unaligned(buffer.add(4) as *mut u16, #fields_count);
+                        // write strcture version
+                        ptr::write_unaligned(buffer.add(6) as *mut u8, 0);
+                        // write flags
+                        ptr::write_unaligned(buffer.add(7) as *mut u8, flags);
                         #(#hash_code)*
-                        let mut buf_pos = 8;
+                        let mut buf_pos = size;
                         let mut ofs_pos = 4;
                         #(#serialize_code)*
                     }
