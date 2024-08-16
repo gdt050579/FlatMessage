@@ -1,13 +1,14 @@
 use common::hashes;
 use common::data_format::DataFormat;
 use quote::{quote, ToTokens};
-use syn::{DataStruct, Field, FieldsNamed};
+use syn::Field;
 
 
 pub(crate) struct FieldInfo {
     pub(crate) name: String,
     pub(crate) hash: u32,
     pub(crate) alignament_order: u32,
+    pub(crate) serialization_alignament: usize,
 }
 impl TryFrom<&Field> for FieldInfo {
     type Error = String;
@@ -27,6 +28,7 @@ impl TryFrom<&Field> for FieldInfo {
             name,
             hash,
             alignament_order: 0,
+            serialization_alignament: data_format.serialization_alignament(),
         })
     }
 }

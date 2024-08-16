@@ -1,8 +1,8 @@
+use crate::field_info::FieldInfo;
 use common::hashes;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{DataStruct, Field, FieldsNamed};
-use crate::field_info::FieldInfo;   
 
 pub(crate) struct StructInfo<'a> {
     fields_name: &'a FieldsNamed,
@@ -243,11 +243,22 @@ impl<'a> StructInfo<'a> {
             for field in fields.named.iter() {
                 data_members.push(FieldInfo::try_from(field)?);
             }
-
-            data_members.sort_by_key(|field_info| field_info.hash);
             if data_members.len() > 0xFFFF {
                 return Err(format!("Structs with more than 65535 fields are not supported ! (Current structure has {} fields)", data_members.len()));
             }
+
+            // sort the key backwards based on their serialization alignament
+            data_members.sort_unstable_by_key(|field_info| {
+                usize::MAX - field_info.serialization_alignament
+            });
+            // compute the order
+            let mut idx = 0;
+            for dm in &mut data_members {
+                dm.alignament_order = idx;
+                idx += 1;
+            }
+            // sort the fields again (based on hash)
+            data_members.sort_by_key(|field_info| field_info.hash);
             Ok(StructInfo {
                 fields_name: fields,
                 name,
