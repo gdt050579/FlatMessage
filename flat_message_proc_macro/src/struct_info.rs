@@ -1,3 +1,5 @@
+use core::time;
+
 use crate::field_info::FieldInfo;
 use common::hashes;
 use common::constants;
@@ -55,47 +57,45 @@ impl<'a> StructInfo<'a> {
             lines.push(quote! {
                 let metadata = self.metadata();
                 if let Some(timestamp) = metadata.timestamp() {
-                    flags |= 0b0001_0000;
-                    unsafe { ptr::write_unaligned(buffer.add(buf_pos) as *mut u64, timestamp); }
-                    buf_pos += 8;
+                    unsafe { ptr::write_unaligned(buffer.add(metadata_offset) as *mut u64, timestamp); }
+                    metadata_offset += 8;
                 }
                 if let Some(unique_id) = metadata.unique_id() {
-                    flags |= 0b0010_0000;
-                    ptr::write_unaligned(buffer.add(buf_pos) as *mut u64, unique_id);
-                    buf_pos += 8;
+                    ptr::write_unaligned(buffer.add(metadata_offset) as *mut u64, unique_id);
+                    metadata_offset += 8;
                 }
             });
         }
         if self.store_name {
             let name_hash = hashes::fnv_32(&self.name);
             lines.push(quote! {
-                flags |= 0b0000_1000;
-                ptr::write_unaligned(buffer.add(buf_pos) as *mut u32, #name_hash);
+                ptr::write_unaligned(buffer.add(metadata_offset) as *mut u32, #name_hash);
+                metadata_offset+=4;
             });
         }
-        lines.push(quote! {
-            ptr::write_unaligned(buffer.add(7) as *mut u8, flags);
-        });
         lines
     }
     fn generate_flags_code(&self) -> Vec<proc_macro2::TokenStream> {
         let mut lines = Vec::with_capacity(8);
+        let timestamp_flag = constants::FLAG_HAS_TIMESTAMP;
+        let unique_id_flag = constants::FLAG_HAS_UNIQUEID;
+        let name_hash_flag = constants::FLAG_HAS_NAME_HASH;
         if self.add_metadata {
             lines.push(quote! {
                 let metadata = self.metadata();
                 if metadata.timestamp().is_some() {
-                    flags |= 0b0001_0000;
+                    flags |= #timestamp_flag;
                     metainfo_size += 8;
                 }
                 if metadata.unique_id().is_some() {
-                    flags |= 0b0010_0000;
+                    flags |= #unique_id_flag;
                     metainfo_size += 8;
                 }
             });
         }
         if self.store_name {
             lines.push(quote! {
-                flags |= 0b0000_1000;
+                flags |= #name_hash_flag;
                 metainfo_size += 4;
             });
         }
@@ -183,6 +183,7 @@ impl<'a> StructInfo<'a> {
         let serialize_code_u8 = self.generate_fields_serialize_code(1);
         let serialize_code_u16 = self.generate_fields_serialize_code(2);
         let serialize_code_u32 = self.generate_fields_serialize_code(4);
+        let metadata_serialization_code = self.generate_metadata_serialization_code();
         let hash_table_code = self.generate_hash_table_code();
         let compute_size_code = self.generate_compute_size_code();
         let version_code = self.generate_version_code();
@@ -206,6 +207,7 @@ impl<'a> StructInfo<'a> {
                 let ref_offset = size + 4 * #fields_count as usize;
                 size += (4+offset_size) * #fields_count as usize;
                 // Step 3: compute aditional size of metainformation
+                let mut metadata_offset = size;
                 size += metainfo_size;
                 // Step 4: add CRC32 information (if needed)
                 #[cfg(feature = "VALIDATE_CRC32")]
@@ -239,6 +241,8 @@ impl<'a> StructInfo<'a> {
                     }
                     // hash table
                     #(#hash_table_code)*
+                    // metadata
+                    #(#metadata_serialization_code)*
                 }
             }
         }
