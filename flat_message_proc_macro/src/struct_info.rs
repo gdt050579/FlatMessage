@@ -1,8 +1,7 @@
 use crate::field_info::FieldInfo;
 use common::hashes;
-use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
-use syn::{DataStruct, Field, FieldsNamed};
+use quote::quote;
+use syn::{DataStruct, FieldsNamed};
 
 pub(crate) struct StructInfo<'a> {
     fields_name: &'a FieldsNamed,
@@ -145,16 +144,44 @@ impl<'a> StructInfo<'a> {
         }
         v
     }
+    fn generate_fields_serialize_code(&self, ref_size: u8)->Vec<Option<proc_macro2::TokenStream>> {
+        let v: Vec<_> = self.fields.iter().map(|field| {
+            let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
+            let field_ref_order = field.alignament_order as usize;
+            match ref_size {
+                1 => 
+                    Some(quote! {
+                        buf_pos = SerDe::align_offset(&self.#field_name, buf_pos);
+                        let offset = buf_pos as u8;
+                        ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order) as *mut u8, offset);
+                        buf_pos = SerDe::write(&self.#field_name, buffer, buf_pos);
+                    }),
+        
+                2 => 
+                    Some(quote! {
+                        buf_pos = SerDe::align_offset(&self.#field_name, buf_pos);
+                        let offset = buf_pos as u16;
+                        ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order*2) as *mut u16, offset);
+                        buf_pos = SerDe::write(&self.#field_name, buffer, buf_pos);
+                    }),
+                4 => 
+                    Some(quote! {
+                        buf_pos = SerDe::align_offset(&self.#field_name, buf_pos);
+                        let offset = buf_pos as u32;
+                        ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order*4) as *mut u32, offset);
+                        buf_pos = SerDe::write(&self.#field_name, buffer, buf_pos);
+                    }),
+                _ => None
+            }
+        }).collect();
+        v
+    }
     fn generate_serialize_to_methods(&self) -> proc_macro2::TokenStream {
         let fields_count = self.fields.len() as u16;
         // serialize fields
-        let serialize_code = self.fields.iter().map(|field| {
-            let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
-            Some(quote! {
-                buf_pos = SerDe::write(&self.#field_name, buffer, buf_pos);
-            })
-        });
-        // hashes code
+        let serialize_code_u8 = self.generate_fields_serialize_code(1);
+        let serialize_code_u16 = self.generate_fields_serialize_code(2);
+        let serialize_code_u32 = self.generate_fields_serialize_code(4);
         let hash_table_code = self.generate_hash_table_code();
         let compute_size_code = self.generate_compute_size_code();
         let version_code = self.generate_version_code();
@@ -196,14 +223,25 @@ impl<'a> StructInfo<'a> {
                     #version_code
                     // write flags
                     #(#flags_code)*
-                    #(#serialize_code)*
+                    match offset_size {
+                        1 => {
+                            #(#serialize_code_u8)*
+                        }
+                        2 => {
+                            #(#serialize_code_u16)*
+                        }
+                        4 => {
+                            #(#serialize_code_u32)*
+                        }
+                        _ => {}
+                    }
                     // hash table
                     #(#hash_table_code)*
                 }
             }
         }
     }
-    pub(crate) fn generate_code(&self) -> TokenStream {
+    pub(crate) fn generate_code(&self) -> proc_macro::TokenStream {
         let name = syn::Ident::new(self.name.as_str(), proc_macro2::Span::call_site());
         let struct_fields = self.fields_name.named.iter().map(|field| {
             Some(quote! {
