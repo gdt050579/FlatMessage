@@ -1,12 +1,12 @@
 [package]
-name = "KeyValueStruct"
+name = "flat_message"
 version = "1.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-KeyValueStructProcMacro = {path = "../keyvaluestruct-proc-macro"}
+flat_message_proc_macro = {path = "../flat_message_proc_macro"}
 common = {path = "../common"}
 
 

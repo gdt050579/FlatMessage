@@ -46,19 +46,19 @@ impl<'a> StructInfo<'a> {
     fn generate_metadata_methods(&self) -> proc_macro2::TokenStream {
         if self.add_metadata {
             quote! {
-                fn metadata(&self)-> &::KeyValueStruct::MetaData {
+                fn metadata(&self)-> &flat_message::MetaData {
                     &self.metadata
                 }
-                fn update_metada(&mut self, new: ::KeyValueStruct::MetaData) {
+                fn update_metada(&mut self, new: flat_message::MetaData) {
                     self.metadata = new;
                 }
             }
         } else {
             quote! {
-                fn metadata(&self)-> &::KeyValueStruct::MetaData {
-                    &::KeyValueStruct::MetaData::default()
+                fn metadata(&self)-> &flat_message::MetaData {
+                    &flat_message::MetaData::default()
                 }
-                fn update_metada(&mut self, new: ::KeyValueStruct::MetaData) {
+                fn update_metada(&mut self, new: flat_message::MetaData) {
                 }
             }
         }
@@ -241,7 +241,7 @@ impl<'a> StructInfo<'a> {
             })
         });
         let metadata_field = if self.add_metadata {
-            quote! {metadata: ::KeyValueStruct::MetaData}
+            quote! {metadata: flat_message::MetaData}
         } else {
             quote! {}
         };
@@ -253,7 +253,7 @@ impl<'a> StructInfo<'a> {
                 #(#struct_fields)*
                 #metadata_field
             }
-            impl KeyValueStructSerDe for #name {
+            impl FlatMessage for #name {
                 #metadata_methods
                 #serialize_to_methods
             }

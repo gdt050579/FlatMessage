@@ -43,17 +43,18 @@ mod key;
 mod keyvaluestruct;
 mod metadata;
 mod serde;
+mod flat_message;
 
-pub use error::Error;
-pub use key::BufferWriter;
-pub use key::Key;
-pub use key::StructValue;
-pub use keyvaluestruct::KeyValueStruct;
-pub use metadata::MetaData;
-pub use serde::SerDe;
+pub use flat_message_proc_macro::*;
+pub use self::error::Error;
+pub use self::key::BufferWriter;
+pub use self::key::Key;
+pub use self::key::StructValue;
+pub use self::keyvaluestruct::KeyValueStruct;
+pub use self::metadata::MetaData;
+pub use self::serde::SerDe;
+pub use self::flat_message::FlatMessage;   
 
-pub trait KeyValueStructSerDe {
-    fn metadata(&self) -> &MetaData;
-    fn update_metada(&mut self, new: MetaData);
-    fn serialize_to(&self, output: &mut Vec<u8>);
-}
+
+
+

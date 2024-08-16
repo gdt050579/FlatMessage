@@ -6,8 +6,14 @@ use syn::{parse_macro_input, DeriveInput};
 
 extern crate proc_macro;
 
+#[allow(non_snake_case)]
 #[proc_macro_attribute]
-pub fn KeyValueStruct(args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn FlatMessage(args: TokenStream, input: TokenStream) -> TokenStream {
+    flat_message(args, input)
+}
+
+#[proc_macro_attribute]
+pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut store_name = true;
     let mut add_metadata = true;
     let mut it = args.into_iter();

@@ -3,8 +3,8 @@ resolver = "2"
 
 members = [
   "common",
-  "keyvaluestruct",
-  "keyvaluestruct-proc-macro",
+  "flat_message",
+  "flat_message_proc_macro",
   "examples",
 ]
 

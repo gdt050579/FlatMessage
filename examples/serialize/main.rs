@@ -1,11 +1,10 @@
-use ::KeyValueStruct::*;
-use ::KeyValueStructProcMacro::*;
+use flat_message::*;
 
 // create an alias for String
 type MyString = String;
 
 
-#[KeyValueStruct]
+#[flat_message]
 struct MyStruct {
     a: i32,
     b: bool,

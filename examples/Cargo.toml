@@ -5,8 +5,7 @@ publish = false
 edition = "2021"
 
 [dev-dependencies]
-KeyValueStruct = { version = "1.0.0", path = "../keyvaluestruct" }
-KeyValueStructProcMacro = { version = "1.0.0", path = "../keyvaluestruct-proc-macro"}
+flat_message = { version = "1.0.0", path = "../flat_message" }
 
 
 [[example]]
