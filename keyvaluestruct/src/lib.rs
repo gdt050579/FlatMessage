@@ -1,10 +1,13 @@
+mod buffer;
+mod error;
+mod key;
 /// KeyValueStruct format
 /// ---------------------------------------------------------------------------
-/// 
+///
 /// |--------|-------------|------|----------------------------------------------------------|
 /// | Offset | Name        | Type | Observation                                              |
 /// |--------|-------------|------|----------------------------------------------------------|
-/// | +0     | Magic       | u32  | always KVS+ver  (KVS\1)                                  |
+/// | +0     | Magic       | u32  | always GTH+ver  (GTH\1)                                  |
 /// | +4     | FieldsCount | u16  | Can not be more than 0xFFFF                              |
 /// | +6     | Struct Ver  | u8   | Version of the structure                                 |
 /// | +7     | Flags       | u8   | Flags for the structure as follows                       |
@@ -14,15 +17,14 @@
 /// |        |             |      | ....x... -> TimeStamp (8 bytes)                          |
 /// |        |             |      | .....x.. -> UniqueID (8 bytes)                           |
 /// |--------|-------------|------|----------------------------------------------------------|
-/// | +?     | TimeStamp   | u64  | TimeStamp (only if TimeStamp flag is set)                |
-/// | +?     | UniquID     | u64  | UniqueID (only if UniqueID flag is set)                  |
-/// | +?     | Name Hash   | u32  | Hash of the structure name (only if NameHash flag is set)|
+/// | +8     | Actual data | ?    | Data for all fields                                      |
 /// |--------|-------------|------|----------------------------------------------------------|
 /// | +?     | Hash Table  | u32* | 4 bytes x FieldsCount                                    |
 /// | +?     | Offsets     | ?    | 1/2/4 bytes x FieldsCount depending on Offset Type flag  |
 /// |--------|-------------|------|----------------------------------------------------------|
-/// | +?     | Actual data | ?    | Data for all fields                                      |
-/// |--------|-------------|------|----------------------------------------------------------|
+/// | +?     | TimeStamp   | u64  | TimeStamp (only if TimeStamp flag is set)                |
+/// | +?     | UniquID     | u64  | UniqueID (only if UniqueID flag is set)                  |
+/// | +?     | Name Hash   | u32  | Hash of the structure name (only if NameHash flag is set)|
 /// | Last   | CRC32 value | u32  | Last 4 bytes, only if CRC32 flags is set                 |
 /// |--------|-------------|------|----------------------------------------------------------|
 
@@ -30,7 +32,7 @@
 /// Ofs1, Ofs2, ... Ofs_n (16 bits)
 /// Data
 /// Optional CRC32 at the end
-/// 
+///
 /// Hash = 24 bits (hash) + 8 bits (type)
 /// a type can be:
 /// - basic type (i8-i128,u8-u128,f32,f64,bool)
@@ -38,21 +40,20 @@
 /// - Vector of basic types
 /// - Vector of String
 /// - Other objects: --> ref leads to [Object Type Hash (32 bits) + value]
-
-
 mod keyvaluestruct;
-mod error;
-mod key;
+mod metadata;
 mod serde;
-mod buffer;
 
-pub use keyvaluestruct::KeyValueStruct;
 pub use error::Error;
+pub use key::BufferWriter;
 pub use key::Key;
 pub use key::StructValue;
-pub use key::BufferWriter;
+pub use keyvaluestruct::KeyValueStruct;
+pub use metadata::MetaData;
 pub use serde::SerDe;
 
-pub trait StructSerializationTrait {
+pub trait KeyValueStructSerDe {
+    fn metadata(&self) -> &MetaData;
+    fn update_metada(&mut self, new: MetaData);
     fn serialize_to(&self, output: &mut Vec<u8>);
 }

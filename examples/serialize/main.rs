@@ -1,11 +1,11 @@
 use ::KeyValueStruct::*;
-use ::KeyValueStructProcMacro::Serialized;
+use ::KeyValueStructProcMacro::*;
 
 // create an alias for String
 type MyString = String;
 
 
-#[derive(Serialized)]
+#[KeyValueStruct]
 struct MyStruct {
     a: i32,
     b: bool,
@@ -13,7 +13,7 @@ struct MyStruct {
 }
 
 fn main() {
-    let a = MyStruct { a: 42, b: true, c: "Hello, World!".to_string() };
+    let a = MyStruct { a: 42, b: true, c: "Hello, World!".to_string(),metadata: MetaData::default()};
     let mut output = Vec::new();
     a.serialize_to(&mut output);
     println!("Size = {}",output.len());
