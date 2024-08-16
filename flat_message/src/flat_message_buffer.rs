@@ -31,7 +31,7 @@ enum OffsetSize {
     U32 = 4,
 }
 
-pub struct KeyValueStruct<'a> {
+pub struct FlatMessageBuffer<'a> {
     name_hash: Option<NonZeroU32>,
     timestamp: Option<NonZeroU64>,
     unique_id: Option<NonZeroU64>,
@@ -42,7 +42,7 @@ pub struct KeyValueStruct<'a> {
     fields_count: u32,
 }
 
-impl KeyValueStruct<'_> {
+impl FlatMessageBuffer<'_> {
     const FLAGS_OFFSET_SIZE: u8 = 0b0000_0011;
     const FLAG_HAS_CRC: u8 = 0b0000_0100;
     const FLAG_HAS_NAME_HASH: u8 = 0b0000_1000;
@@ -134,7 +134,7 @@ impl KeyValueStruct<'_> {
     }
 }
 
-impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
+impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
     type Error = Error;
 
     fn try_from(buf: &'a [u8]) -> Result<Self, Self::Error> {
@@ -154,26 +154,26 @@ impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
             return Err(Error::InvalidSize((buf.len() as u32, buffer_size)));
         }
         // now check flags
-        let offset_size = match flags & KeyValueStruct::FLAGS_OFFSET_SIZE {
+        let offset_size = match flags & FlatMessageBuffer::FLAGS_OFFSET_SIZE {
             0 => OffsetSize::U8,
             1 => OffsetSize::U16,
             2 => OffsetSize::U32,
             _ => return Err(Error::InvalidOffsetSize),
         };
         let mut extra_size = 0;
-        if flags & KeyValueStruct::FLAG_HAS_CRC != 0 {
+        if flags & FlatMessageBuffer::FLAG_HAS_CRC != 0 {
             extra_size += 4;
         }
-        if flags & KeyValueStruct::FLAG_HAS_NAME_HASH != 0 {
+        if flags & FlatMessageBuffer::FLAG_HAS_NAME_HASH != 0 {
             extra_size += 4;
         }
-        if flags & KeyValueStruct::FLAG_HAS_VERSION != 0 {
+        if flags & FlatMessageBuffer::FLAG_HAS_VERSION != 0 {
             extra_size += 4;
         }
-        if flags & KeyValueStruct::FLAG_HAS_TIMESTAMP != 0 {
+        if flags & FlatMessageBuffer::FLAG_HAS_TIMESTAMP != 0 {
             extra_size += 8;
         }
-        if flags & KeyValueStruct::FLAG_HAS_UNIQUEID != 0 {
+        if flags & FlatMessageBuffer::FLAG_HAS_UNIQUEID != 0 {
             extra_size += 8;
         }
         if (extra_size + 8) as usize > buf.len() {
@@ -185,7 +185,7 @@ impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
 
         // if CRC32 exists --> read it and test
         let mut offset = 8;
-        if flags & KeyValueStruct::FLAG_HAS_CRC != 0 {
+        if flags & FlatMessageBuffer::FLAG_HAS_CRC != 0 {
             #[cfg(feature = "VALIDATE_CRC32")]
             {
                 let crc = READ_VALUE!(buf, offset, u32);
@@ -197,28 +197,28 @@ impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
             offset += 4;
         }
         // read metadata
-        let name_hash = if flags & KeyValueStruct::FLAG_HAS_NAME_HASH != 0 {
+        let name_hash = if flags & FlatMessageBuffer::FLAG_HAS_NAME_HASH != 0 {
             let value = READ_VALUE!(buf, offset, u32);
             offset += 4;
             NonZeroU32::new(value)
         } else {
             None
         };
-        let version = if flags & KeyValueStruct::FLAG_HAS_NAME_HASH != 0 {
+        let version = if flags & FlatMessageBuffer::FLAG_HAS_NAME_HASH != 0 {
             let value = READ_VALUE!(buf, offset, u32);
             offset += 4;
             NonZeroU32::new(value)
         } else {
             None
         };
-        let timestamp = if flags & KeyValueStruct::FLAG_HAS_TIMESTAMP != 0 {
+        let timestamp = if flags & FlatMessageBuffer::FLAG_HAS_TIMESTAMP != 0 {
             let value = READ_VALUE!(buf, offset, u64);
             offset += 8;
             NonZeroU64::new(value)
         } else {
             None
         };
-        let unique_id = if flags & KeyValueStruct::FLAG_HAS_UNIQUEID != 0 {
+        let unique_id = if flags & FlatMessageBuffer::FLAG_HAS_UNIQUEID != 0 {
             let value = READ_VALUE!(buf, offset, u64);
             offset += 8;
             NonZeroU64::new(value)
@@ -236,7 +236,7 @@ impl<'a> TryFrom<&'a [u8]> for KeyValueStruct<'a> {
         }
         let fields_table_offset = offset;
 
-        Ok(KeyValueStruct {
+        Ok(FlatMessageBuffer {
             buf,
             name_hash,
             timestamp,

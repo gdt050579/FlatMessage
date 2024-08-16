@@ -40,7 +40,7 @@ mod key;
 /// - Vector of basic types
 /// - Vector of String
 /// - Other objects: --> ref leads to [Object Type Hash (32 bits) + value]
-mod keyvaluestruct;
+mod flat_message_buffer;
 mod metadata;
 mod serde;
 mod flat_message;
@@ -50,7 +50,7 @@ pub use self::error::Error;
 pub use self::key::BufferWriter;
 pub use self::key::Key;
 pub use self::key::StructValue;
-pub use self::keyvaluestruct::KeyValueStruct;
+pub use self::flat_message_buffer::FlatMessageBuffer;
 pub use self::metadata::MetaData;
 pub use self::serde::SerDe;
 pub use self::flat_message::FlatMessage;   
