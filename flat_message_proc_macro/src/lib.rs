@@ -1,5 +1,5 @@
+mod field_info;
 mod struct_info;
-
 use proc_macro::*;
 use struct_info::StructInfo;
 use syn::{parse_macro_input, DeriveInput};

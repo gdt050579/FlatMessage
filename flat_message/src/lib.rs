@@ -47,9 +47,7 @@ mod flat_message;
 
 pub use flat_message_proc_macro::*;
 pub use self::error::Error;
-pub use self::key::BufferWriter;
 pub use self::key::Key;
-pub use self::key::StructValue;
 pub use self::flat_message_buffer::FlatMessageBuffer;
 pub use self::metadata::MetaData;
 pub use self::serde::SerDe;

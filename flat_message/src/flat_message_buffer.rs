@@ -2,7 +2,7 @@
 use super::hashes;
 use super::Error;
 use super::Key;
-use super::StructValue;
+use super::SerDe;
 use std::num::{NonZeroU32, NonZeroU64};
 
 macro_rules! READ_VALUE {
@@ -65,13 +65,13 @@ impl FlatMessageBuffer<'_> {
     #[inline(always)]
     pub fn get<'a, T>(&'a self, key: Key) -> Option<T>
     where
-        T: StructValue<'a>,
+        T: SerDe<'a>,
     {
         if self.fields_count == 0 {
             return None;
         }
-        let type_id = (key.value & 0x7F) as u8;
-        if T::supported_type() as u8 != type_id {
+        let type_id = (key.value & 0xFF) as u8;
+        if T::data_format() as u8 != type_id {
             return None;
         }
         // valid type --> check if the key actually exists
@@ -84,7 +84,7 @@ impl FlatMessageBuffer<'_> {
                     None
                 } else {
                     let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
-                    Some(T::from_buffer(self.buf, ofs as usize, self.buf.len()))
+                    T::from_buffer(self.buf, ofs as usize)
                 }
             }
             2 => {
@@ -95,12 +95,12 @@ impl FlatMessageBuffer<'_> {
                         None
                     } else {
                         let ofs = READ_OFFSET!(self.buf, end + 4, self.offset_size);
-                        Some(T::from_buffer(self.buf, ofs as usize, self.buf.len()))
+                        T::from_buffer(self.buf, ofs as usize)
                     }
                 } else {
                     let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
                     let next = READ_OFFSET!(self.buf, end + 4, self.offset_size);
-                    Some(T::from_buffer(self.buf, ofs as usize, next as usize))
+                    T::from_buffer(self.buf, ofs as usize)
                 }
             }
             _ => {
@@ -114,10 +114,10 @@ impl FlatMessageBuffer<'_> {
                         let mid_pos = end + mid * 4;
                         let ofs = READ_OFFSET!(self.buf, mid_pos, self.offset_size);
                         if mid == last {
-                            return Some(T::from_buffer(self.buf, ofs as usize, self.buf.len()));
+                            return T::from_buffer(self.buf, ofs as usize);
                         } else {
                             let next = READ_OFFSET!(self.buf, mid_pos + 4, self.offset_size);
-                            return Some(T::from_buffer(self.buf, ofs as usize, next as usize));
+                            return T::from_buffer(self.buf, ofs as usize);
                         }
                     } else if k < key.value {
                         left = mid + 1;

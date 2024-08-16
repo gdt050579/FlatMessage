@@ -1,39 +1,9 @@
 use common::hashes;
-use common::supported_types::SupportedTypes;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{DataStruct, Field, FieldsNamed};
+use crate::field_info::FieldInfo;   
 
-struct FieldInfo {
-    name: String,
-    ty: SupportedTypes,
-    hash: u32,
-    start: usize,
-    end: usize,
-}
-impl TryFrom<&Field> for FieldInfo {
-    type Error = String;
-    fn try_from(field: &Field) -> Result<Self, Self::Error> {
-        if field.ident.is_none() {
-            return Err(format!(
-                "Field without any name is not supported => '{}' !",
-                field.to_token_stream().to_string()
-            ));
-        }
-        let ty = &field.ty;
-        let type_name = quote! {#ty}.to_string();
-        let ty = SupportedTypes::try_from(type_name.as_str())?;
-        let name = field.ident.as_ref().unwrap().to_string();
-        let hash = (hashes::fnv_32(&name) & 0xFFFFFF00) | (ty as u32);
-        Ok(FieldInfo {
-            name,
-            ty,
-            hash,
-            start: usize::MAX,
-            end: usize::MAX,
-        })
-    }
-}
 pub(crate) struct StructInfo<'a> {
     fields_name: &'a FieldsNamed,
     name: String,
