@@ -4,6 +4,7 @@ use super::Error;
 use super::Key;
 use super::SerDe;
 use std::num::{NonZeroU32, NonZeroU64};
+use common::constants;
 
 macro_rules! READ_VALUE {
     ($bytes:expr, $pos:expr, $t:ty) => {{
@@ -43,13 +44,6 @@ pub struct FlatMessageBuffer<'a> {
 }
 
 impl FlatMessageBuffer<'_> {
-    const FLAGS_OFFSET_SIZE: u8 = 0b0000_0011;
-    const FLAG_HAS_CRC: u8 = 0b0000_0100;
-    const FLAG_HAS_NAME_HASH: u8 = 0b0000_1000;
-    const FLAG_HAS_TIMESTAMP: u8 = 0b0001_0000;
-    const FLAG_HAS_UNIQUEID: u8 = 0b0010_0000;
-    const FLAG_HAS_VERSION: u8 = 0b0100_0000;
-
     #[inline(always)]
     pub fn version(&self) -> Option<u32> {
         self.version.map(|v| v.get())
@@ -143,7 +137,7 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             return Err(Error::InvalidHeaderLength(buf.len()));
         }
         // check magic
-        if buf[0] != b'K' || buf[1] != b'V' {
+        if READ_VALUE!(buf, 0, u32) != constants::MAGIC_V1 {
             return Err(Error::InvalidMagic);
         }
         // check fields
@@ -154,26 +148,23 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             return Err(Error::InvalidSize((buf.len() as u32, buffer_size)));
         }
         // now check flags
-        let offset_size = match flags & FlatMessageBuffer::FLAGS_OFFSET_SIZE {
+        let offset_size = match flags & constants::FLAGS_OFFSET_SIZE {
             0 => OffsetSize::U8,
             1 => OffsetSize::U16,
             2 => OffsetSize::U32,
             _ => return Err(Error::InvalidOffsetSize),
         };
         let mut extra_size = 0;
-        if flags & FlatMessageBuffer::FLAG_HAS_CRC != 0 {
+        if flags & constants::FLAG_HAS_CRC != 0 {
             extra_size += 4;
         }
-        if flags & FlatMessageBuffer::FLAG_HAS_NAME_HASH != 0 {
+        if flags & constants::FLAG_HAS_NAME_HASH != 0 {
             extra_size += 4;
         }
-        if flags & FlatMessageBuffer::FLAG_HAS_VERSION != 0 {
-            extra_size += 4;
-        }
-        if flags & FlatMessageBuffer::FLAG_HAS_TIMESTAMP != 0 {
+        if flags & constants::FLAG_HAS_TIMESTAMP != 0 {
             extra_size += 8;
         }
-        if flags & FlatMessageBuffer::FLAG_HAS_UNIQUEID != 0 {
+        if flags & constants::FLAG_HAS_UNIQUEID != 0 {
             extra_size += 8;
         }
         if (extra_size + 8) as usize > buf.len() {
@@ -185,7 +176,7 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
 
         // if CRC32 exists --> read it and test
         let mut offset = 8;
-        if flags & FlatMessageBuffer::FLAG_HAS_CRC != 0 {
+        if flags & constants::FLAG_HAS_CRC != 0 {
             #[cfg(feature = "VALIDATE_CRC32")]
             {
                 let crc = READ_VALUE!(buf, offset, u32);
@@ -197,28 +188,21 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             offset += 4;
         }
         // read metadata
-        let name_hash = if flags & FlatMessageBuffer::FLAG_HAS_NAME_HASH != 0 {
+        let name_hash = if flags & constants::FLAG_HAS_NAME_HASH != 0 {
             let value = READ_VALUE!(buf, offset, u32);
             offset += 4;
             NonZeroU32::new(value)
         } else {
             None
         };
-        let version = if flags & FlatMessageBuffer::FLAG_HAS_NAME_HASH != 0 {
-            let value = READ_VALUE!(buf, offset, u32);
-            offset += 4;
-            NonZeroU32::new(value)
-        } else {
-            None
-        };
-        let timestamp = if flags & FlatMessageBuffer::FLAG_HAS_TIMESTAMP != 0 {
+        let timestamp = if flags & constants::FLAG_HAS_TIMESTAMP != 0 {
             let value = READ_VALUE!(buf, offset, u64);
             offset += 8;
             NonZeroU64::new(value)
         } else {
             None
         };
-        let unique_id = if flags & FlatMessageBuffer::FLAG_HAS_UNIQUEID != 0 {
+        let unique_id = if flags & constants::FLAG_HAS_UNIQUEID != 0 {
             let value = READ_VALUE!(buf, offset, u64);
             offset += 8;
             NonZeroU64::new(value)
@@ -241,7 +225,7 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             name_hash,
             timestamp,
             unique_id,
-            version,
+            version: None,
             offset_size,
             field_table_offset: fields_table_offset as u32,
             fields_count: field_count as u32,

@@ -1,5 +1,6 @@
 use crate::field_info::FieldInfo;
 use common::hashes;
+use common::constants;
 use quote::quote;
 use syn::{DataStruct, FieldsNamed};
 
@@ -186,6 +187,7 @@ impl<'a> StructInfo<'a> {
         let compute_size_code = self.generate_compute_size_code();
         let version_code = self.generate_version_code();
         let flags_code = self.generate_flags_code();
+        let magic = constants::MAGIC_V1;
 
         quote! {
             fn serialize_to(&self,output: &mut Vec<u8>) {
@@ -216,7 +218,7 @@ impl<'a> StructInfo<'a> {
                 let buffer: *mut u8 = output.as_mut_ptr();
                 unsafe {
                     // write magic
-                    ptr::write_unaligned(buffer as *mut u32, 0x4B565301); // b'K' b'V' b'S' b\01
+                    ptr::write_unaligned(buffer as *mut u32, #magic); // b'K' b'V' b'S' b\01
                     // write number of field
                     ptr::write_unaligned(buffer.add(4) as *mut u16, #fields_count);
                     // write strcture version
