@@ -99,9 +99,6 @@ impl<'a> StructInfo<'a> {
                 metainfo_size += 4;
             });
         }
-        lines.push(quote! {
-            ptr::write_unaligned(buffer.add(7) as *mut u8, flags);
-        });
         lines
     }
     fn generate_compute_size_code(&self) -> Vec<proc_macro2::TokenStream> {
@@ -201,6 +198,8 @@ impl<'a> StructInfo<'a> {
                 let mut flags: u8;
                 // Step 1: compute size --> all items will startt from offset 8
                 #(#compute_size_code)*
+                // Step 2: compute flags and metadata size
+                #(#flags_code)*
                 // Step 2: align size to 4 bytes (for hash table)
                 size = (size + 3) & !3;
                 let hash_table_offset = size;
@@ -226,7 +225,7 @@ impl<'a> StructInfo<'a> {
                     // write strcture version
                     #version_code
                     // write flags
-                    #(#flags_code)*
+                    ptr::write_unaligned(buffer.add(7) as *mut u8, flags);
                     match offset_size {
                         1 => {
                             #(#serialize_code_u8)*
