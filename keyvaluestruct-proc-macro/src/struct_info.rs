@@ -63,30 +63,7 @@ impl<'a> StructInfo<'a> {
             }
         }
     }
-    fn generate_unique_id_code(&self) -> Option<proc_macro2::TokenStream> {
-        if let Some(unique_id) = &self.unique_id {
-            let unique_id = syn::Ident::new(unique_id.as_str(), proc_macro2::Span::call_site());
-            Some(quote! {
-                flags |= 0b0000_0001;
-                ptr::write_unaligned(buffer.add(buf_pos) as *mut u64, self.#unique_id);
-                buf_pos += 8;
-            })
-        } else {
-            None
-        }
-    }
-    fn generate_timestamp_code(&self) -> Option<proc_macro2::TokenStream> {
-        if let Some(timestamp) = &self.timestamp {
-            let timestamp = syn::Ident::new(timestamp.as_str(), proc_macro2::Span::call_site());
-            Some(quote! {
-                flags |= 0b0000_0001;
-                ptr::write_unaligned(buffer.add(buf_pos) as *mut u64, self.#timestamp);
-                buf_pos += 8;
-            })
-        } else {
-            None
-        }
-    }
+
     fn generate_version_code(&self) -> proc_macro2::TokenStream {
         if self.add_metadata {
             quote! {
@@ -238,7 +215,7 @@ impl<'a> StructInfo<'a> {
                 }
                 // Step 5: allocate memory
                 output.resize(size, 0);
-                // Step 6: write datat directly to a raw pointer
+                // Step 6: write data directly to a raw pointer
                 let buffer: *mut u8 = output.as_mut_ptr();
                 unsafe {
                     // write magic
