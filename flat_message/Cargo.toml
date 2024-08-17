@@ -9,9 +9,6 @@ edition = "2021"
 flat_message_proc_macro = {path = "../flat_message_proc_macro"}
 common = {path = "../common"}
 
-# TODO: feature
-serde = "1"
-
 [features]
 default = []
 VALIDATE_CRC32 = []

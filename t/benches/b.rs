@@ -1,3 +1,5 @@
+use std::num::{NonZeroU64, NonZeroU8};
+
 use criterion::BenchmarkId;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use flat_message::*;
@@ -22,7 +24,9 @@ struct ProcessCreatedS {
     parent: String,
     user: String,
     command_line: String,
-    metadata: flat_message::MetaData,
+    timestamp: NonZeroU64,
+    unique_id: NonZeroU64,
+    version: NonZeroU8
 }
 
 fn test_flat_message(process: &ProcessCreated, output: &mut Vec<u8>) -> usize {
@@ -81,10 +85,9 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         parent: String::from("C:\\Windows\\System32\\explorer.exe"),
         user: String::from("Administrator"),
         command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
-        metadata: flat_message::MetaDataBuilder::new()
-            .timestamp(0xFEFEFEFE)
-            .unique_id(0xABABABAB)
-            .build(),
+        timestamp: NonZeroU64::new(0xFEFEFEFE).unwrap(),
+        unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
+        version: NonZeroU8::new(1).unwrap(),
     };
     let mut output = Vec::new();
 

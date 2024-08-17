@@ -53,7 +53,7 @@ impl<'a> StructInfo<'a> {
             lines.push(quote! {
                 let metadata = self.metadata();
                 if let Some(timestamp) = metadata.timestamp() {
-                    unsafe { ptr::write_unaligned(buffer.add(metadata_offset) as *mut u64, timestamp); }
+                    ptr::write_unaligned(buffer.add(metadata_offset) as *mut u64, timestamp);
                     metadata_offset += 8;
                 }
                 if let Some(unique_id) = metadata.unique_id() {
@@ -106,18 +106,24 @@ impl<'a> StructInfo<'a> {
             }
         });
         let mut v: Vec<_> = compute_size_code.collect();
+        let ref_table_size_8 = self.fields.len();
+        let ref_table_size_16 = self.fields.len()*2;
+        let ref_table_size_32 = self.fields.len()*4;
         v.push(quote! {
             if size<0x100 {
                 // 8 bites
-                offset_size = 1;
+                offset_size = RefOffsetSize::U8;
+                ref_table_size = #ref_table_size_8;
                 flags = 0b0000_0000;
             } else if size<0x10000 {
                 // 16 bites
-                offset_size = 2;
+                offset_size = RefOffsetSize::U16;
+                ref_table_size = #ref_table_size_16;
                 flags = 0b0000_0001;
             } else {
                 // 32 bites
-                offset_size = 4;
+                offset_size = RefOffsetSize::U32;
+                ref_table_size = #ref_table_size_32;
                 flags = 0b0000_0010;
             }
         });
@@ -185,11 +191,17 @@ impl<'a> StructInfo<'a> {
 
         quote! {
             fn serialize_to(&self,output: &mut Vec<u8>) {
+                enum RefOffsetSize {
+                    U8 = 1,
+                    U16 = 2,
+                    U32 = 4,
+                }
                 output.clear();
                 // basic header (magic + fields count + flags + version)
                 let mut buf_pos = 8usize;
                 let mut size = 8usize;
-                let mut offset_size: usize;
+                let mut ref_table_size: usize;
+                let mut offset_size: RefOffsetSize;
                 let mut metainfo_size = 0usize;
                 let mut flags: u8;
                 // Step 1: compute size --> all items will startt from offset 8
@@ -200,7 +212,7 @@ impl<'a> StructInfo<'a> {
                 size = (size + 3) & !3;
                 let hash_table_offset = size;
                 let ref_offset = size + 4 * #fields_count as usize;
-                size += (4+offset_size) * #fields_count as usize;
+                size = ref_offset + ref_table_size;
                 // Step 4: compute aditional size of metainformation
                 let mut metadata_offset = size;
                 size += metainfo_size;
@@ -227,16 +239,15 @@ impl<'a> StructInfo<'a> {
                     ptr::write_unaligned(buffer as *mut flat_message::headers::HeaderV1, header);
                     // write serialization code
                     match offset_size {
-                        1 => {
+                        RefOffsetSize::U8 => {
                             #(#serialize_code_u8)*
                         }
-                        2 => {
+                        RefOffsetSize::U16 => {
                             #(#serialize_code_u16)*
                         }
-                        4 => {
+                        RefOffsetSize::U32 => {
                             #(#serialize_code_u32)*
                         }
-                        _ => {}
                     }
                     // hash table
                     #(#hash_table_code)*
