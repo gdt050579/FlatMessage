@@ -20,7 +20,7 @@ unsafe impl SerDe<'_> for bool {
     #[inline(always)]
     fn write(&self, p: *mut u8, pos: usize) -> usize {
         unsafe {
-            ptr::write_unaligned(p.add(pos) as *mut u8, *self as u8);
+            ptr::write_unaligned(p.add(pos), *self as u8);
             pos + 1
         }
     }

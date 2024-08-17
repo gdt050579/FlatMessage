@@ -39,12 +39,10 @@ pub(crate) fn read_size(p: *const u8, pos: usize, method: WriteSizeMethod) -> (u
         WriteSizeMethod::FEFFMarker => unsafe {
             let p = p.add(pos);
             let first = p.read_unaligned();
-            if first < 0xFE {
-                (first as usize, 1)
-            } else if first==0xFE {
-                ((p.add(1) as *mut u16).read_unaligned() as usize, 3)
-            } else {
-                ((p.add(1) as *mut u32).read_unaligned() as usize, 5)
+            match first {
+                0xFE => ((p.add(1) as *mut u16).read_unaligned() as usize, 3),
+                0xFF => ((p.add(1) as *mut u32).read_unaligned() as usize, 5),
+                _ => (first as usize, 1),
             }
         },
     }

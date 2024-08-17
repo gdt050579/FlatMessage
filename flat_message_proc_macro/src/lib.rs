@@ -18,31 +18,27 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut add_metadata = true;
     let mut it = args.into_iter();
     while let Some(token) = it.next() {
-        match token {
-            TokenTree::Ident(ident) => {
-                let attr_name = ident.to_string();
-                if let Some(TokenTree::Punct(punct)) = it.next() {
-                    if punct.as_char() == '=' {
-                        if let Some(TokenTree::Literal(literal)) = it.next() {
-                            let lit_str = literal.to_string();
-                            let lit_value =
-                                lit_str.trim_matches('"').parse::<bool>().unwrap_or(true);
-                            match attr_name.as_str() {
-                                "store_name" => store_name = lit_value,
-                                "metadata" => add_metadata = lit_value,
-                                _ => {
-                                    panic!("Unknown attribute name: {}", attr_name);
-                                }
+        if let TokenTree::Ident(ident) = token {
+            let attr_name = ident.to_string();
+            if let Some(TokenTree::Punct(punct)) = it.next() {
+                if punct.as_char() == '=' {
+                    if let Some(TokenTree::Literal(literal)) = it.next() {
+                        let lit_str = literal.to_string();
+                        let lit_value = lit_str.trim_matches('"').parse::<bool>().unwrap_or(true);
+                        match attr_name.as_str() {
+                            "store_name" => store_name = lit_value,
+                            "metadata" => add_metadata = lit_value,
+                            _ => {
+                                panic!("Unknown attribute name: {}", attr_name);
                             }
                         }
-                    } else {
-                        panic!("Expecting '=' after attribute name");
                     }
                 } else {
                     panic!("Expecting '=' after attribute name");
                 }
+            } else {
+                panic!("Expecting '=' after attribute name");
             }
-            _ => {}
         }
     }
 
@@ -57,6 +53,6 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
         };
         si.generate_code()
     } else {
-        panic!("Only structs are supported!")
+        panic!("Only structs are supported !")
     }
 }

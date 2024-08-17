@@ -1,5 +1,3 @@
-use core::time;
-
 use crate::field_info::FieldInfo;
 use common::hashes;
 use common::constants;
@@ -131,16 +129,14 @@ impl<'a> StructInfo<'a> {
     }
     fn generate_hash_table_code(&self) -> Vec<proc_macro2::TokenStream> {
         let mut v: Vec<_> = Vec::with_capacity(16);
-        let mut idx = 0usize;
         v.push(quote! {
             let hash_table_ptr = buffer.add(hash_table_offset) as *mut u32;
         });
-        for field in self.fields.iter() {
+        for (idx, field) in self.fields.iter().enumerate() {
             let hash = field.hash;
             v.push(quote! {
                 ptr::write_unaligned(hash_table_ptr.add(#idx), #hash);
             });
-            idx += 1;
         }
         v
     }
@@ -307,10 +303,8 @@ impl<'a> StructInfo<'a> {
                 usize::MAX - field_info.serialization_alignament
             });
             // compute the order
-            let mut idx = 0;
-            for dm in &mut data_members {
-                dm.alignament_order = idx;
-                idx += 1;
+            for (idx, dm) in data_members.iter_mut().enumerate() {
+                dm.alignament_order = idx as u32;
             }
             // sort the fields again (based on hash)
             data_members.sort_by_key(|field_info| field_info.hash);

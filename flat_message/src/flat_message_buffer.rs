@@ -93,7 +93,7 @@ impl FlatMessageBuffer<'_> {
                     }
                 } else {
                     let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
-                    let next = READ_OFFSET!(self.buf, end + 4, self.offset_size);
+                    //let next = READ_OFFSET!(self.buf, end + 4, self.offset_size);
                     T::from_buffer(self.buf, ofs as usize)
                 }
             }
@@ -104,22 +104,26 @@ impl FlatMessageBuffer<'_> {
                 while left <= right {
                     let mid = left + (right - left) / 2;
                     let k = READ_VALUE!(self.buf, start + mid * 4, u32);
-                    if k == key.value {
-                        let mid_pos = end + mid * 4;
-                        let ofs = READ_OFFSET!(self.buf, mid_pos, self.offset_size);
-                        if mid == last {
-                            return T::from_buffer(self.buf, ofs as usize);
-                        } else {
-                            let next = READ_OFFSET!(self.buf, mid_pos + 4, self.offset_size);
-                            return T::from_buffer(self.buf, ofs as usize);
+                    match k.cmp(&key.value) {
+                        std::cmp::Ordering::Equal => {
+                            let mid_pos = end + mid * 4;
+                            let ofs = READ_OFFSET!(self.buf, mid_pos, self.offset_size);
+                            if mid == last {
+                                return T::from_buffer(self.buf, ofs as usize);
+                            } else {
+                                //let next = READ_OFFSET!(self.buf, mid_pos + 4, self.offset_size);
+                                return T::from_buffer(self.buf, ofs as usize);
+                            }
                         }
-                    } else if k < key.value {
-                        left = mid + 1;
-                    } else {
-                        if mid == 0 {
-                            return None;
+                        std::cmp::Ordering::Less => {
+                            left = mid + 1;
                         }
-                        right = mid - 1;
+                        std::cmp::Ordering::Greater => {
+                            if mid == 0 {
+                                return None;
+                            }
+                            right = mid - 1;
+                        }
                     }
                 }
                 None

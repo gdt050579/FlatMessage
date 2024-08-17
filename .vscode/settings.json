@@ -1,0 +1,7 @@
+{
+    "cmake.configureOnOpen": false,
+    "rust-analyzer.linkedProjects": [
+    ],
+    "rust-analyzer.showUnlinkedFileNotification": false,
+    //"rust-analyzer.checkOnSave.command": "clippy"
+}

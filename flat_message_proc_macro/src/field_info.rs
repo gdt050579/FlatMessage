@@ -1,8 +1,7 @@
-use common::hashes;
 use common::data_format::DataFormat;
+use common::hashes;
 use quote::{quote, ToTokens};
 use syn::Field;
-
 
 pub(crate) struct FieldInfo {
     pub(crate) name: String,
@@ -16,7 +15,7 @@ impl TryFrom<&Field> for FieldInfo {
         if field.ident.is_none() {
             return Err(format!(
                 "Field without any name is not supported => '{}' !",
-                field.to_token_stream().to_string()
+                field.to_token_stream()
             ));
         }
         let ty = &field.ty;

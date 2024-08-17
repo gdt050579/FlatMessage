@@ -1,6 +1,7 @@
 use std::num::{NonZeroU64, NonZeroU8};
 use std::sync::atomic::AtomicU64;
 
+#[derive(Default)]
 pub struct MetaData {
     timestamp: Option<NonZeroU64>,
     unique_id: Option<NonZeroU64>,
@@ -19,16 +20,6 @@ impl MetaData {
     #[inline(always)]
     pub fn version(&self) -> Option<u8> {
         self.version.map(|v| v.get())
-    }
-}
-
-impl Default for MetaData {
-    fn default() -> Self {
-        Self {
-            timestamp: None,
-            unique_id: None,
-            version: None,
-        }
     }
 }
 
