@@ -101,8 +101,8 @@ impl<'a> StructInfo<'a> {
         let compute_size_code = self.fields.iter().map(|field| {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
             quote! {
-                size = SerDe::align_offset(&self.#field_name, size);
-                size += SerDe::size(&self.#field_name);
+                size = flat_message::SerDe::align_offset(&self.#field_name, size);
+                size += flat_message::SerDe::size(&self.#field_name);
             }
         });
         let mut v: Vec<_> = compute_size_code.collect();
@@ -145,25 +145,25 @@ impl<'a> StructInfo<'a> {
             match ref_size {
                 1 => 
                     Some(quote! {
-                        buf_pos = SerDe::align_offset(&self.#field_name, buf_pos);
+                        buf_pos = flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u8;
                         ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order) as *mut u8, offset);
-                        buf_pos = SerDe::write(&self.#field_name, buffer, buf_pos);
+                        buf_pos = flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
         
                 2 => 
                     Some(quote! {
-                        buf_pos = SerDe::align_offset(&self.#field_name, buf_pos);
+                        buf_pos = flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u16;
                         ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order*2) as *mut u16, offset);
-                        buf_pos = SerDe::write(&self.#field_name, buffer, buf_pos);
+                        buf_pos = flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
                 4 => 
                     Some(quote! {
-                        buf_pos = SerDe::align_offset(&self.#field_name, buf_pos);
+                        buf_pos = flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u32;
                         ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order*4) as *mut u32, offset);
-                        buf_pos = SerDe::write(&self.#field_name, buffer, buf_pos);
+                        buf_pos = flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
                 _ => None
             }
@@ -262,11 +262,12 @@ impl<'a> StructInfo<'a> {
         let serialize_to_methods = self.generate_serialize_to_methods();
         let new_code = quote! {
             use std::ptr;
+            use flat_message::*;
             struct #name {
                 #(#struct_fields)*
                 #metadata_field
             }
-            impl FlatMessage for #name {
+            impl flat_message::FlatMessage for #name {
                 #metadata_methods
                 #serialize_to_methods
             }

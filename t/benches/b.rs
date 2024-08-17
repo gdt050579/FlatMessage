@@ -1,8 +1,6 @@
 use criterion::BenchmarkId;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use flat_message::flat_message;
-use flat_message::FlatMessage;
-use flat_message::SerDe;
+use flat_message::*;
 use serde::Serialize;
 
 #[flat_message]
