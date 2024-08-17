@@ -15,6 +15,7 @@ struct ProcessCreated {
 
 #[derive(Serialize)]
 struct ProcessCreatedS {
+    struct_name: &'static str,
     name: String,
     pid: u32,
     parent_pid: u32,
@@ -73,6 +74,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
             .build(),
     };
     let process_s = ProcessCreatedS {
+        struct_name: "ProcessCreated",
         name: String::from("C:\\Windows\\System32\\example.exe"),
         pid: 1234,
         parent_pid: 1,
