@@ -11,3 +11,4 @@ flat_message = { version = "1.0.0", path = "../flat_message" }
 [[example]]
 name = "serialize"
 path = "serialize/main.rs"
+

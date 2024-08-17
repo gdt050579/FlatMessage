@@ -1,0 +1,25 @@
+[package]
+name = "t"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+
+[dev-dependencies]
+criterion = "0.5.1"
+flat_message = { version = "1.0.0", path = "../flat_message" }
+serde = "1"
+serde_derive = "1"
+serde_json = "1"
+bson = "2"
+ciborium = "0.2.2"
+rmp = "0.8.14"
+rmp-serde = "1"
+bincode = "1"
+
+[[bench]]
+name = "b"
+harness = false
+
+[lints]
+workspace = true

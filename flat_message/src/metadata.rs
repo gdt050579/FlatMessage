@@ -1,7 +1,7 @@
 use std::num::{NonZeroU64, NonZeroU8};
 use std::sync::atomic::AtomicU64;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, serde::Serialize)]
 pub struct MetaData {
     timestamp: Option<NonZeroU64>,
     unique_id: Option<NonZeroU64>,
