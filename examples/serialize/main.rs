@@ -1,8 +1,5 @@
 use flat_message::*;
 
-// create an alias for String
-type MyString = String;
-
 
 #[flat_message]
 struct MyStruct {

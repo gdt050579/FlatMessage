@@ -1,9 +1,4 @@
-mod buffer;
-mod error;
-mod key;
-/// KeyValueStruct format
-/// ---------------------------------------------------------------------------
-///
+/// FlatMessage format
 /// |--------|-------------|------|----------------------------------------------------------|
 /// | Offset | Name        | Type | Observation                                              |
 /// |--------|-------------|------|----------------------------------------------------------|
@@ -28,22 +23,14 @@ mod key;
 /// | Last   | CRC32 value | u32  | Last 4 bytes, only if CRC32 flags is set                 |
 /// |--------|-------------|------|----------------------------------------------------------|
 
-/// Hash1, Hash2, ... Hash_n
-/// Ofs1, Ofs2, ... Ofs_n (16 bits)
-/// Data
-/// Optional CRC32 at the end
-///
-/// Hash = 24 bits (hash) + 8 bits (type)
-/// a type can be:
-/// - basic type (i8-i128,u8-u128,f32,f64,bool)
-/// - String
-/// - Vector of basic types
-/// - Vector of String
-/// - Other objects: --> ref leads to [Object Type Hash (32 bits) + value]
+mod buffer;
+mod error;
+mod key;
 mod flat_message_buffer;
 mod metadata;
 mod serde;
 mod flat_message;
+pub mod headers;
 
 pub use flat_message_proc_macro::*;
 pub use self::error::Error;
@@ -52,7 +39,8 @@ pub use self::flat_message_buffer::FlatMessageBuffer;
 pub use self::metadata::MetaData;
 pub use self::metadata::MetaDataBuilder;
 pub use self::serde::SerDe;
-pub use self::flat_message::FlatMessage;   
+pub use self::flat_message::FlatMessage;  
+
 
 
 

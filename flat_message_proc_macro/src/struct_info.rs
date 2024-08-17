@@ -39,15 +39,11 @@ impl<'a> StructInfo<'a> {
     fn generate_version_code(&self) -> proc_macro2::TokenStream {
         if self.add_metadata {
             quote! {
-                if let Some(version) = self.metadata().version() {
-                    ptr::write_unaligned(buffer.add(6) as *mut u8, version);
-                } else {
-                    ptr::write_unaligned(buffer.add(6) as *mut u8, 0);
-                }
+                let version = self.metadata().version().unwrap_or(0);
             }
         } else {
             quote! {
-                ptr::write_unaligned(buffer.add(6) as *mut u8, 0);
+                let version = 0;
             }
         }
     }
@@ -200,32 +196,36 @@ impl<'a> StructInfo<'a> {
                 #(#compute_size_code)*
                 // Step 2: compute flags and metadata size
                 #(#flags_code)*
-                // Step 2: align size to 4 bytes (for hash table)
+                // Step 3: align size to 4 bytes (for hash table)
                 size = (size + 3) & !3;
                 let hash_table_offset = size;
                 let ref_offset = size + 4 * #fields_count as usize;
                 size += (4+offset_size) * #fields_count as usize;
-                // Step 3: compute aditional size of metainformation
+                // Step 4: compute aditional size of metainformation
                 let mut metadata_offset = size;
                 size += metainfo_size;
-                // Step 4: add CRC32 information (if needed)
+                // Step 5: add CRC32 information (if needed)
                 #[cfg(feature = "VALIDATE_CRC32")]
                 {
                     size += 4;
                 }
-                // Step 5: allocate memory
+                // Step 6: calculate version
+                #version_code
+                // Step 7: create a header
+                let header = flat_message::headers::HeaderV1 {
+                    magic: #magic,
+                    fields_count: #fields_count,
+                    version,
+                    flags,
+                };  
+                // Step 7: allocate memory
                 output.resize(size, 0);
-                // Step 6: write data directly to a raw pointer
+                // Step 8: write data directly to a raw pointer
                 let buffer: *mut u8 = output.as_mut_ptr();
                 unsafe {
-                    // write magic
-                    ptr::write_unaligned(buffer as *mut u32, #magic); // b'K' b'V' b'S' b\01
-                    // write number of field
-                    ptr::write_unaligned(buffer.add(4) as *mut u16, #fields_count);
-                    // write strcture version
-                    #version_code
-                    // write flags
-                    ptr::write_unaligned(buffer.add(7) as *mut u8, flags);
+                    // write header
+                    ptr::write_unaligned(buffer as *mut flat_message::headers::HeaderV1, header);
+                    // write serialization code
                     match offset_size {
                         1 => {
                             #(#serialize_code_u8)*
