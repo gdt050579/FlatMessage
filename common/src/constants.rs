@@ -1,4 +1,4 @@
-pub const MAGIC_V1: u32 = 0x47_54_48_01; 
+pub const MAGIC_V1: u32 = 0x01_48_54_47; // GTH\1
 pub const FLAGS_OFFSET_SIZE: u8 = 0b0000_0011;
 pub const FLAG_HAS_CRC: u8 = 0b0000_0100;
 pub const FLAG_HAS_NAME_HASH: u8 = 0b0000_1000;

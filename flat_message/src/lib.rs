@@ -50,6 +50,7 @@ pub use self::error::Error;
 pub use self::key::Key;
 pub use self::flat_message_buffer::FlatMessageBuffer;
 pub use self::metadata::MetaData;
+pub use self::metadata::MetaDataBuilder;
 pub use self::serde::SerDe;
 pub use self::flat_message::FlatMessage;   
 
