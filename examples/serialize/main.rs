@@ -2,8 +2,8 @@ use flat_message::*;
 
 #[flat_message(store_name = false, metadata: true)]
 pub struct MyStruct<'a> {
-    a: i32,
-    b: bool,
+    pub a: i32,
+    pub(crate) b: bool,
     c: String,
     d: &'a str,
 }
