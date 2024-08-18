@@ -1,5 +1,7 @@
+mod attribute_parser;
 mod field_info;
 mod struct_info;
+mod utils;
 use proc_macro::*;
 use struct_info::StructInfo;
 use syn::{parse_macro_input, DeriveInput};
@@ -16,32 +18,17 @@ pub fn FlatMessage(args: TokenStream, input: TokenStream) -> TokenStream {
 pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut store_name = true;
     let mut add_metadata = true;
-    let mut it = args.into_iter();
-    while let Some(token) = it.next() {
-        if let TokenTree::Ident(ident) = token {
-            let attr_name = ident.to_string();
-            if let Some(TokenTree::Punct(punct)) = it.next() {
-                if punct.as_char() == '=' {
-                    if let Some(TokenTree::Literal(literal)) = it.next() {
-                        let lit_str = literal.to_string();
-                        let lit_value = lit_str.trim_matches('"').parse::<bool>().unwrap_or(true);
-                        match attr_name.as_str() {
-                            "store_name" => store_name = lit_value,
-                            "metadata" => add_metadata = lit_value,
-                            _ => {
-                                panic!("Unknown attribute name: {}", attr_name);
-                            }
-                        }
-                    }
-                } else {
-                    panic!("Expecting '=' after attribute name");
-                }
-            } else {
-                panic!("Expecting '=' after attribute name");
+
+    let attrs = attribute_parser::parse(args);
+    for (attr_name, attr_value) in attrs.iter() {
+        match attr_name.as_str() {
+            "store_name" => store_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
+            "metadata" => add_metadata = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
+            _ => {
+                panic!("Unknown attribute: {}. Supported attributes are: `store_name' and 'metadata' !", attr_name);
             }
         }
     }
-
     let input = parse_macro_input!(input as DeriveInput);
 
     if let syn::Data::Struct(s) = &input.data {
