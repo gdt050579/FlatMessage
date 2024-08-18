@@ -4,9 +4,10 @@ use crate::MetaData;
 #[cfg(feature = "VALIDATE_CRC32")]
 use super::hashes;
 use super::Error;
-use super::Key;
+use super::Name;
 use super::SerDe;
 use common::constants;
+use std::num::NonZeroU8;
 use std::num::{NonZeroU32, NonZeroU64};
 
 macro_rules! READ_VALUE {
@@ -16,16 +17,6 @@ macro_rules! READ_VALUE {
             std::ptr::read_unaligned(ptr)
         }
     }};
-}
-
-macro_rules! READ_OFFSET {
-    ($bytes:expr, $pos:expr, $ofs_type:expr) => {
-        match $ofs_type {
-            OffsetSize::U8 => $bytes[$pos] as u32,
-            OffsetSize::U16 => READ_VALUE!($bytes, $pos, u16) as u32,
-            OffsetSize::U32 => READ_VALUE!($bytes, $pos, u32),
-        }
-    };
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -38,7 +29,6 @@ enum OffsetSize {
 pub struct FlatMessageBuffer<'a> {
     header: HeaderV1,
     metadata: MetaData,
-    name_hash: Option<NonZeroU32>,
     buf: &'a [u8],
     offset_size: OffsetSize,
     field_table_offset: usize,
@@ -51,14 +41,14 @@ impl FlatMessageBuffer<'_> {
         &self.metadata
     }
     #[inline(always)]
-    pub fn get<'a, T>(&'a self, key: Key) -> Option<T>
+    pub fn get<'a, T>(&'a self, field_name: Name) -> Option<T>
     where
         T: SerDe<'a>,
     {
         if self.header.fields_count == 0 {
             return None;
         }
-        let type_id = (key.value & 0xFF) as u8;
+        let type_id = (field_name.value & 0xFF) as u8;
         if T::data_format() as u8 != type_id {
             return None;
         }
@@ -68,51 +58,36 @@ impl FlatMessageBuffer<'_> {
         match self.header.fields_count {
             1 => {
                 let k = READ_VALUE!(self.buf, start, u32);
-                if k != key.value {
+                if k != field_name.value {
                     None
                 } else {
-                    let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
-                    todo!()
-                    //T::from_buffer(self.buf, ofs as usize)
+                    unsafe { T::from_buffer(self.buf, self.ref_table_offset) }
                 }
             }
             2 => {
                 let k = READ_VALUE!(self.buf, start, u32);
-                if k != key.value {
+                if k != field_name.value {
                     let k = READ_VALUE!(self.buf, start + 4, u32);
-                    if k != key.value {
+                    if k != field_name.value {
                         None
                     } else {
-                        let ofs = READ_OFFSET!(self.buf, end + 4, self.offset_size);
-                        todo!()
-                        //T::from_buffer(self.buf, ofs as usize)
+                        let ofs = self.index_to_offset(1);
+                        unsafe { T::from_buffer(self.buf, ofs) }
                     }
                 } else {
-                    let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
-                    //let next = READ_OFFSET!(self.buf, end + 4, self.offset_size);
-                    todo!()
-                    //T::from_buffer(self.buf, ofs as usize)
+                    unsafe { T::from_buffer(self.buf, self.ref_table_offset) }
                 }
             }
             _ => {
                 let mut left = 0;
                 let mut right = (self.header.fields_count as usize) - 1;
-                let last = right;
                 while left <= right {
                     let mid = left + (right - left) / 2;
                     let k = READ_VALUE!(self.buf, start + mid * 4, u32);
-                    match k.cmp(&key.value) {
+                    match k.cmp(&field_name.value) {
                         std::cmp::Ordering::Equal => {
-                            let mid_pos = end + mid * 4;
-                            let ofs = READ_OFFSET!(self.buf, mid_pos, self.offset_size);
-                            if mid == last {
-                                todo!()
-                                //return T::from_buffer(self.buf, ofs as usize);
-                            } else {
-                                //let next = READ_OFFSET!(self.buf, mid_pos + 4, self.offset_size);
-                                todo!()
-                                //return T::from_buffer(self.buf, ofs as usize);
-                            }
+                            let ofs = self.index_to_offset(mid);
+                            return unsafe { T::from_buffer(self.buf, ofs) };
                         }
                         std::cmp::Ordering::Less => {
                             left = mid + 1;
@@ -126,6 +101,18 @@ impl FlatMessageBuffer<'_> {
                     }
                 }
                 None
+            }
+        }
+    }
+    #[inline(always)]
+    fn index_to_offset(&self, index: usize) -> usize {
+        match self.offset_size {
+            OffsetSize::U8 => READ_VALUE!(self.buf, self.ref_table_offset, u8) as usize,
+            OffsetSize::U16 => {
+                READ_VALUE!(self.buf, self.ref_table_offset + index * 2, u16) as usize
+            }
+            OffsetSize::U32 => {
+                READ_VALUE!(self.buf, self.ref_table_offset + index * 4, u32) as usize
             }
         }
     }
@@ -202,31 +189,35 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
         };
         let name_hash = if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
             let value = NonZeroU32::new(READ_VALUE!(buf, offset, u32));
-            offset += 4;
+            #[cfg(feature = "VALIDATE_CRC32")]
+            {
+                offset += 4;
+            }
             value
         } else {
             None
         };
+        #[cfg(feature = "VALIDATE_CRC32")]
         if header.flags & constants::FLAG_HAS_CRC != 0 {
-            #[cfg(feature = "VALIDATE_CRC32")]
-            {
-                let crc = READ_VALUE!(buf, offset, u32);
-                let calculated_crc = hashes::crc32(&buf[..offset]);
-                if crc != calculated_crc {
-                    return Err(Error::InvalidHash((crc, calculated_crc)));
-                }
+            let crc = READ_VALUE!(buf, offset, u32);
+            let calculated_crc = hashes::crc32(&buf[..offset]);
+            if crc != calculated_crc {
+                return Err(Error::InvalidHash((crc, calculated_crc)));
             }
-            offset += 4;
         }
 
         Ok(FlatMessageBuffer {
             header,
-            metadata: todo!(),
-            name_hash,
+            metadata: MetaData::new(
+                timestamp,
+                unique_id,
+                name_hash,
+                NonZeroU8::new(header.version),
+            ),
             buf,
             offset_size,
             field_table_offset: buf.len() - hash_table_size - ref_table_size - metadata_size,
-            ref_table_offset: buf.len()  - ref_table_size - metadata_size,
+            ref_table_offset: buf.len() - ref_table_size - metadata_size,
         })
     }
 }

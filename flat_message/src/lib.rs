@@ -25,7 +25,7 @@
 
 mod buffer;
 mod error;
-mod key;
+mod name;
 mod flat_message_buffer;
 mod metadata;
 mod serde;
@@ -34,7 +34,7 @@ pub mod headers;
 
 pub use flat_message_proc_macro::*;
 pub use self::error::Error;
-pub use self::key::Key;
+pub use self::name::Name;
 pub use self::flat_message_buffer::FlatMessageBuffer;
 pub use self::metadata::MetaData;
 pub use self::metadata::MetaDataBuilder;
