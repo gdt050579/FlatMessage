@@ -2,10 +2,10 @@ use std::num::{NonZeroU64, NonZeroU8};
 
 use criterion::BenchmarkId;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use flat_message::*;
+use flat_message::FlatMessage;
 use serde::Serialize;
 
-#[flat_message]
+#[flat_message::flat_message]
 struct ProcessCreated {
     name: String,
     pid: u32,

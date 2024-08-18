@@ -8,7 +8,7 @@ unsafe impl<'a> SerDe<'a> for &'a str {
         DataFormat::String
     }
     #[inline(always)]
-    fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
+    unsafe fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
         let (len, slen) = buffer::read_size(buf.as_ptr(), pos, buffer::WriteSizeMethod::FEFFMarker);
         let end = pos + slen + len;
         if end > buf.len() {
@@ -18,7 +18,7 @@ unsafe impl<'a> SerDe<'a> for &'a str {
         }
     }
     #[inline(always)]
-    fn write(&self, p: *mut u8, pos: usize) -> usize {
+    unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
         let len = self.len() as u32;
         unsafe {
             let slen = buffer::write_size(p, pos, len, buffer::WriteSizeMethod::FEFFMarker);
@@ -42,12 +42,12 @@ unsafe impl SerDe<'_> for String {
         DataFormat::String
     }
     #[inline(always)]
-    fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
+    unsafe fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
         let v: &str = SerDe::from_buffer(buf, pos)?;
         Some(v.to_string())
     }
     #[inline(always)]
-    fn write(&self, p: *mut u8, pos: usize) -> usize {
+    unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
         SerDe::write(&self.as_str(), p, pos)
     }
     #[inline(always)]

@@ -5,7 +5,7 @@ pub(crate) enum WriteSizeMethod {
 }
 
 #[inline(always)]
-pub(crate) fn write_size(p: *mut u8, pos: usize, value: u32, method: WriteSizeMethod) -> usize {
+pub(crate) unsafe fn write_size(p: *mut u8, pos: usize, value: u32, method: WriteSizeMethod) -> usize {
     match method {
         WriteSizeMethod::DWORD => unsafe {
             (p.add(pos) as *mut u32).write_unaligned(value);
@@ -65,7 +65,7 @@ pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
 }
 
 #[inline(always)]
-pub(crate) fn write<T: Sized + Copy>(p: *mut u8, pos: usize, value: T) {
+pub(crate) unsafe fn write<T: Sized + Copy>(p: *mut u8, pos: usize, value: T) {
     unsafe {
         (p.add(pos) as *mut T).write_unaligned(value);
     }
