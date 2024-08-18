@@ -2,11 +2,13 @@ use crate::field_info::FieldInfo;
 use common::hashes;
 use common::constants;
 use quote::quote;
-use syn::{DataStruct, FieldsNamed};
+use syn::{DataStruct, FieldsNamed, DeriveInput};
 
 pub(crate) struct StructInfo<'a> {
     fields_name: &'a FieldsNamed,
-    name: String,
+    visibility: &'a syn::Visibility,
+    generics: &'a syn::Generics,
+    name: &'a syn::Ident,
     fields: Vec<FieldInfo>,
     store_name: bool,
     add_metadata: bool,
@@ -61,7 +63,7 @@ impl<'a> StructInfo<'a> {
             });
         }
         if self.store_name {
-            let name_hash = hashes::fnv_32(&self.name);
+            let name_hash = hashes::fnv_32(self.name.to_string().as_str());
             lines.push(quote! {
                 ptr::write_unaligned(buffer.add(metadata_offset) as *mut u32, #name_hash);
                 metadata_offset+=4;
@@ -254,7 +256,9 @@ impl<'a> StructInfo<'a> {
         }
     }
     pub(crate) fn generate_code(&self) -> proc_macro::TokenStream {
-        let name = syn::Ident::new(self.name.as_str(), proc_macro2::Span::call_site());
+        let name = self.name;
+        let visibility = self.visibility;
+        let generics = self.generics;
         let struct_fields = self.fields_name.named.iter().map(|field| {
             Some(quote! {
                 #field,
@@ -270,11 +274,11 @@ impl<'a> StructInfo<'a> {
         let new_code = quote! {
             use std::ptr;
             use flat_message::*;
-            struct #name {
+            #visibility struct #name #generics {
                 #(#struct_fields)*
                 #metadata_field
             }
-            impl flat_message::FlatMessage for #name {
+            impl #generics flat_message::FlatMessage for #name #generics {
                 #metadata_methods
                 #serialize_to_methods
             }
@@ -283,7 +287,7 @@ impl<'a> StructInfo<'a> {
     }
 
     pub(crate) fn new(
-        name: String,
+        input: &'a DeriveInput,
         d: &'a DataStruct,
         store_name: bool,
         add_metadata: bool,
@@ -306,14 +310,16 @@ impl<'a> StructInfo<'a> {
             for (idx, dm) in data_members.iter_mut().enumerate() {
                 dm.alignament_order = idx as u32;
             }
-            // sort the fields again (based on hash)
+            // sort the fields again (based on hash)          
             data_members.sort_by_key(|field_info| field_info.hash);
             Ok(StructInfo {
                 fields_name: fields,
-                name,
                 fields: data_members,
                 store_name,
                 add_metadata,
+                visibility: &input.vis,
+                generics: &input.generics,
+                name: &input.ident,                
             })
         } else {
             Err("Can not read fields from the structure !".to_string())

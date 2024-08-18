@@ -5,7 +5,6 @@ mod utils;
 use proc_macro::*;
 use struct_info::StructInfo;
 use syn::{parse_macro_input, DeriveInput};
-
 extern crate proc_macro;
 
 #[allow(non_snake_case)]
@@ -32,9 +31,7 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     if let syn::Data::Struct(s) = &input.data {
-        let struct_name = input.ident.to_string();
-
-        let si = match StructInfo::new(struct_name, s, store_name, add_metadata) {
+        let si = match StructInfo::new(&input, s, store_name, add_metadata) {
             Ok(si) => si,
             Err(e) => panic!("Error => {}", e),
         };
