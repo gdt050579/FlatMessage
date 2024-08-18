@@ -3,6 +3,8 @@ use common::hashes;
 use quote::{quote, ToTokens};
 use syn::Field;
 
+use crate::utils;
+
 pub(crate) struct FieldInfo {
     pub(crate) name: String,
     pub(crate) hash: u32,
@@ -19,7 +21,8 @@ impl TryFrom<&Field> for FieldInfo {
             ));
         }
         let ty = &field.ty;
-        let type_name = quote! {#ty}.to_string();
+        let mut type_name = quote! {#ty}.to_string();
+        utils::type_name_formatter(&mut type_name);
         let data_format = DataFormat::try_from(type_name.as_str())?;
         let name = field.ident.as_ref().unwrap().to_string();
         let hash = (hashes::fnv_32(&name) & 0xFFFFFF00) | (data_format as u32);
