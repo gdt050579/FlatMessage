@@ -11,7 +11,7 @@ common = {path = "../common"}
 
 [features]
 default = []
-VALIDATE_CRC32 = []
+check_crc32 = []
 
 [lints]
 workspace = true

@@ -9,6 +9,7 @@ members = [
   "benchmarks",
 ]
 
+
 [profile.release]
 debug = true
 

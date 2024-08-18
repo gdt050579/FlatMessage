@@ -5,7 +5,7 @@ publish = false
 edition = "2021"
 
 [dev-dependencies]
-flat_message = { version = "1.0.0", path = "../flat_message" }
+flat_message = { version = "1.0.0", path = "../flat_message", features = ["check_crc32"] }
 
 
 [[example]]

@@ -219,7 +219,7 @@ impl<'a> StructInfo<'a> {
                 let mut metadata_offset = size;
                 size += metainfo_size;
                 // Step 5: add CRC32 information (if needed)
-                #[cfg(feature = "VALIDATE_CRC32")]
+                #[cfg(feature = "check_crc32")]
                 {
                     size += 4;
                 }
@@ -255,6 +255,12 @@ impl<'a> StructInfo<'a> {
                     #(#hash_table_code)*
                     // metadata
                     #(#metadata_serialization_code)*
+                    // CRC32 if case
+                    #[cfg(feature = "check_crc32")]
+                    {
+                        let hash = flat_message::crc32(&output[..size - 4]);
+                        buf.add(size - 4).write_unaligned(hash);
+                    }
                 }
             }
         }

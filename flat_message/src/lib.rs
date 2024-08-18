@@ -41,6 +41,8 @@ pub use self::metadata::MetaDataBuilder;
 pub use self::serde::SerDe;
 pub use self::flat_message::FlatMessage;  
 
+pub use common::hashes::crc32;
+
 
 
 
