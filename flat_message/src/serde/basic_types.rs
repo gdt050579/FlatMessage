@@ -11,14 +11,14 @@ macro_rules! IMPLEMENT_SERDE_FOR_BASIC_TYPE {
                 DataFormat::$data_format
             }
             #[inline(always)]
-            fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
+            unsafe fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
                 unsafe {
                     let ptr = buf.as_ptr().add(pos) as *const $t;
                     Some(std::ptr::read_unaligned(ptr))
                 }
             }
             #[inline(always)]
-            fn write(&self, p: *mut u8, pos: usize) -> usize {
+            unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
                 unsafe {
                     ptr::write_unaligned(p.add(pos) as *mut $t, *self);
                     pos + std::mem::size_of::<$t>()

@@ -7,7 +7,7 @@ unsafe impl SerDe<'_> for bool {
         DataFormat::Bool
     }
     #[inline(always)]
-    fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
+    unsafe fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
         unsafe {
             let ptr = buf.as_ptr().add(pos);
             match *ptr {
@@ -18,7 +18,7 @@ unsafe impl SerDe<'_> for bool {
         }
     }
     #[inline(always)]
-    fn write(&self, p: *mut u8, pos: usize) -> usize {
+    unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
         unsafe {
             ptr::write_unaligned(p.add(pos), *self as u8);
             pos + 1
