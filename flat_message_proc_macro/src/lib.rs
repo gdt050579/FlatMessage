@@ -5,6 +5,7 @@ mod utils;
 use proc_macro::*;
 use struct_info::StructInfo;
 use syn::{parse_macro_input, DeriveInput};
+use std::str::FromStr;
 extern crate proc_macro;
 
 #[allow(non_snake_case)]
@@ -39,4 +40,12 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     } else {
         panic!("Only structs are supported !")
     }
+}
+
+
+#[proc_macro]
+pub fn name(input: TokenStream) -> TokenStream {
+    let value = utils::validate_one_string_parameter(input, "name");
+    let hash = common::hashes::fnv_32(&value);
+    TokenStream::from_str(format!("Name::new({})",hash).as_str()).expect("Fail to convert name! to stream")
 }

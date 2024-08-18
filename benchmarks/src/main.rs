@@ -8,6 +8,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(test)]
+mod tests;
+
 #[flat_message]
 struct ProcessCreated {
     name: String,
