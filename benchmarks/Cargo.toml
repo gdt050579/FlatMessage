@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+flat_message = { version = "1.0.0", path = "../flat_message" }
 
 [dev-dependencies]
 criterion = "0.5.1"
-flat_message = { version = "1.0.0", path = "../flat_message" }
 serde = "1"
 serde_derive = "1"
 serde_json = "1"

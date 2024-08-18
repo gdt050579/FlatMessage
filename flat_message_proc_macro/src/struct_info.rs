@@ -69,6 +69,9 @@ impl<'a> StructInfo<'a> {
                 metadata_offset+=4;
             });
         }
+        lines.push(quote! {
+            debug_assert_eq!(size, output.len());
+        });
         lines
     }
     fn generate_flags_code(&self) -> Vec<proc_macro2::TokenStream> {
@@ -101,27 +104,30 @@ impl<'a> StructInfo<'a> {
         let compute_size_code = self.fields.iter().map(|field| {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
             quote! {
-                size = flat_message::SerDe::align_offset(&self.#field_name, size);
-                size += flat_message::SerDe::size(&self.#field_name);
+                size = ::flat_message::SerDe::align_offset(&self.#field_name, size);
+                size += ::flat_message::SerDe::size(&self.#field_name);
             }
         });
         let mut v: Vec<_> = compute_size_code.collect();
         let ref_table_size_8 = self.fields.len();
-        let ref_table_size_16 = self.fields.len()*2;
-        let ref_table_size_32 = self.fields.len()*4;
+        let ref_table_size_16 = self.fields.len() * 2;
+        let ref_table_size_32 = self.fields.len() * 4;
         v.push(quote! {
-            if size<0x100 {
-                // 8 bites
+            let ref_table_size: usize;
+            let offset_size: RefOffsetSize;
+            let mut flags: u8;
+            if size < 0x100 {
+                // 8 bits
                 offset_size = RefOffsetSize::U8;
                 ref_table_size = #ref_table_size_8;
                 flags = 0b0000_0000;
-            } else if size<0x10000 {
-                // 16 bites
+            } else if size < 0x10000 {
+                // 16 bits
                 offset_size = RefOffsetSize::U16;
                 ref_table_size = #ref_table_size_16;
                 flags = 0b0000_0001;
             } else {
-                // 32 bites
+                // 32 bits
                 offset_size = RefOffsetSize::U32;
                 ref_table_size = #ref_table_size_32;
                 flags = 0b0000_0010;
@@ -149,25 +155,25 @@ impl<'a> StructInfo<'a> {
             match ref_size {
                 1 => 
                     Some(quote! {
-                        buf_pos = flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
+                        buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u8;
                         ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order) as *mut u8, offset);
-                        buf_pos = flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
+                        buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
         
                 2 => 
                     Some(quote! {
-                        buf_pos = flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
+                        buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u16;
                         ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order*2) as *mut u16, offset);
-                        buf_pos = flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
+                        buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
                 4 => 
                     Some(quote! {
-                        buf_pos = flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
+                        buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u32;
                         ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order*4) as *mut u32, offset);
-                        buf_pos = flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
+                        buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
                 _ => None
             }
@@ -189,19 +195,17 @@ impl<'a> StructInfo<'a> {
 
         quote! {
             fn serialize_to(&self,output: &mut Vec<u8>) {
+                use ::std::ptr;
                 enum RefOffsetSize {
-                    U8 = 1,
-                    U16 = 2,
-                    U32 = 4,
+                    U8,
+                    U16,
+                    U32,
                 }
                 output.clear();
                 // basic header (magic + fields count + flags + version)
                 let mut buf_pos = 8usize;
                 let mut size = 8usize;
-                let mut ref_table_size: usize;
-                let mut offset_size: RefOffsetSize;
                 let mut metainfo_size = 0usize;
-                let mut flags: u8;
                 // Step 1: compute size --> all items will startt from offset 8
                 #(#compute_size_code)*
                 // Step 2: compute flags and metadata size
@@ -272,8 +276,6 @@ impl<'a> StructInfo<'a> {
         let metadata_methods = self.generate_metadata_methods();
         let serialize_to_methods = self.generate_serialize_to_methods();
         let new_code = quote! {
-            use std::ptr;
-            use flat_message::*;
             #visibility struct #name #generics {
                 #(#struct_fields)*
                 #metadata_field
