@@ -48,8 +48,12 @@ fn test_json(process: &ProcessCreatedS, output: &mut Vec<u8>) {
     serde_json::to_writer(&mut *output, process).unwrap();
 }
 
-fn test_rmp(process: &ProcessCreatedS, output: &mut Vec<u8>) {
+fn test_rmp_schema(process: &ProcessCreatedS, output: &mut Vec<u8>) {
     rmp_serde::encode::write(output, process).unwrap();
+}
+
+fn test_rmp_schemaless(process: &ProcessCreatedS, output: &mut Vec<u8>) {
+    rmp_serde::encode::write_named(output, process).unwrap();
 }
 
 fn test_bincode(process: &ProcessCreatedS, output: &mut Vec<u8>) {
@@ -81,7 +85,7 @@ fn bench<T, F: Fn(&T, &mut Vec<u8>)>(name: &'static str, x: &T, f: F, results: &
     results.push(Result {
         name,
         time,
-        time_s: format!("{:?}", time),
+        time_s: format!("{:.2}", time.as_secs_f64() * 1000.0),
         size: vec.len(),
     });
 }
@@ -91,7 +95,8 @@ fn add_benches(process: &ProcessCreated, process_s: &ProcessCreatedS, results: &
     bench("cbor", process_s, test_cbor, results);
     bench("bson", process_s, test_bson, results);
     bench("json", process_s, test_json, results);
-    bench("rmp", process_s, test_rmp, results);
+    bench("rmp_schema", process_s, test_rmp_schema, results);
+    bench("rmp_schemaless", process_s, test_rmp_schemaless, results);
     bench("bincode", process_s, test_bincode, results);
     bench("flexbuffers", process_s, test_flexbuffers, results);
 }
@@ -138,7 +143,7 @@ fn main() {
         .set_align(Align::Right);
     ascii_table
         .column(2)
-        .set_header("time")
+        .set_header("time (ms)")
         .set_align(Align::Right);
 
     let mut r: Vec<[&dyn Display; 3]> = Vec::new();
