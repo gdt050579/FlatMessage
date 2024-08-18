@@ -65,7 +65,7 @@ fn test_flexbuffers(process: &ProcessCreatedS, output: &mut Vec<u8>) {
 }
 
 struct Result {
-    name: &'static str,
+    name: String,
     time: Duration,
     time_s: String,
     size: usize,
@@ -73,7 +73,13 @@ struct Result {
 
 const ITERATIONS: u32 = 1_000_000;
 
-fn bench<T, F: Fn(&T, &mut Vec<u8>)>(name: &'static str, x: &T, f: F, results: &mut Vec<Result>) {
+fn bench<T, F: Fn(&T, &mut Vec<u8>)>(
+    test_name: &str,
+    input_name: &str,
+    x: &T,
+    f: F,
+    results: &mut Vec<Result>,
+) {
     let mut vec = Vec::with_capacity(4096);
     let start = Instant::now();
     for _ in 0..ITERATIONS {
@@ -83,52 +89,56 @@ fn bench<T, F: Fn(&T, &mut Vec<u8>)>(name: &'static str, x: &T, f: F, results: &
     }
     let time = start.elapsed();
     results.push(Result {
-        name,
+        name: format!("{}~{}", test_name, input_name),
         time,
         time_s: format!("{:.2}", time.as_secs_f64() * 1000.0),
         size: vec.len(),
     });
 }
 
-fn add_benches(process: &ProcessCreated, process_s: &ProcessCreatedS, results: &mut Vec<Result>) {
-    bench("flat_message", process, test_flat_message, results);
-    bench("cbor", process_s, test_cbor, results);
-    bench("bson", process_s, test_bson, results);
-    bench("json", process_s, test_json, results);
-    bench("rmp_schema", process_s, test_rmp_schema, results);
-    bench("rmp_schemaless", process_s, test_rmp_schemaless, results);
-    bench("bincode", process_s, test_bincode, results);
-    bench("flexbuffers", process_s, test_flexbuffers, results);
+fn add_benches(
+    input_name: &str,
+    process: &ProcessCreated,
+    process_s: &ProcessCreatedS,
+    results: &mut Vec<Result>,
+) {
+    bench(
+        "flat_message",
+        input_name,
+        process,
+        test_flat_message,
+        results,
+    );
+    bench("cbor", input_name, process_s, test_cbor, results);
+    bench("bson", input_name, process_s, test_bson, results);
+    bench("json", input_name, process_s, test_json, results);
+    bench(
+        "rmp_schema",
+        input_name,
+        process_s,
+        test_rmp_schema,
+        results,
+    );
+    bench(
+        "rmp_schemaless",
+        input_name,
+        process_s,
+        test_rmp_schemaless,
+        results,
+    );
+    bench("bincode", input_name, process_s, test_bincode, results);
+    bench(
+        "flexbuffers",
+        input_name,
+        process_s,
+        test_flexbuffers,
+        results,
+    );
 }
 
-fn main() {
-    let process = ProcessCreated {
-        name: String::from("C:\\Windows\\System32\\example.exe"),
-        pid: 1234,
-        parent_pid: 1,
-        parent: String::from("C:\\Windows\\System32\\explorer.exe"),
-        user: String::from("Administrator"),
-        command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
-        metadata: flat_message::MetaDataBuilder::new()
-            .timestamp(0xFEFEFEFE)
-            .unique_id(0xABABABAB)
-            .build(),
-    };
-    let process_s = ProcessCreatedS {
-        struct_name: "ProcessCreated",
-        name: String::from("C:\\Windows\\System32\\example.exe"),
-        pid: 1234,
-        parent_pid: 1,
-        parent: String::from("C:\\Windows\\System32\\explorer.exe"),
-        user: String::from("Administrator"),
-        command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
-        timestamp: NonZeroU64::new(0xFEFEFEFE).unwrap(),
-        unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
-        version: NonZeroU8::new(1).unwrap(),
-    };
+fn do_one(input_name: &str, process: &ProcessCreated, process_s: &ProcessCreatedS) {
     let results = &mut Vec::with_capacity(16);
-    add_benches(&process, &process_s, results);
-
+    add_benches(input_name, process, process_s, results);
     results.sort_by_key(|x| x.time);
 
     let mut ascii_table = AsciiTable::default();
@@ -151,6 +161,65 @@ fn main() {
         r.push([&i.name, &i.size, &i.time_s]);
     }
 
-    println!("iterations: {}", ITERATIONS);
     ascii_table.print(r);
+}
+
+fn main() {
+    println!("iterations: {}", ITERATIONS);
+
+    {
+        let process = ProcessCreated {
+            name: String::from("C:\\Windows\\System32\\example.exe"),
+            pid: 1234,
+            parent_pid: 1,
+            parent: String::from("C:\\Windows\\System32\\explorer.exe"),
+            user: String::from("Administrator"),
+            command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
+            metadata: flat_message::MetaDataBuilder::new()
+                .timestamp(0xFEFEFEFE)
+                .unique_id(0xABABABAB)
+                .build(),
+        };
+        let process_s = ProcessCreatedS {
+            struct_name: "ProcessCreated",
+            name: String::from("C:\\Windows\\System32\\example.exe"),
+            pid: 1234,
+            parent_pid: 1,
+            parent: String::from("C:\\Windows\\System32\\explorer.exe"),
+            user: String::from("Administrator"),
+            command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
+            timestamp: NonZeroU64::new(0xFEFEFEFE).unwrap(),
+            unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
+            version: NonZeroU8::new(1).unwrap(),
+        };
+        do_one("small", &process, &process_s);
+    }
+    {
+        let repeat = 100;
+        let process = ProcessCreated {
+            name: String::from("C:\\Windows\\System32\\example.exe").repeat(repeat),
+            pid: 1234,
+            parent_pid: 1,
+            parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
+            user: String::from("Administrator").repeat(repeat),
+            command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
+            metadata: flat_message::MetaDataBuilder::new()
+                .timestamp(0xFEFEFEFE)
+                .unique_id(0xABABABAB)
+                .build(),
+        };
+        let process_s = ProcessCreatedS {
+            struct_name: "ProcessCreated",
+            name: String::from("C:\\Windows\\System32\\example.exe").repeat(repeat),
+            pid: 1234,
+            parent_pid: 1,
+            parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
+            user: String::from("Administrator").repeat(repeat),
+            command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
+            timestamp: NonZeroU64::new(0xFEFEFEFE).unwrap(),
+            unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
+            version: NonZeroU8::new(1).unwrap(),
+        };
+        do_one("big", &process, &process_s);
+    }
 }
