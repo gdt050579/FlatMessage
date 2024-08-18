@@ -26,7 +26,7 @@ struct ProcessCreatedS {
     command_line: String,
     timestamp: NonZeroU64,
     unique_id: NonZeroU64,
-    version: NonZeroU8
+    version: NonZeroU8,
 }
 
 fn test_flat_message(process: &ProcessCreated, output: &mut Vec<u8>) -> usize {
@@ -62,6 +62,11 @@ fn test_bincode(process: &ProcessCreatedS, output: &mut Vec<u8>) -> usize {
     output.clear();
     bincode::serialize_into(&mut *output, process).unwrap();
     output.len()
+}
+
+fn test_flexbuffers(process: &ProcessCreatedS) -> usize {
+    let data = flexbuffers::to_vec(process).unwrap();
+    data.len()
 }
 
 pub fn criterion_benchmark(c: &mut Criterion) {
@@ -110,6 +115,9 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     });
     group.bench_with_input(BenchmarkId::new("bincode", "_"), &(), |b, _| {
         b.iter(|| test_bincode(black_box(&process_s), black_box(&mut output)))
+    });
+    group.bench_with_input(BenchmarkId::new("flexbuffers", "_"), &(), |b, _| {
+        b.iter(|| test_flexbuffers(black_box(&process_s)))
     });
 }
 
