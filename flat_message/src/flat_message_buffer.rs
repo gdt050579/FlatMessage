@@ -1,10 +1,13 @@
+use crate::headers::HeaderV1;
+use crate::MetaData;
+
 #[cfg(feature = "VALIDATE_CRC32")]
 use super::hashes;
 use super::Error;
 use super::Key;
 use super::SerDe;
-use std::num::{NonZeroU32, NonZeroU64};
 use common::constants;
+use std::num::{NonZeroU32, NonZeroU64};
 
 macro_rules! READ_VALUE {
     ($bytes:expr, $pos:expr, $t:ty) => {{
@@ -33,35 +36,26 @@ enum OffsetSize {
 }
 
 pub struct FlatMessageBuffer<'a> {
+    header: HeaderV1,
+    metadata: MetaData,
     name_hash: Option<NonZeroU32>,
-    timestamp: Option<NonZeroU64>,
-    unique_id: Option<NonZeroU64>,
-    version: Option<NonZeroU32>,
     buf: &'a [u8],
     offset_size: OffsetSize,
-    field_table_offset: u32,
-    fields_count: u32,
+    field_table_offset: usize,
+    ref_table_offset: usize,
 }
 
 impl FlatMessageBuffer<'_> {
     #[inline(always)]
-    pub fn version(&self) -> Option<u32> {
-        self.version.map(|v| v.get())
-    }
-    #[inline(always)]
-    pub fn timestamp(&self) -> Option<u64> {
-        self.timestamp.map(|v| v.get())
-    }
-    #[inline(always)]
-    pub fn unique_id(&self) -> Option<u64> {
-        self.unique_id.map(|v| v.get())
+    pub fn metadata(&self) -> &MetaData {
+        &self.metadata
     }
     #[inline(always)]
     pub fn get<'a, T>(&'a self, key: Key) -> Option<T>
     where
         T: SerDe<'a>,
     {
-        if self.fields_count == 0 {
+        if self.header.fields_count == 0 {
             return None;
         }
         let type_id = (key.value & 0xFF) as u8;
@@ -70,8 +64,8 @@ impl FlatMessageBuffer<'_> {
         }
         // valid type --> check if the key actually exists
         let start = self.field_table_offset as usize;
-        let end = start + self.fields_count as usize * 4;
-        match self.fields_count {
+        let end = start + self.header.fields_count as usize * 4;
+        match self.header.fields_count {
             1 => {
                 let k = READ_VALUE!(self.buf, start, u32);
                 if k != key.value {
@@ -99,7 +93,7 @@ impl FlatMessageBuffer<'_> {
             }
             _ => {
                 let mut left = 0;
-                let mut right = (self.fields_count as usize) - 1;
+                let mut right = (self.header.fields_count as usize) - 1;
                 let last = right;
                 while left <= right {
                     let mid = left + (right - left) / 2;
@@ -136,103 +130,98 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
     type Error = Error;
 
     fn try_from(buf: &'a [u8]) -> Result<Self, Self::Error> {
-        // validate buf length
+        // validate buf length - minimum 8 bytes
         if buf.len() < 8 {
             return Err(Error::InvalidHeaderLength(buf.len()));
         }
-        // check magic
-        if READ_VALUE!(buf, 0, u32) != constants::MAGIC_V1 {
+        let header = READ_VALUE!(buf, 0, HeaderV1);
+        if header.magic != constants::MAGIC_V1 {
             return Err(Error::InvalidMagic);
         }
-        // check fields
-        let field_count = buf[2] as usize;
-        let flags = buf[3];
-        let buffer_size = u32::from_le_bytes([buf[4], buf[5], buf[6], buf[7]]);
-        if buf.len() != buffer_size as usize {
-            return Err(Error::InvalidSize((buf.len() as u32, buffer_size)));
-        }
         // now check flags
-        let offset_size = match flags & constants::FLAGS_OFFSET_SIZE {
+        let offset_size = match header.flags & constants::FLAGS_OFFSET_SIZE {
             0 => OffsetSize::U8,
             1 => OffsetSize::U16,
             2 => OffsetSize::U32,
             _ => return Err(Error::InvalidOffsetSize),
         };
-        let mut extra_size = 0;
-        if flags & constants::FLAG_HAS_CRC != 0 {
-            extra_size += 4;
+        let mut metadata_size = 0usize;
+        if header.flags & constants::FLAG_HAS_CRC != 0 {
+            metadata_size += 4;
         }
-        if flags & constants::FLAG_HAS_NAME_HASH != 0 {
-            extra_size += 4;
+        if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
+            metadata_size += 4;
         }
-        if flags & constants::FLAG_HAS_TIMESTAMP != 0 {
-            extra_size += 8;
+        if header.flags & constants::FLAG_HAS_TIMESTAMP != 0 {
+            metadata_size += 8;
         }
-        if flags & constants::FLAG_HAS_UNIQUEID != 0 {
-            extra_size += 8;
+        if header.flags & constants::FLAG_HAS_UNIQUEID != 0 {
+            metadata_size += 8;
         }
-        if (extra_size + 8) as usize > buf.len() {
+        if (metadata_size + 8) as usize > buf.len() {
             return Err(Error::InvalidSizeToStoreMetaData((
                 buf.len() as u32,
-                extra_size + 8,
+                (metadata_size + 8) as u32,
+            )));
+        }
+        let field_count = header.fields_count as usize;
+        let hash_table_size = field_count * 4;
+        let ref_table_size = match offset_size {
+            OffsetSize::U8 => field_count,
+            OffsetSize::U16 => field_count * 2,
+            OffsetSize::U32 => field_count * 4,
+        };
+        let min_size = 8 + metadata_size + hash_table_size + ref_table_size + field_count /* assuming at least one byte for each field */;
+        if min_size > buf.len() {
+            return Err(Error::InvalidSizeToStoreFieldsTable((
+                buf.len() as u32,
+                min_size as u32,
             )));
         }
 
-        // if CRC32 exists --> read it and test
-        let mut offset = 8;
-        if flags & constants::FLAG_HAS_CRC != 0 {
+        // read the metadata
+        let mut offset = buf.len() - metadata_size;
+        let timestamp = if header.flags & constants::FLAG_HAS_TIMESTAMP != 0 {
+            let value = NonZeroU64::new(READ_VALUE!(buf, offset, u64));
+            offset += 8;
+            value
+        } else {
+            None
+        };
+        let unique_id = if header.flags & constants::FLAG_HAS_UNIQUEID != 0 {
+            let value = NonZeroU64::new(READ_VALUE!(buf, offset, u64));
+            offset += 8;
+            value
+        } else {
+            None
+        };
+        let name_hash = if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
+            let value = NonZeroU32::new(READ_VALUE!(buf, offset, u32));
+            offset += 4;
+            value
+        } else {
+            None
+        };
+        if header.flags & constants::FLAG_HAS_CRC != 0 {
             #[cfg(feature = "VALIDATE_CRC32")]
             {
                 let crc = READ_VALUE!(buf, offset, u32);
-                let calculated_crc = hashes::crc32(buf);
+                let calculated_crc = hashes::crc32(&buf[..offset]);
                 if crc != calculated_crc {
                     return Err(Error::InvalidHash((crc, calculated_crc)));
                 }
             }
             offset += 4;
         }
-        // read metadata
-        let name_hash = if flags & constants::FLAG_HAS_NAME_HASH != 0 {
-            let value = READ_VALUE!(buf, offset, u32);
-            offset += 4;
-            NonZeroU32::new(value)
-        } else {
-            None
-        };
-        let timestamp = if flags & constants::FLAG_HAS_TIMESTAMP != 0 {
-            let value = READ_VALUE!(buf, offset, u64);
-            offset += 8;
-            NonZeroU64::new(value)
-        } else {
-            None
-        };
-        let unique_id = if flags & constants::FLAG_HAS_UNIQUEID != 0 {
-            let value = READ_VALUE!(buf, offset, u64);
-            offset += 8;
-            NonZeroU64::new(value)
-        } else {
-            None
-        };
-
-        // validate there is space for fields table
-        // now at offset the param table starts
-        if offset + (4 + offset_size as usize) * field_count > buf.len() {
-            return Err(Error::InvalidSizeToStoreFieldsTable((
-                buf.len() as u32,
-                (offset + (4 + offset_size as usize) * field_count) as u32,
-            )));
-        }
-        let fields_table_offset = offset;
 
         Ok(FlatMessageBuffer {
-            buf,
+            header,
+            metadata: todo!(),
             name_hash,
-            timestamp,
-            unique_id,
-            version: None,
+            buf,
             offset_size,
-            field_table_offset: fields_table_offset as u32,
-            fields_count: field_count as u32,
+            field_table_offset: buf.len() - hash_table_size - ref_table_size - metadata_size,
+            ref_table_offset: buf.len()  - ref_table_size - metadata_size,
         })
     }
 }
