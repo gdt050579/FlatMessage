@@ -72,7 +72,8 @@ impl FlatMessageBuffer<'_> {
                     None
                 } else {
                     let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
-                    T::from_buffer(self.buf, ofs as usize)
+                    todo!()
+                    //T::from_buffer(self.buf, ofs as usize)
                 }
             }
             2 => {
@@ -83,12 +84,14 @@ impl FlatMessageBuffer<'_> {
                         None
                     } else {
                         let ofs = READ_OFFSET!(self.buf, end + 4, self.offset_size);
-                        T::from_buffer(self.buf, ofs as usize)
+                        todo!()
+                        //T::from_buffer(self.buf, ofs as usize)
                     }
                 } else {
                     let ofs = READ_OFFSET!(self.buf, end, self.offset_size);
                     //let next = READ_OFFSET!(self.buf, end + 4, self.offset_size);
-                    T::from_buffer(self.buf, ofs as usize)
+                    todo!()
+                    //T::from_buffer(self.buf, ofs as usize)
                 }
             }
             _ => {
@@ -103,10 +106,12 @@ impl FlatMessageBuffer<'_> {
                             let mid_pos = end + mid * 4;
                             let ofs = READ_OFFSET!(self.buf, mid_pos, self.offset_size);
                             if mid == last {
-                                return T::from_buffer(self.buf, ofs as usize);
+                                todo!()
+                                //return T::from_buffer(self.buf, ofs as usize);
                             } else {
                                 //let next = READ_OFFSET!(self.buf, mid_pos + 4, self.offset_size);
-                                return T::from_buffer(self.buf, ofs as usize);
+                                todo!()
+                                //return T::from_buffer(self.buf, ofs as usize);
                             }
                         }
                         std::cmp::Ordering::Less => {
