@@ -54,7 +54,6 @@ impl FlatMessageBuffer<'_> {
         }
         // valid type --> check if the key actually exists
         let start = self.field_table_offset as usize;
-        let end = start + self.header.fields_count as usize * 4;
         match self.header.fields_count {
             1 => {
                 let k = READ_VALUE!(self.buf, start, u32);
