@@ -6,7 +6,7 @@ members = [
   "flat_message",
   "flat_message_proc_macro",
   "examples",
-  "t",
+  "benchmarks",
 ]
 
 [workspace.lints.clippy]
