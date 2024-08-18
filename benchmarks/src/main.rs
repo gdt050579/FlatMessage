@@ -32,35 +32,35 @@ struct ProcessCreatedS {
     version: NonZeroU8,
 }
 
-fn test_flat_message(process: &ProcessCreated, output: &mut Vec<u8>) {
+fn test_flat_message<T: FlatMessage>(process: &T, output: &mut Vec<u8>) {
     process.serialize_to(output);
 }
 
-fn test_bson<'x>(process: &ProcessCreatedS, output: &'x mut Vec<u8>) {
+fn test_bson<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     *output = bson::to_vec(&process).unwrap();
 }
 
-fn test_cbor(process: &ProcessCreatedS, output: &mut Vec<u8>) {
+fn test_cbor<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     ciborium::into_writer(process, &mut *output).unwrap();
 }
 
-fn test_json(process: &ProcessCreatedS, output: &mut Vec<u8>) {
+fn test_json<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     serde_json::to_writer(&mut *output, process).unwrap();
 }
 
-fn test_rmp_schema(process: &ProcessCreatedS, output: &mut Vec<u8>) {
+fn test_rmp_schema<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     rmp_serde::encode::write(output, process).unwrap();
 }
 
-fn test_rmp_schemaless(process: &ProcessCreatedS, output: &mut Vec<u8>) {
+fn test_rmp_schemaless<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     rmp_serde::encode::write_named(output, process).unwrap();
 }
 
-fn test_bincode(process: &ProcessCreatedS, output: &mut Vec<u8>) {
+fn test_bincode<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     bincode::serialize_into(&mut *output, process).unwrap();
 }
 
-fn test_flexbuffers(process: &ProcessCreatedS, output: &mut Vec<u8>) {
+fn test_flexbuffers<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     *output = flexbuffers::to_vec(process).unwrap();
 }
 
@@ -96,10 +96,10 @@ fn bench<T, F: Fn(&T, &mut Vec<u8>)>(
     });
 }
 
-fn add_benches(
+fn add_benches<T: FlatMessage, S: Serialize>(
     input_name: &str,
-    process: &ProcessCreated,
-    process_s: &ProcessCreatedS,
+    process: &T,
+    process_s: &S,
     results: &mut Vec<Result>,
 ) {
     bench(
@@ -136,7 +136,7 @@ fn add_benches(
     );
 }
 
-fn do_one(input_name: &str, process: &ProcessCreated, process_s: &ProcessCreatedS) {
+fn do_one<T: FlatMessage, S: Serialize>(input_name: &str, process: &T, process_s: &S) {
     let results = &mut Vec::with_capacity(16);
     add_benches(input_name, process, process_s, results);
     results.sort_by_key(|x| x.time);
@@ -202,7 +202,8 @@ fn main() {
             parent_pid: 1,
             parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
             user: String::from("Administrator").repeat(repeat),
-            command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
+            command_line: String::from("-help -verbose -debug -output C:\\output.txt")
+                .repeat(repeat),
             metadata: flat_message::MetaDataBuilder::new()
                 .timestamp(0xFEFEFEFE)
                 .unique_id(0xABABABAB)
@@ -215,7 +216,8 @@ fn main() {
             parent_pid: 1,
             parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
             user: String::from("Administrator").repeat(repeat),
-            command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
+            command_line: String::from("-help -verbose -debug -output C:\\output.txt")
+                .repeat(repeat),
             timestamp: NonZeroU64::new(0xFEFEFEFE).unwrap(),
             unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
             version: NonZeroU8::new(1).unwrap(),
