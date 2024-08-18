@@ -96,44 +96,15 @@ fn bench<T, F: Fn(&T, &mut Vec<u8>)>(
     });
 }
 
-fn add_benches<T: FlatMessage, S: Serialize>(
-    input_name: &str,
-    process: &T,
-    process_s: &S,
-    results: &mut Vec<Result>,
-) {
-    bench(
-        "flat_message",
-        input_name,
-        process,
-        test_flat_message,
-        results,
-    );
-    bench("cbor", input_name, process_s, test_cbor, results);
-    bench("bson", input_name, process_s, test_bson, results);
-    bench("json", input_name, process_s, test_json, results);
-    bench(
-        "rmp_schema",
-        input_name,
-        process_s,
-        test_rmp_schema,
-        results,
-    );
-    bench(
-        "rmp_schemaless",
-        input_name,
-        process_s,
-        test_rmp_schemaless,
-        results,
-    );
-    bench("bincode", input_name, process_s, test_bincode, results);
-    bench(
-        "flexbuffers",
-        input_name,
-        process_s,
-        test_flexbuffers,
-        results,
-    );
+fn add_benches<T: FlatMessage, S: Serialize>(name: &str, t: &T, s: &S, results: &mut Vec<Result>) {
+    bench("flat_message", name, t, test_flat_message, results);
+    bench("cbor", name, s, test_cbor, results);
+    bench("bson", name, s, test_bson, results);
+    bench("json", name, s, test_json, results);
+    bench("rmp_schema", name, s, test_rmp_schema, results);
+    bench("rmp_schemaless", name, s, test_rmp_schemaless, results);
+    bench("bincode", name, s, test_bincode, results);
+    bench("flexbuffers", name, s, test_flexbuffers, results);
 }
 
 fn do_one<T: FlatMessage, S: Serialize>(input_name: &str, process: &T, process_s: &S) {
