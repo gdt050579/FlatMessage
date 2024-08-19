@@ -11,6 +11,12 @@ pub struct MetaData {
 }
 
 impl MetaData {
+    pub const NONE: Self = Self {
+        timestamp: None,
+        unique_id: None,
+        name: None,
+        version: None,
+    };
     // public to crate alone (to be used by FlatMessageBuffer)
     pub(crate) fn new(
         timestamp: Option<NonZeroU64>,

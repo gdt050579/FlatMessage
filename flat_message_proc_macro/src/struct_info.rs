@@ -28,7 +28,7 @@ impl<'a> StructInfo<'a> {
         } else {
             quote! {
                 fn metadata(&self)-> &flat_message::MetaData {
-                    &flat_message::MetaData::default()
+                    &MetaData::NONE
                 }
                 fn update_metada(&mut self, new: flat_message::MetaData) {
                 }
