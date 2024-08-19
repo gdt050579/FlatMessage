@@ -136,12 +136,15 @@ impl<'a> StructInfo<'a> {
         v
     }
     fn generate_hash_table_code(&self) -> Vec<proc_macro2::TokenStream> {
+        // build a sorted hash vector
+        let mut hashes: Vec<u32> = self.fields.iter().map(|field| field.hash).collect();
+        hashes.sort();
+
         let mut v: Vec<_> = Vec::with_capacity(16);
         v.push(quote! {
             let hash_table_ptr = buffer.add(hash_table_offset) as *mut u32;
         });
-        for (idx, field) in self.fields.iter().enumerate() {
-            let hash = field.hash;
+        for (idx, hash) in hashes.iter().enumerate() {
             v.push(quote! {
                 ptr::write_unaligned(hash_table_ptr.add(#idx), #hash);
             });
@@ -151,13 +154,13 @@ impl<'a> StructInfo<'a> {
     fn generate_fields_serialize_code(&self, ref_size: u8)->Vec<Option<proc_macro2::TokenStream>> {
         let v: Vec<_> = self.fields.iter().map(|field| {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
-            let field_ref_order = field.alignament_order as usize;
+            let hash_table_order = field.hash_table_order as usize;
             match ref_size {
                 1 => 
                     Some(quote! {
                         buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u8;
-                        ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order) as *mut u8, offset);
+                        ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order) as *mut u8, offset);
                         buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
         
@@ -165,14 +168,14 @@ impl<'a> StructInfo<'a> {
                     Some(quote! {
                         buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u16;
-                        ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order*2) as *mut u16, offset);
+                        ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*2) as *mut u16, offset);
                         buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
                 4 => 
                     Some(quote! {
                         buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u32;
-                        ptr::write_unaligned(buffer.add(ref_offset + #field_ref_order*4) as *mut u32, offset);
+                        ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*4) as *mut u32, offset);
                         buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
                     }),
                 _ => None
@@ -309,17 +312,16 @@ impl<'a> StructInfo<'a> {
             if data_members.len() > 0xFFFF {
                 return Err(format!("Structs with more than 65535 fields are not supported ! (Current structure has {} fields)", data_members.len()));
             }
-
-            // sort the key backwards based on their serialization alignament
+            // sort the fields again (based on hash)          
+            data_members.sort_by_key(|field_info| field_info.hash);
+            // compute the order
+            for (idx, dm) in data_members.iter_mut().enumerate() {
+                dm.hash_table_order = idx as u32;
+            }
+            // now sort the key backwards based on their serialization alignament
             data_members.sort_unstable_by_key(|field_info| {
                 usize::MAX - field_info.serialization_alignament
             });
-            // compute the order
-            for (idx, dm) in data_members.iter_mut().enumerate() {
-                dm.alignament_order = idx as u32;
-            }
-            // sort the fields again (based on hash)          
-            data_members.sort_by_key(|field_info| field_info.hash);
             Ok(StructInfo {
                 fields_name: fields,
                 fields: data_members,

@@ -2,7 +2,7 @@ use crate::Name;
 use std::num::{NonZeroU32, NonZeroU64, NonZeroU8};
 use std::sync::atomic::AtomicU64;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Default, Clone, Copy, Debug)]
 pub struct MetaData {
     timestamp: Option<NonZeroU64>,
     unique_id: Option<NonZeroU64>,

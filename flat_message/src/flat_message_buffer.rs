@@ -26,6 +26,7 @@ enum OffsetSize {
     U32 = 4,
 }
 
+#[derive(Debug)]
 pub struct FlatMessageBuffer<'a> {
     header: HeaderV1,
     metadata: MetaData,
@@ -48,11 +49,7 @@ impl FlatMessageBuffer<'_> {
         if self.header.fields_count == 0 {
             return None;
         }
-        let type_id = (field_name.value & 0xFF) as u8;
-        if T::data_format() as u8 != type_id {
-            return None;
-        }
-        // valid type --> check if the key actually exists
+        let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::data_format() as u32));
         let start = self.field_table_offset as usize;
         match self.header.fields_count {
             1 => {
@@ -60,7 +57,8 @@ impl FlatMessageBuffer<'_> {
                 if k != field_name.value {
                     None
                 } else {
-                    unsafe { T::from_buffer(self.buf, self.ref_table_offset) }
+                    let ofs = self.index_to_offset(0);
+                    return unsafe { T::from_buffer(self.buf, ofs) };
                 }
             }
             2 => {
@@ -74,18 +72,22 @@ impl FlatMessageBuffer<'_> {
                         unsafe { T::from_buffer(self.buf, ofs) }
                     }
                 } else {
-                    unsafe { T::from_buffer(self.buf, self.ref_table_offset) }
+                    let ofs = self.index_to_offset(0);
+                    return unsafe { T::from_buffer(self.buf, ofs) };
                 }
             }
             _ => {
                 let mut left = 0;
                 let mut right = (self.header.fields_count as usize) - 1;
+                //println!("Search for: {}", field_name.value);
                 while left <= right {
-                    let mid = left + (right - left) / 2;
+                    let mid = (left + right) / 2;
                     let k = READ_VALUE!(self.buf, start + mid * 4, u32);
+                    //println!("{left} - {right} - {mid} - {k}");
                     match k.cmp(&field_name.value) {
                         std::cmp::Ordering::Equal => {
                             let ofs = self.index_to_offset(mid);
+                            //println!("Found at Offset = {ofs}");                            
                             return unsafe { T::from_buffer(self.buf, ofs) };
                         }
                         std::cmp::Ordering::Less => {
@@ -93,12 +95,14 @@ impl FlatMessageBuffer<'_> {
                         }
                         std::cmp::Ordering::Greater => {
                             if mid == 0 {
+                                //println!(" Exit --> Mid = 0");
                                 return None;
                             }
                             right = mid - 1;
                         }
                     }
                 }
+                //println!("Exit --> Not found !");
                 None
             }
         }
@@ -106,7 +110,7 @@ impl FlatMessageBuffer<'_> {
     #[inline(always)]
     fn index_to_offset(&self, index: usize) -> usize {
         match self.offset_size {
-            OffsetSize::U8 => READ_VALUE!(self.buf, self.ref_table_offset, u8) as usize,
+            OffsetSize::U8 => READ_VALUE!(self.buf, self.ref_table_offset + index, u8) as usize,
             OffsetSize::U16 => {
                 READ_VALUE!(self.buf, self.ref_table_offset + index * 2, u16) as usize
             }

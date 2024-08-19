@@ -8,7 +8,7 @@ use crate::utils;
 pub(crate) struct FieldInfo {
     pub(crate) name: String,
     pub(crate) hash: u32,
-    pub(crate) alignament_order: u32,
+    pub(crate) hash_table_order: u32,
     pub(crate) serialization_alignament: usize,
 }
 impl TryFrom<&Field> for FieldInfo {
@@ -29,7 +29,7 @@ impl TryFrom<&Field> for FieldInfo {
         Ok(FieldInfo {
             name,
             hash,
-            alignament_order: 0,
+            hash_table_order: 0,
             serialization_alignament: data_format.serialization_alignament(),
         })
     }
