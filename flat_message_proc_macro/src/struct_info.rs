@@ -12,6 +12,7 @@ pub(crate) struct StructInfo<'a> {
     fields: Vec<FieldInfo>,
     store_name: bool,
     add_metadata: bool,
+    version: u8,
 }
 
 impl<'a> StructInfo<'a> {
@@ -36,17 +37,6 @@ impl<'a> StructInfo<'a> {
         }
     }
 
-    fn generate_version_code(&self) -> proc_macro2::TokenStream {
-        if self.add_metadata {
-            quote! {
-                let version = self.metadata().version().unwrap_or(0);
-            }
-        } else {
-            quote! {
-                let version = 0;
-            }
-        }
-    }
     fn generate_metadata_serialization_code(&self) -> Vec<proc_macro2::TokenStream> {
         let mut lines = Vec::with_capacity(8);
         if self.add_metadata {
@@ -192,9 +182,9 @@ impl<'a> StructInfo<'a> {
         let metadata_serialization_code = self.generate_metadata_serialization_code();
         let hash_table_code = self.generate_hash_table_code();
         let compute_size_code = self.generate_compute_size_code();
-        let version_code = self.generate_version_code();
         let flags_code = self.generate_flags_code();
         let magic = constants::MAGIC_V1;
+        let version = self.version;
 
         quote! {
             fn serialize_to(&self,output: &mut Vec<u8>) {
@@ -226,13 +216,11 @@ impl<'a> StructInfo<'a> {
                 {
                     size += 4;
                 }
-                // Step 6: calculate version
-                #version_code
-                // Step 7: create a header
+                // Step 6: create a header
                 let header = flat_message::headers::HeaderV1 {
                     magic: #magic,
                     fields_count: #fields_count,
-                    version,
+                    version: #version,
                     flags,
                 };  
                 // Step 7: allocate memory
@@ -268,6 +256,43 @@ impl<'a> StructInfo<'a> {
             }
         }
     }
+    fn generate_deserialize_from_methods(&self) -> proc_macro2::TokenStream {
+        let magic = constants::MAGIC_V1;
+        let has_crc = constants::FLAG_HAS_CRC;
+        let has_name = constants::FLAG_HAS_NAME_HASH;
+        let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
+        let has_unique_id = constants::FLAG_HAS_UNIQUEID;
+        quote! {
+            fn deserialize_from(input: &[u8]) -> core::result::Result<Self,flat_message::Error> 
+            {
+                use ::std::ptr;
+                let len = input.len();
+                if len < 8 {
+                    return Err(flat_message::Error::InvalidHeaderLength(len));
+                }
+                let buffer = input.as_ptr();
+                let header: flat_message::headers::HeaderV1 = unsafe { ptr::read_unaligned(buffer as *const flat_message::headers::HeaderV1) };
+                if header.magic != #magic {
+                    return Err(flat_message::Error::InvalidMagic);
+                }
+                let mut metadata_size = 0usize;
+                if header.flags & #has_crc != 0 {
+                    metadata_size += 4;
+                }
+                if header.flags & #has_name != 0 {
+                    metadata_size += 4;
+                }
+                if header.flags & #has_timestamp != 0 {
+                    metadata_size += 8;
+                }
+                if header.flags & #has_unique_id != 0 {
+                    metadata_size += 8;
+                }
+                // temporary result
+                return Err(flat_message::Error::InvalidHeaderLength(0));
+            }
+        }
+    }
     pub(crate) fn generate_code(&self) -> proc_macro::TokenStream {
         let name = self.name;
         let visibility = self.visibility;
@@ -284,6 +309,7 @@ impl<'a> StructInfo<'a> {
         };
         let metadata_methods = self.generate_metadata_methods();
         let serialize_to_methods = self.generate_serialize_to_methods();
+        let deserialize_from_methods = self.generate_deserialize_from_methods();
         let new_code = quote! {
             #visibility struct #name #generics {
                 #(#struct_fields)*
@@ -292,6 +318,7 @@ impl<'a> StructInfo<'a> {
             impl #generics flat_message::FlatMessage for #name #generics {
                 #metadata_methods
                 #serialize_to_methods
+                #deserialize_from_methods
             }
         };
         new_code.into()
@@ -302,6 +329,7 @@ impl<'a> StructInfo<'a> {
         d: &'a DataStruct,
         store_name: bool,
         add_metadata: bool,
+        version: u8,
     ) -> Result<Self, String> {
         if let syn::Fields::Named(fields) = &d.fields {
             let mut data_members: Vec<FieldInfo> = Vec::with_capacity(32);
@@ -327,6 +355,7 @@ impl<'a> StructInfo<'a> {
                 fields: data_members,
                 store_name,
                 add_metadata,
+                version,
                 visibility: &input.vis,
                 generics: &input.generics,
                 name: &input.ident,                

@@ -9,6 +9,7 @@ pub struct MyStruct<'a> {
 }
 
 fn main() {
+    let h = flat_message::headers::HeaderV1 { magic: todo!(), fields_count: todo!(), version: todo!(), flags: todo!() };
     let s = "Hello, World reference!".to_string();
     let a = MyStruct {
         a: 42,

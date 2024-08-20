@@ -32,7 +32,7 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     if let syn::Data::Struct(s) = &input.data {
-        let si = match StructInfo::new(&input, s, store_name, add_metadata) {
+        let si = match StructInfo::new(&input, s, store_name, add_metadata, 0 ) {
             Ok(si) => si,
             Err(e) => panic!("Error => {}", e),
         };

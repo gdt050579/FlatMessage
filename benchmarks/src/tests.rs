@@ -127,7 +127,6 @@ fn check_flat_message_metadata() {
         passed: true,
         average: 95.0,
         metadata: MetaDataBuilder::new()
-            .version(5)
             .timestamp(123456)
             .unique_id(654321)
             .build(),
@@ -136,12 +135,11 @@ fn check_flat_message_metadata() {
     a.serialize_to(&mut output);
     let buf = FlatMessageBuffer::try_from(output.as_slice()).unwrap();
     let metadata = buf.metadata();
-    assert_eq!(metadata.version(), Some(5));
+    assert_eq!(buf.version(), Some(5));
     assert_eq!(metadata.timestamp(), Some(123456));
     assert_eq!(metadata.unique_id(), Some(654321));
-    assert_eq!(metadata.name(), Some(name!("TestStruct")));
+    assert_eq!(buf.name(), Some(name!("TestStruct")));
 }
-
 
 #[test]
 fn check_flat_message_no_metadata() {
@@ -166,10 +164,10 @@ fn check_flat_message_no_metadata() {
     a.serialize_to(&mut output);
     let buf = FlatMessageBuffer::try_from(output.as_slice()).unwrap();
     let metadata = buf.metadata();
-    assert_eq!(metadata.version(), None);
+    assert_eq!(buf.version(), None);
     assert_eq!(metadata.timestamp(), None);
     assert_eq!(metadata.unique_id(), None);
-    assert_eq!(metadata.name(), Some(name!("TestStruct")));
+    assert_eq!(buf.name(), Some(name!("TestStruct")));
 }
 
 #[test]
@@ -195,8 +193,8 @@ fn check_flat_message_no_metadata_no_name() {
     a.serialize_to(&mut output);
     let buf = FlatMessageBuffer::try_from(output.as_slice()).unwrap();
     let metadata = buf.metadata();
-    assert_eq!(metadata.version(), None);
+    assert_eq!(buf.version(), None);
     assert_eq!(metadata.timestamp(), None);
     assert_eq!(metadata.unique_id(), None);
-    assert_eq!(metadata.name(), None);
+    assert_eq!(buf.name(), None);
 }

@@ -7,8 +7,7 @@ use super::Error;
 use super::Name;
 use super::SerDe;
 use common::constants;
-use std::num::NonZeroU8;
-use std::num::{NonZeroU32, NonZeroU64};
+use std::num::NonZeroU64;
 
 macro_rules! READ_VALUE {
     ($bytes:expr, $pos:expr, $t:ty) => {{
@@ -30,6 +29,8 @@ enum OffsetSize {
 pub struct FlatMessageBuffer<'a> {
     header: HeaderV1,
     metadata: MetaData,
+    name: Option<Name>,
+    version: Option<u8>,
     buf: &'a [u8],
     offset_size: OffsetSize,
     field_table_offset: usize,
@@ -41,6 +42,15 @@ impl FlatMessageBuffer<'_> {
     pub fn metadata(&self) -> &MetaData {
         &self.metadata
     }
+    #[inline(always)]
+    pub fn version(&self) -> Option<u8> {
+        self.version
+    }
+    #[inline(always)]
+    pub fn name(&self) -> Option<Name> {
+        self.name
+    }
+
     #[inline(always)]
     pub fn get<'a, T>(&'a self, field_name: Name) -> Option<T>
     where
@@ -87,7 +97,7 @@ impl FlatMessageBuffer<'_> {
                     match k.cmp(&field_name.value) {
                         std::cmp::Ordering::Equal => {
                             let ofs = self.index_to_offset(mid);
-                            //println!("Found at Offset = {ofs}");                            
+                            //println!("Found at Offset = {ofs}");
                             return unsafe { T::from_buffer(self.buf, ofs) };
                         }
                         std::cmp::Ordering::Less => {
@@ -191,12 +201,16 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             None
         };
         let name_hash = if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
-            let value = NonZeroU32::new(READ_VALUE!(buf, offset, u32));
+            let value = READ_VALUE!(buf, offset, u32);
             #[cfg(feature = "VALIDATE_CRC32")]
             {
                 offset += 4;
             }
-            value
+            if value != 0 {
+                Some(Name { value })
+            } else {
+                None
+            }
         } else {
             None
         };
@@ -211,12 +225,13 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
 
         Ok(FlatMessageBuffer {
             header,
-            metadata: MetaData::new(
-                timestamp,
-                unique_id,
-                name_hash,
-                NonZeroU8::new(header.version),
-            ),
+            metadata: MetaData::new(timestamp, unique_id),
+            version: if header.version != 0 {
+                Some(header.version)
+            } else {
+                None
+            },
+            name: name_hash,
             buf,
             offset_size,
             field_table_offset: buf.len() - hash_table_size - ref_table_size - metadata_size,
