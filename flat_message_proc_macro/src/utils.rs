@@ -8,6 +8,19 @@ pub(crate) fn to_bool(value: &str) -> Option<bool> {
     }
 }
 
+pub(crate) fn to_version(value: &str) -> Option<u8> {
+    match value.parse::<u8>() {
+        Ok(v) => {
+            if v > 0 {
+                Some(v)
+            } else {
+                None
+            }
+        }
+        Err(_) => None,
+    }
+}
+
 fn find_lifetime(input: &str) -> Option<(usize, usize)> {
     let mut start = 0;
     let mut found = false;

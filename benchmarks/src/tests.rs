@@ -110,7 +110,7 @@ fn check_flat_message_buffer_1() {
 
 #[test]
 fn check_flat_message_metadata() {
-    #[flat_message]
+    #[flat_message(version = 5)]
     struct TestStruct<'a> {
         name: String,
         surname: &'a str,
