@@ -1,4 +1,3 @@
-use std::f32::consts::E;
 pub use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

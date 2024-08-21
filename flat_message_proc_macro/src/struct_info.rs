@@ -173,20 +173,34 @@ impl<'a> StructInfo<'a> {
         }).collect();
         v
     }
+    fn generate_metadata_deserialization_code(&self)->proc_macro2::TokenStream {
+        if self.add_metadata {
+            let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
+            let has_unique_id = constants::FLAG_HAS_UNIQUEID;
+            quote! {
+                let mut metadata_ptr = unsafe { buffer.add(len - metadata_size) as *const u64 };
+                let timestamp = if header.flags & #has_timestamp != 0 {
+                    let value = unsafe { ptr::read_unaligned(metadata_ptr) };
+                    unsafe { metadata_ptr = metadata_ptr.add(1); }
+                    value
+                } else { 0 };
+                let unique_id = if header.flags & #has_unique_id != 0 {
+                    unsafe { ptr::read_unaligned(metadata_ptr) }
+                } else { 
+                    0 
+                };
+            }
+        } else {
+            quote! {}
+        }
+    }
     fn generate_header_deserialization_code(&self)->proc_macro2::TokenStream {
         let magic = constants::MAGIC_V1;
         let has_crc = constants::FLAG_HAS_CRC;
         let has_name = constants::FLAG_HAS_NAME_HASH;
         let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
         let has_unique_id = constants::FLAG_HAS_UNIQUEID;
-
-        // let inner_vars: Vec<_> = self.fields.iter().map(|field| {
-        //     let inner_var = field.inner_var();
-        //     let ty = &field.ty;
-        //     quote! {
-        //         let #inner_var: #ty;
-        //     }
-        // }).collect();
+        let metadata_code = self.generate_metadata_deserialization_code();
 
         quote!{
             use ::std::ptr;
@@ -233,11 +247,13 @@ impl<'a> StructInfo<'a> {
                 if min_size > len {
                     return Err(flat_message::Error::InvalidSizeToStoreFieldsTable((len as u32, min_size as u32)));
                 }
-                let mut hash_table_offset = len - ref_table_size - metadata_size - hash_table_size;
-                let mut ref_table_offset = hash_table_offset + hash_table_size;
+                // read metada if case
+                #metadata_code
+
+                let hash_table_offset = len - ref_table_size - metadata_size - hash_table_size;
+                let ref_table_offset = hash_table_offset + hash_table_size;                
                 let hashes = unsafe { core::slice::from_raw_parts(buffer.add(hash_table_offset) as *const u32, header.fields_count as usize) };
                 let mut it = hashes.iter();
-                //#(#inner_vars)*
         }
     }
     fn generate_field_deserialize_code(&self, inner_var: &syn::Ident, ty: &syn::Type, field_name_hash: u32)->proc_macro2::TokenStream {
@@ -253,6 +269,7 @@ impl<'a> StructInfo<'a> {
                 unsafe { p_ofs = p_ofs.add(1); }
             };
             let offset = unsafe { ptr::read_unaligned(p_ofs) as usize};
+            unsafe { p_ofs = p_ofs.add(1); }
             if offset<8 || offset >= hash_table_offset {
                 return Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32)));
             }
@@ -291,6 +308,28 @@ impl<'a> StructInfo<'a> {
             v.push(self.generate_field_deserialize_code(&obj.inner_var, &obj.ty, obj.hash));
         }
         v
+    }
+    fn generate_struct_construction_code(&self)->proc_macro2::TokenStream {
+        let struct_fields = self.fields.iter().map(|field| {
+            let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
+            let iner_value = field.inner_var();
+            Some(quote! {
+                #field_name: #iner_value,
+            })
+        });
+        let metadata_field = if self.add_metadata {
+            quote! {
+                metadata: flat_message::MetaDataBuilder::new().timestamp(timestamp).unique_id(unique_id).build()    
+            } 
+        } else {
+            quote! {}
+        };
+        quote! {
+            return Ok(Self {
+                #(#struct_fields)*
+                #metadata_field
+            });
+        }
     }
     fn generate_serialize_to_methods(&self) -> proc_macro2::TokenStream {
         let fields_count = self.fields.len() as u16;
@@ -380,6 +419,7 @@ impl<'a> StructInfo<'a> {
         let deserializaton_code_u8 = self.generate_fields_deserialize_code(1);
         let deserializaton_code_u16 = self.generate_fields_deserialize_code(2);
         let deserializaton_code_u32 = self.generate_fields_deserialize_code(4);
+        let ctor_code = self.generate_struct_construction_code();
         quote! {
             fn deserialize_from(input: &[u8]) -> core::result::Result<Self,flat_message::Error> 
             {
@@ -387,16 +427,17 @@ impl<'a> StructInfo<'a> {
                 match ref_offset_size {
                     RefOffsetSize::U8 => {
                         #(#deserializaton_code_u8)*
+                        #ctor_code
                     }
                     RefOffsetSize::U16 => {
                         #(#deserializaton_code_u16)*
+                        #ctor_code
                     }
                     RefOffsetSize::U32 => {
                         #(#deserializaton_code_u32)*
+                        #ctor_code
                     }
                 }
-                // temporary result
-                return Err(flat_message::Error::InvalidHeaderLength(0));
             }
         }
     }

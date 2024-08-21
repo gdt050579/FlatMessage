@@ -198,3 +198,158 @@ fn check_flat_message_no_metadata_no_name() {
     assert_eq!(metadata.unique_id(), None);
     assert_eq!(buf.name(), None);
 }
+
+
+#[test]
+fn check_serde_full() {
+    #[flat_message]
+    struct TestStruct<'a> {
+        name: String,
+        surname: &'a str,
+        math: u8,
+        engligh: u8,
+        passed: bool,
+        average: f64,
+    }
+    let a = TestStruct {
+        name: "John".to_string(),
+        surname: "Doe",
+        math: 100,
+        engligh: 90,
+        passed: true,
+        average: 95.0,
+        metadata: MetaDataBuilder::new()
+            .timestamp(123456)
+            .unique_id(654321)
+            .build(),
+    };
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let b = TestStruct::deserialize_from(output.as_slice()).unwrap();
+    assert_eq!(a.name, b.name);
+    assert_eq!(a.surname, b.surname);
+    assert_eq!(a.math, b.math);
+    assert_eq!(a.engligh, b.engligh);
+    assert_eq!(a.passed, b.passed);
+    assert_eq!(a.average, b.average);
+    assert_eq!(a.metadata.timestamp(), b.metadata.timestamp());
+    assert_eq!(a.metadata.unique_id(), b.metadata.unique_id());
+}
+
+#[test]
+fn check_serde_into_smaller_struct() {
+    #[flat_message]
+    struct TestStruct<'a> {
+        name: String,
+        surname: &'a str,
+        math: u8,
+        engligh: u8,
+        passed: bool,
+        average: f64,
+    }
+
+    #[flat_message(metadata: false)]
+    struct TestSmallerStruct {
+        name: String,
+        math: u8,
+        engligh: u8,
+        average: f64,
+    }
+
+    let a = TestStruct {
+        name: "John".to_string(),
+        surname: "Doe",
+        math: 100,
+        engligh: 90,
+        passed: true,
+        average: 95.0,
+        metadata: MetaDataBuilder::new()
+            .timestamp(123456)
+            .unique_id(654321)
+            .build(),
+    };
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let b = TestSmallerStruct::deserialize_from(output.as_slice()).unwrap();
+    assert_eq!(a.name, b.name);
+    assert_eq!(a.math, b.math);
+    assert_eq!(a.engligh, b.engligh);
+    assert_eq!(a.average, b.average);
+}
+
+#[test]
+fn check_serde_into_different_struct() {
+    #[flat_message]
+    struct TestStruct<'a> {
+        name: String,
+        surname: &'a str,
+        math: u8,
+        engligh: u8,
+        passed: bool,
+        average: f64,
+    }
+
+    #[flat_message(metadata: false)]
+    struct TestSmallerStruct {
+        a: u8,
+        b: u16,
+        math: u16,
+    }
+
+    let a = TestStruct {
+        name: "John".to_string(),
+        surname: "Doe",
+        math: 100,
+        engligh: 90,
+        passed: true,
+        average: 95.0,
+        metadata: MetaDataBuilder::new()
+            .timestamp(123456)
+            .unique_id(654321)
+            .build(),
+    };
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let b = TestSmallerStruct::deserialize_from(output.as_slice());
+    assert_eq!(b.is_err(), true);
+}
+
+#[test]
+fn check_serde_into_different_type() {
+    #[flat_message]
+    struct TestStruct<'a> {
+        name: String,
+        surname: &'a str,
+        math: u8,
+        engligh: u8,
+        passed: bool,
+        average: f64,
+    }
+
+    #[flat_message]
+    struct TestStruct2<'a> {
+        name: String,
+        surname: &'a str,
+        math: u8,
+        engligh: u16, // english is not the same type
+        passed: bool,
+        average: f64,
+    }
+
+    let a = TestStruct {
+        name: "John".to_string(),
+        surname: "Doe",
+        math: 100,
+        engligh: 90,
+        passed: true,
+        average: 95.0,
+        metadata: MetaDataBuilder::new()
+            .timestamp(123456)
+            .unique_id(654321)
+            .build(),
+    };
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let b = TestStruct2::deserialize_from(output.as_slice());
+    assert_eq!(b.is_err(), true);
+}
