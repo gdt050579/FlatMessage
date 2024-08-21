@@ -7,9 +7,9 @@ unsafe impl SerDe<'_> for bool {
         DataFormat::Bool
     }
     #[inline(always)]
-    unsafe fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
+    unsafe fn from_buffer_unchecked(p: *const u8, pos: usize) -> Option<Self> {
         unsafe {
-            let ptr = buf.as_ptr().add(pos);
+            let ptr = p.add(pos);
             match *ptr {
                 0 => Some(false),
                 1 => Some(true),

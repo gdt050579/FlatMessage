@@ -179,6 +179,15 @@ impl<'a> StructInfo<'a> {
         let has_name = constants::FLAG_HAS_NAME_HASH;
         let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
         let has_unique_id = constants::FLAG_HAS_UNIQUEID;
+
+        // let inner_vars: Vec<_> = self.fields.iter().map(|field| {
+        //     let inner_var = field.inner_var();
+        //     let ty = &field.ty;
+        //     quote! {
+        //         let #inner_var: #ty;
+        //     }
+        // }).collect();
+
         quote!{
             use ::std::ptr;
                 enum RefOffsetSize {
@@ -228,9 +237,10 @@ impl<'a> StructInfo<'a> {
                 let mut ref_table_offset = hash_table_offset + hash_table_size;
                 let hashes = unsafe { core::slice::from_raw_parts(buffer.add(hash_table_offset) as *const u32, header.fields_count as usize) };
                 let mut it = hashes.iter();
+                //#(#inner_vars)*
         }
     }
-    fn generate_field_deserialize_code(&self, field_name_hash: u32)->proc_macro2::TokenStream {
+    fn generate_field_deserialize_code(&self, inner_var: &syn::Ident, ty: &syn::Type, field_name_hash: u32)->proc_macro2::TokenStream {
         quote! {
             loop {
                 if let Some(value) = it.next() {
@@ -246,12 +256,25 @@ impl<'a> StructInfo<'a> {
             if offset<8 || offset >= hash_table_offset {
                 return Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32)));
             }
+            let Some(#inner_var): Option<#ty> = ( unsafe { flat_message::SerDe::from_buffer_unchecked(buffer, offset) } ) 
+            else {
+                return Err(flat_message::Error::FailToDeserialize(#field_name_hash));
+            };
         }
     }
     fn generate_fields_deserialize_code(&self, ref_size: u8)->Vec<proc_macro2::TokenStream> {
+        struct HashAndInnerVar {
+            hash: u32,
+            inner_var: syn::Ident,
+            ty: syn::Type,
+        }
         let mut v = Vec::with_capacity(4);
-        let mut hashes:Vec<_> = self.fields.iter().map(|field| field.hash).collect();
-        hashes.sort();
+        let mut hashes:Vec<_> = self.fields.iter().map(|field| HashAndInnerVar {
+            hash: field.hash,
+            inner_var: field.inner_var(),
+            ty: field.ty.clone(),
+        }).collect();
+        hashes.sort_by_key(|hash| hash.hash);
         v.push (match ref_size {
             1 => quote! {
                 let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const u8 };
@@ -264,8 +287,8 @@ impl<'a> StructInfo<'a> {
             },
             _ => quote! {}
         });
-        for hash in hashes {
-            v.push(self.generate_field_deserialize_code(hash));
+        for obj in hashes {
+            v.push(self.generate_field_deserialize_code(&obj.inner_var, &obj.ty, obj.hash));
         }
         v
     }

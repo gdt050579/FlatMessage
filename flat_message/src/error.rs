@@ -12,6 +12,7 @@ pub enum Error {
     InvalidSizeToStoreFieldsTable((u32, u32)),
     UnknownHash(u32),
     InvalidFieldOffset((u32, u32)),
+    FailToDeserialize(u32),
 }
 
 impl fmt::Display for Error {
@@ -50,6 +51,7 @@ impl fmt::Display for Error {
                 "Invalid field offset (expected an offset between 8 and {} - but found: {})",
                 expected, actual
             ),
+            Error::FailToDeserialize(hash) => write!(f, "Fail to deserialize field with hash: 0x{:08X}", hash),
         }
     }
 }

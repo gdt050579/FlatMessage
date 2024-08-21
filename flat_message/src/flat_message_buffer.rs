@@ -68,7 +68,7 @@ impl FlatMessageBuffer<'_> {
                     None
                 } else {
                     let ofs = self.index_to_offset(0);
-                    return unsafe { T::from_buffer(self.buf, ofs) };
+                    return unsafe { T::from_buffer_unchecked(self.buf.as_ptr(), ofs) };
                 }
             }
             2 => {
@@ -79,11 +79,11 @@ impl FlatMessageBuffer<'_> {
                         None
                     } else {
                         let ofs = self.index_to_offset(1);
-                        unsafe { T::from_buffer(self.buf, ofs) }
+                        unsafe { T::from_buffer_unchecked(self.buf.as_ptr(), ofs) }
                     }
                 } else {
                     let ofs = self.index_to_offset(0);
-                    return unsafe { T::from_buffer(self.buf, ofs) };
+                    return unsafe { T::from_buffer_unchecked(self.buf.as_ptr(), ofs) };
                 }
             }
             _ => {
@@ -98,7 +98,7 @@ impl FlatMessageBuffer<'_> {
                         std::cmp::Ordering::Equal => {
                             let ofs = self.index_to_offset(mid);
                             //println!("Found at Offset = {ofs}");
-                            return unsafe { T::from_buffer(self.buf, ofs) };
+                            return unsafe { T::from_buffer_unchecked(self.buf.as_ptr(), ofs) };
                         }
                         std::cmp::Ordering::Less => {
                             left = mid + 1;
