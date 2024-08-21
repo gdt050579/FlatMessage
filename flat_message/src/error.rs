@@ -1,3 +1,4 @@
+use std::f32::consts::E;
 pub use std::fmt;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -9,6 +10,8 @@ pub enum Error {
     InvalidSizeToStoreMetaData((u32, u32)),
     InvalidHash((u32, u32)),
     InvalidSizeToStoreFieldsTable((u32, u32)),
+    UnknownHash(u32),
+    InvalidFieldOffset((u32, u32)),
 }
 
 impl fmt::Display for Error {
@@ -39,6 +42,12 @@ impl fmt::Display for Error {
             Error::InvalidSizeToStoreFieldsTable((actual, expected)) => write!(
                 f,
                 "Invalid buffer size to store fields table (expected at least {} bytes - but found: {})",
+                expected, actual
+            ),
+            Error::UnknownHash(hash) => write!(f, "Unknown hash: 0x{:08X}", hash),
+            Error::InvalidFieldOffset((actual, expected)) => write!(
+                f,
+                "Invalid field offset (expected an offset between 8 and {} - but found: {})",
                 expected, actual
             ),
         }

@@ -173,6 +173,102 @@ impl<'a> StructInfo<'a> {
         }).collect();
         v
     }
+    fn generate_header_deserialization_code(&self)->proc_macro2::TokenStream {
+        let magic = constants::MAGIC_V1;
+        let has_crc = constants::FLAG_HAS_CRC;
+        let has_name = constants::FLAG_HAS_NAME_HASH;
+        let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
+        let has_unique_id = constants::FLAG_HAS_UNIQUEID;
+        quote!{
+            use ::std::ptr;
+                enum RefOffsetSize {
+                    U8,
+                    U16,
+                    U32,
+                }
+                let len = input.len();
+                if len < 8 {
+                    return Err(flat_message::Error::InvalidHeaderLength(len));
+                }
+                let buffer = input.as_ptr();
+                let header: flat_message::headers::HeaderV1 = unsafe { ptr::read_unaligned(buffer as *const flat_message::headers::HeaderV1) };
+                if header.magic != #magic {
+                    return Err(flat_message::Error::InvalidMagic);
+                }
+                let mut metadata_size = 0usize;
+                if header.flags & #has_crc != 0 {
+                    metadata_size += 4;
+                }
+                if header.flags & #has_name != 0 {
+                    metadata_size += 4;
+                }
+                if header.flags & #has_timestamp != 0 {
+                    metadata_size += 8;
+                }
+                if header.flags & #has_unique_id != 0 {
+                    metadata_size += 8;
+                }
+                let ref_offset_size = match header.flags & 0b0000_0011 {
+                    0 => RefOffsetSize::U8,
+                    1 => RefOffsetSize::U16,
+                    2 => RefOffsetSize::U32,
+                    _ => return Err(flat_message::Error::InvalidOffsetSize),
+                }; 
+                let ref_table_size =  match ref_offset_size {
+                    RefOffsetSize::U8 => header.fields_count as usize,
+                    RefOffsetSize::U16 =>header.fields_count as usize * 2,
+                    RefOffsetSize::U32 =>header.fields_count as usize * 4,
+                };
+                let hash_table_size = header.fields_count as usize * 4;
+                let min_size = 8/* header */ + metadata_size + hash_table_size + ref_table_size + header.fields_count as usize /* at least one byte per field */;
+                if min_size > len {
+                    return Err(flat_message::Error::InvalidSizeToStoreFieldsTable((len as u32, min_size as u32)));
+                }
+                let mut hash_table_offset = len - ref_table_size - metadata_size - hash_table_size;
+                let mut ref_table_offset = hash_table_offset + hash_table_size;
+                let hashes = unsafe { core::slice::from_raw_parts(buffer.add(hash_table_offset) as *const u32, header.fields_count as usize) };
+                let mut it = hashes.iter();
+        }
+    }
+    fn generate_field_deserialize_code(&self, field_name_hash: u32)->proc_macro2::TokenStream {
+        quote! {
+            loop {
+                if let Some(value) = it.next() {
+                    if *value == #field_name_hash {
+                        break;
+                    }
+                } else {
+                    return Err(flat_message::Error::UnknownHash(#field_name_hash));
+                }
+                unsafe { p_ofs = p_ofs.add(1); }
+            };
+            let offset = unsafe { ptr::read_unaligned(p_ofs) as usize};
+            if offset<8 || offset >= hash_table_offset {
+                return Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32)));
+            }
+        }
+    }
+    fn generate_fields_deserialize_code(&self, ref_size: u8)->Vec<proc_macro2::TokenStream> {
+        let mut v = Vec::with_capacity(4);
+        let mut hashes:Vec<_> = self.fields.iter().map(|field| field.hash).collect();
+        hashes.sort();
+        v.push (match ref_size {
+            1 => quote! {
+                let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const u8 };
+            },
+            2 => quote! {
+                let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const u16 };
+            },
+            4 => quote! {
+                let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const u32 };
+            },
+            _ => quote! {}
+        });
+        for hash in hashes {
+            v.push(self.generate_field_deserialize_code(hash));
+        }
+        v
+    }
     fn generate_serialize_to_methods(&self) -> proc_macro2::TokenStream {
         let fields_count = self.fields.len() as u16;
         // serialize fields
@@ -257,36 +353,24 @@ impl<'a> StructInfo<'a> {
         }
     }
     fn generate_deserialize_from_methods(&self) -> proc_macro2::TokenStream {
-        let magic = constants::MAGIC_V1;
-        let has_crc = constants::FLAG_HAS_CRC;
-        let has_name = constants::FLAG_HAS_NAME_HASH;
-        let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
-        let has_unique_id = constants::FLAG_HAS_UNIQUEID;
+        let header_deserialization_code = self.generate_header_deserialization_code();
+        let deserializaton_code_u8 = self.generate_fields_deserialize_code(1);
+        let deserializaton_code_u16 = self.generate_fields_deserialize_code(2);
+        let deserializaton_code_u32 = self.generate_fields_deserialize_code(4);
         quote! {
             fn deserialize_from(input: &[u8]) -> core::result::Result<Self,flat_message::Error> 
             {
-                use ::std::ptr;
-                let len = input.len();
-                if len < 8 {
-                    return Err(flat_message::Error::InvalidHeaderLength(len));
-                }
-                let buffer = input.as_ptr();
-                let header: flat_message::headers::HeaderV1 = unsafe { ptr::read_unaligned(buffer as *const flat_message::headers::HeaderV1) };
-                if header.magic != #magic {
-                    return Err(flat_message::Error::InvalidMagic);
-                }
-                let mut metadata_size = 0usize;
-                if header.flags & #has_crc != 0 {
-                    metadata_size += 4;
-                }
-                if header.flags & #has_name != 0 {
-                    metadata_size += 4;
-                }
-                if header.flags & #has_timestamp != 0 {
-                    metadata_size += 8;
-                }
-                if header.flags & #has_unique_id != 0 {
-                    metadata_size += 8;
+                #header_deserialization_code
+                match ref_offset_size {
+                    RefOffsetSize::U8 => {
+                        #(#deserializaton_code_u8)*
+                    }
+                    RefOffsetSize::U16 => {
+                        #(#deserializaton_code_u16)*
+                    }
+                    RefOffsetSize::U32 => {
+                        #(#deserializaton_code_u32)*
+                    }
                 }
                 // temporary result
                 return Err(flat_message::Error::InvalidHeaderLength(0));
