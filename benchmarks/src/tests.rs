@@ -6,6 +6,12 @@ macro_rules! check_field_value {
         assert_eq!(val, $value);
     };
 }
+macro_rules! check_field_value_unsafe {
+    ($field_name: expr, $type: ty, $value: expr, $flat_message_buffer: expr) => {
+        let val: $type = unsafe { $flat_message_buffer.get_unchecked($field_name).unwrap() };
+        assert_eq!(val, $value);
+    };
+}
 
 #[test]
 fn check_flat_message_buffer_one_field_i32() {
@@ -78,7 +84,7 @@ fn check_flat_message_buffer_two_fields_string_string() {
 }
 
 #[test]
-fn check_flat_message_buffer_1() {
+fn check_flat_message_buffer_safe() {
     #[flat_message]
     struct TestStruct<'a> {
         name: String,
@@ -107,6 +113,38 @@ fn check_flat_message_buffer_1() {
     check_field_value!(name!("passed"), bool, true, buf);
     check_field_value!(name!("average"), f64, 95.0, buf);
 }
+
+#[test]
+fn check_flat_message_buffer_unsafe() {
+    #[flat_message]
+    struct TestStruct<'a> {
+        name: String,
+        surname: &'a str,
+        math: u8,
+        engligh: u8,
+        passed: bool,
+        average: f64,
+    }
+    let a = TestStruct {
+        name: "John".to_string(),
+        surname: "Doe",
+        math: 100,
+        engligh: 90,
+        passed: true,
+        average: 95.0,
+        metadata: MetaData::default(),
+    };
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let buf = FlatMessageBuffer::try_from(output.as_slice()).unwrap();
+    check_field_value_unsafe!(name!("name"), &str, "John", buf);
+    check_field_value_unsafe!(name!("surname"), &str, "Doe", buf);
+    check_field_value_unsafe!(name!("math"), u8, 100, buf);
+    check_field_value_unsafe!(name!("engligh"), u8, 90, buf);
+    check_field_value_unsafe!(name!("passed"), bool, true, buf);
+    check_field_value_unsafe!(name!("average"), f64, 95.0, buf);
+}
+
 
 #[test]
 fn check_flat_message_metadata() {

@@ -9,10 +9,10 @@ macro_rules! IMPLEMENT_SERDE_FOR_BASIC_TYPE {
                 DataFormat::$data_format
             }
             #[inline(always)]
-            unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Option<Self> {
+            unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
                 unsafe {
                     let ptr = buf.as_ptr().add(pos) as *const $t;
-                    Some(std::ptr::read_unaligned(ptr))
+                    std::ptr::read_unaligned(ptr)
                 }
             }
             #[inline(always)]

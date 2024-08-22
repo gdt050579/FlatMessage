@@ -1,12 +1,12 @@
 use common::data_format::DataFormat;
 
+mod basic_types;
 mod bool;
 mod string;
-mod basic_types;
 
 pub unsafe trait SerDe<'a> {
     fn data_format() -> DataFormat;
-    unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Option<Self>
+    unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Self
     where
         Self: Sized;
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self>

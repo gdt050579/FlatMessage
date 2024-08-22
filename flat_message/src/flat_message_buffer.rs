@@ -112,6 +112,69 @@ impl FlatMessageBuffer<'_> {
             }
         }
     }
+
+    #[inline(always)]
+    pub unsafe fn get_unchecked<'a, T>(&'a self, field_name: Name) -> Option<T>
+    where
+        T: SerDe<'a>,
+    {
+        if self.header.fields_count == 0 {
+            return None;
+        }
+        let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::data_format() as u32));
+        let start = self.field_table_offset as usize;
+        match self.header.fields_count {
+            1 => {
+                let k = READ_VALUE!(self.buf, start, u32);
+                if k != field_name.value {
+                    None
+                } else {
+                    let ofs = self.index_to_offset(0);
+                    return Some(T::from_buffer_unchecked(self.buf, ofs));
+                }
+            }
+            2 => {
+                let k = READ_VALUE!(self.buf, start, u32);
+                if k != field_name.value {
+                    let k = READ_VALUE!(self.buf, start + 4, u32);
+                    if k != field_name.value {
+                        None
+                    } else {
+                        let ofs = self.index_to_offset(1);
+                        Some(T::from_buffer_unchecked(self.buf, ofs))
+                    }
+                } else {
+                    let ofs = self.index_to_offset(0);
+                    return Some(T::from_buffer_unchecked(self.buf, ofs));
+                }
+            }
+            _ => {
+                let mut left = 0;
+                let mut right = (self.header.fields_count as usize) - 1;
+                while left <= right {
+                    let mid = (left + right) / 2;
+                    let k = READ_VALUE!(self.buf, start + mid * 4, u32);
+                    match k.cmp(&field_name.value) {
+                        std::cmp::Ordering::Equal => {
+                            let ofs = self.index_to_offset(mid);
+                            return Some(T::from_buffer_unchecked(self.buf, ofs));
+                        }
+                        std::cmp::Ordering::Less => {
+                            left = mid + 1;
+                        }
+                        std::cmp::Ordering::Greater => {
+                            if mid == 0 {
+                                return None;
+                            }
+                            right = mid - 1;
+                        }
+                    }
+                }
+                None
+            }
+        }
+    }
+
     #[inline(always)]
     fn index_to_offset(&self, index: usize) -> usize {
         match self.offset_size {
