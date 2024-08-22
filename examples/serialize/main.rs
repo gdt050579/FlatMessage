@@ -1,5 +1,7 @@
 use flat_message::*;
 
+
+
 #[flat_message(store_name = false, metadata: true)]
 pub struct MyStruct<'a> {
     pub a: i32,

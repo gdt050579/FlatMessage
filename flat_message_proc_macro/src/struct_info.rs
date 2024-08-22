@@ -251,12 +251,30 @@ impl<'a> StructInfo<'a> {
                 #metadata_code
 
                 let hash_table_offset = len - ref_table_size - metadata_size - hash_table_size;
-                let ref_table_offset = hash_table_offset + hash_table_size;                
+                let ref_table_offset = hash_table_offset + hash_table_size;  
+                let data_buffer = &input[..hash_table_offset];              
                 let hashes = unsafe { core::slice::from_raw_parts(buffer.add(hash_table_offset) as *const u32, header.fields_count as usize) };
                 let mut it = hashes.iter();
         }
     }
     fn generate_field_deserialize_code(&self, inner_var: &syn::Ident, ty: &syn::Type, field_name_hash: u32)->proc_macro2::TokenStream {
+        let start_boundary_check = quote!{
+            if offset<8 || offset >= hash_table_offset {
+                return Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32)));
+            }
+        };
+        let unsafe_init = quote!{
+            let Some(#inner_var): Option<#ty> = ( unsafe { flat_message::SerDe::from_buffer_unchecked(buffer, offset) } ) 
+            else {
+                return Err(flat_message::Error::FailToDeserialize(#field_name_hash));
+            };
+        };
+        let safe_init = quote!{
+            let Some(#inner_var): Option<#ty> = flat_message::SerDe::from_buffer(data_buffer, offset) else {
+                return Err(flat_message::Error::FailToDeserialize(#field_name_hash));
+            };
+        };
+        
         quote! {
             loop {
                 if let Some(value) = it.next() {
@@ -270,13 +288,9 @@ impl<'a> StructInfo<'a> {
             };
             let offset = unsafe { ptr::read_unaligned(p_ofs) as usize};
             unsafe { p_ofs = p_ofs.add(1); }
-            if offset<8 || offset >= hash_table_offset {
-                return Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32)));
-            }
-            let Some(#inner_var): Option<#ty> = ( unsafe { flat_message::SerDe::from_buffer_unchecked(buffer, offset) } ) 
-            else {
-                return Err(flat_message::Error::FailToDeserialize(#field_name_hash));
-            };
+            #start_boundary_check
+            #safe_init
+
         }
     }
     fn generate_fields_deserialize_code(&self, ref_size: u8)->Vec<proc_macro2::TokenStream> {
@@ -420,8 +434,9 @@ impl<'a> StructInfo<'a> {
         let deserializaton_code_u16 = self.generate_fields_deserialize_code(2);
         let deserializaton_code_u32 = self.generate_fields_deserialize_code(4);
         let ctor_code = self.generate_struct_construction_code();
+        let lifetimes = &self.generics.params;
         quote! {
-            fn deserialize_from(input: &[u8]) -> core::result::Result<Self,flat_message::Error> 
+            fn deserialize_from(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error> 
             {
                 #header_deserialization_code
                 match ref_offset_size {
@@ -445,6 +460,11 @@ impl<'a> StructInfo<'a> {
         let name = self.name;
         let visibility = self.visibility;
         let generics = self.generics;
+        let implicit_lifetime = if generics.lifetimes().count() > 0 {
+            quote! { #generics }
+        } else {
+            quote! { <'_>}
+        };
         let struct_fields = self.fields_name.named.iter().map(|field| {
             Some(quote! {
                 #field,
@@ -463,7 +483,7 @@ impl<'a> StructInfo<'a> {
                 #(#struct_fields)*
                 #metadata_field
             }
-            impl #generics flat_message::FlatMessage for #name #generics {
+            impl #generics flat_message::FlatMessage #implicit_lifetime for #name #generics {
                 #metadata_methods
                 #serialize_to_methods
                 #deserialize_from_methods

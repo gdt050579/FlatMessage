@@ -35,7 +35,7 @@ struct ProcessCreatedS {
     version: NonZeroU8,
 }
 
-fn test_flat_message<T: FlatMessage>(process: &T, output: &mut Vec<u8>) {
+fn test_flat_message<'a,T:  FlatMessage<'a>>(process: &T, output: &mut Vec<u8>) {
     process.serialize_to(output);
 }
 
@@ -99,7 +99,7 @@ fn bench<T, F: Fn(&T, &mut Vec<u8>)>(
     });
 }
 
-fn add_benches<T: FlatMessage, S: Serialize>(name: &str, t: &T, s: &S, results: &mut Vec<Result>) {
+fn add_benches<'a, T: FlatMessage<'a>, S: Serialize>(name: &str, t: &T, s: &S, results: &mut Vec<Result>) {
     bench("flat_message", name, t, test_flat_message, results);
     bench("cbor", name, s, test_cbor, results);
     bench("bson", name, s, test_bson, results);
@@ -110,7 +110,7 @@ fn add_benches<T: FlatMessage, S: Serialize>(name: &str, t: &T, s: &S, results: 
     bench("flexbuffers", name, s, test_flexbuffers, results);
 }
 
-fn do_one<T: FlatMessage, S: Serialize>(input_name: &str, process: &T, process_s: &S) {
+fn do_one<'a, T: FlatMessage<'a>, S: Serialize>(input_name: &str, process: &T, process_s: &S) {
     let results = &mut Vec::with_capacity(16);
     add_benches(input_name, process, process_s, results);
     results.sort_by_key(|x| x.time);

@@ -20,6 +20,21 @@ unsafe impl<'a> SerDe<'a> for &'a str {
         //}
     }
     #[inline(always)]
+    fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
+        let (len, slen) = buffer::read_size(buf.as_ptr(), pos, buffer::WriteSizeMethod::FEFFMarker);
+        let end = pos + slen + len;
+        if end > buf.len() {
+            None
+        } else {
+            let s = &buf[pos + slen..end];
+            if let Ok(new_string_slice) = std::str::from_utf8(s) {
+                Some(new_string_slice)
+            } else {
+                None
+            }
+        }
+    }
+    #[inline(always)]
     unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
         let len = self.len() as u32;
         unsafe {
@@ -46,6 +61,11 @@ unsafe impl SerDe<'_> for String {
     #[inline(always)]
     unsafe fn from_buffer_unchecked(p: *const u8, pos: usize) -> Option<Self> {
         let v: &str = SerDe::from_buffer_unchecked(p, pos)?;
+        Some(v.to_string())
+    }
+    #[inline(always)]
+    fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
+        let v: &str = SerDe::from_buffer(buf, pos)?;
         Some(v.to_string())
     }
     #[inline(always)]

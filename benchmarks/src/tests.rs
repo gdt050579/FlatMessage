@@ -353,3 +353,31 @@ fn check_serde_into_different_type() {
     let b = TestStruct2::deserialize_from(output.as_slice());
     assert_eq!(b.is_err(), true);
 }
+
+#[test]
+fn check_serde_string_into_str() {
+    #[flat_message(metadata: false)]
+    struct TestStruct {
+        name: String,
+        surname: String,
+    }
+
+    #[flat_message(metadata: false)]
+    struct TestStruct2<'a> {
+        name: &'a str,
+        surname: &'a str,
+    }
+
+    let a = TestStruct {
+        name: "John".to_string(),
+        surname: "Doe".to_string(),
+    };
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let b = TestStruct2::deserialize_from(output.as_slice()).unwrap();
+    // the following lines should not compile
+    // output.clear();
+    // output.resize(0xFFFF,b'a');
+    assert_eq!(b.name, a.name.as_str());
+    assert_eq!(b.surname, a.surname.as_str());
+}

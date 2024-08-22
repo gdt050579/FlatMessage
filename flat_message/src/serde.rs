@@ -9,6 +9,9 @@ pub unsafe trait SerDe<'a> {
     unsafe fn from_buffer_unchecked(p: *const u8, pos: usize) -> Option<Self>
     where
         Self: Sized;
+    fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self>
+    where
+        Self: Sized;
     unsafe fn write(&self, p: *mut u8, pos: usize) -> usize;
     fn size(&self) -> usize;
     fn align_offset(&self, offset: usize) -> usize;

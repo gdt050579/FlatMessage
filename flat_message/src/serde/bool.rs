@@ -17,6 +17,16 @@ unsafe impl SerDe<'_> for bool {
             }
         }
     }
+    fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
+        unsafe {
+            let ptr = buf.as_ptr().add(pos);
+            match *ptr {
+                0 => Some(false),
+                1 => Some(true),
+                _ => None,
+            }
+        }
+    }
     #[inline(always)]
     unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
         unsafe {
