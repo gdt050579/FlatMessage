@@ -68,7 +68,7 @@ impl FlatMessageBuffer<'_> {
                     None
                 } else {
                     let ofs = self.index_to_offset(0);
-                    return unsafe { T::from_buffer_unchecked(self.buf.as_ptr(), ofs) };
+                    return T::from_buffer(self.buf, ofs);
                 }
             }
             2 => {
@@ -79,40 +79,35 @@ impl FlatMessageBuffer<'_> {
                         None
                     } else {
                         let ofs = self.index_to_offset(1);
-                        unsafe { T::from_buffer_unchecked(self.buf.as_ptr(), ofs) }
+                        T::from_buffer(self.buf, ofs)
                     }
                 } else {
                     let ofs = self.index_to_offset(0);
-                    return unsafe { T::from_buffer_unchecked(self.buf.as_ptr(), ofs) };
+                    return T::from_buffer(self.buf, ofs);
                 }
             }
             _ => {
                 let mut left = 0;
                 let mut right = (self.header.fields_count as usize) - 1;
-                //println!("Search for: {}", field_name.value);
                 while left <= right {
                     let mid = (left + right) / 2;
                     let k = READ_VALUE!(self.buf, start + mid * 4, u32);
-                    //println!("{left} - {right} - {mid} - {k}");
                     match k.cmp(&field_name.value) {
                         std::cmp::Ordering::Equal => {
                             let ofs = self.index_to_offset(mid);
-                            //println!("Found at Offset = {ofs}");
-                            return unsafe { T::from_buffer_unchecked(self.buf.as_ptr(), ofs) };
+                            return T::from_buffer(self.buf, ofs);
                         }
                         std::cmp::Ordering::Less => {
                             left = mid + 1;
                         }
                         std::cmp::Ordering::Greater => {
                             if mid == 0 {
-                                //println!(" Exit --> Mid = 0");
                                 return None;
                             }
                             right = mid - 1;
                         }
                     }
                 }
-                //println!("Exit --> Not found !");
                 None
             }
         }

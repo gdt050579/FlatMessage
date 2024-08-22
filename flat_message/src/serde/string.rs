@@ -8,16 +8,11 @@ unsafe impl<'a> SerDe<'a> for &'a str {
         DataFormat::String
     }
     #[inline(always)]
-    unsafe fn from_buffer_unchecked(p: *const u8, pos: usize) -> Option<Self> {
+    unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Option<Self> {
+        let p = buf.as_ptr();
         let (len, slen) = buffer::read_size(p, pos, buffer::WriteSizeMethod::FEFFMarker);
-        //let end = pos + slen + len;
-        //println!("String: start: {}, end: {}, len: {}, slen: {}", pos, end, len, slen);
-        // if end > buf.len() {
-        //     None
-        // } else {
-            let s = std::slice::from_raw_parts(p.add(pos + slen), len);
-            unsafe { Some(std::str::from_utf8_unchecked(s)) }
-        //}
+        let s = std::slice::from_raw_parts(p.add(pos + slen), len);
+        unsafe { Some(std::str::from_utf8_unchecked(s)) }
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
@@ -59,8 +54,8 @@ unsafe impl SerDe<'_> for String {
         DataFormat::String
     }
     #[inline(always)]
-    unsafe fn from_buffer_unchecked(p: *const u8, pos: usize) -> Option<Self> {
-        let v: &str = SerDe::from_buffer_unchecked(p, pos)?;
+    unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Option<Self> {
+        let v: &str = SerDe::from_buffer_unchecked(buf, pos)?;
         Some(v.to_string())
     }
     #[inline(always)]
