@@ -1,3 +1,4 @@
+use crate::buffer;
 use crate::headers::HeaderV1;
 use crate::MetaData;
 
@@ -8,15 +9,6 @@ use super::Name;
 use super::SerDe;
 use common::constants;
 use std::num::NonZeroU64;
-
-macro_rules! READ_VALUE {
-    ($bytes:expr, $pos:expr, $t:ty) => {{
-        unsafe {
-            let ptr = $bytes.as_ptr().add($pos) as *const $t;
-            std::ptr::read_unaligned(ptr)
-        }
-    }};
-}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum OffsetSize {
@@ -61,9 +53,10 @@ impl FlatMessageBuffer<'_> {
         }
         let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::data_format() as u32));
         let start = self.field_table_offset as usize;
+        let p = self.buf.as_ptr();
         match self.header.fields_count {
             1 => {
-                let k = READ_VALUE!(self.buf, start, u32);
+                let k = unsafe { buffer::read::<u32>(p, start) };
                 if k != field_name.value {
                     None
                 } else {
@@ -72,9 +65,9 @@ impl FlatMessageBuffer<'_> {
                 }
             }
             2 => {
-                let k = READ_VALUE!(self.buf, start, u32);
+                let k = unsafe { buffer::read::<u32>(p, start) };
                 if k != field_name.value {
-                    let k = READ_VALUE!(self.buf, start + 4, u32);
+                    let k = unsafe { buffer::read::<u32>(p, start + 4) };
                     if k != field_name.value {
                         None
                     } else {
@@ -91,7 +84,7 @@ impl FlatMessageBuffer<'_> {
                 let mut right = (self.header.fields_count as usize) - 1;
                 while left <= right {
                     let mid = (left + right) / 2;
-                    let k = READ_VALUE!(self.buf, start + mid * 4, u32);
+                    let k = unsafe { buffer::read::<u32>(p, start + mid * 4) };
                     match k.cmp(&field_name.value) {
                         std::cmp::Ordering::Equal => {
                             let ofs = self.index_to_offset(mid);
@@ -123,9 +116,10 @@ impl FlatMessageBuffer<'_> {
         }
         let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::data_format() as u32));
         let start = self.field_table_offset as usize;
+        let p = self.buf.as_ptr();
         match self.header.fields_count {
             1 => {
-                let k = READ_VALUE!(self.buf, start, u32);
+                let k = unsafe { buffer::read::<u32>(p, start) };
                 if k != field_name.value {
                     None
                 } else {
@@ -134,9 +128,9 @@ impl FlatMessageBuffer<'_> {
                 }
             }
             2 => {
-                let k = READ_VALUE!(self.buf, start, u32);
+                let k = unsafe { buffer::read::<u32>(p, start) };
                 if k != field_name.value {
-                    let k = READ_VALUE!(self.buf, start + 4, u32);
+                    let k = unsafe { buffer::read::<u32>(p, start + 4) };
                     if k != field_name.value {
                         None
                     } else {
@@ -153,7 +147,7 @@ impl FlatMessageBuffer<'_> {
                 let mut right = (self.header.fields_count as usize) - 1;
                 while left <= right {
                     let mid = (left + right) / 2;
-                    let k = READ_VALUE!(self.buf, start + mid * 4, u32);
+                    let k = unsafe { buffer::read::<u32>(p, start + mid * 4) };
                     match k.cmp(&field_name.value) {
                         std::cmp::Ordering::Equal => {
                             let ofs = self.index_to_offset(mid);
@@ -178,13 +172,9 @@ impl FlatMessageBuffer<'_> {
     #[inline(always)]
     fn index_to_offset(&self, index: usize) -> usize {
         match self.offset_size {
-            OffsetSize::U8 => READ_VALUE!(self.buf, self.ref_table_offset + index, u8) as usize,
-            OffsetSize::U16 => {
-                READ_VALUE!(self.buf, self.ref_table_offset + index * 2, u16) as usize
-            }
-            OffsetSize::U32 => {
-                READ_VALUE!(self.buf, self.ref_table_offset + index * 4, u32) as usize
-            }
+            OffsetSize::U8 => unsafe { buffer::read::<u8>(self.buf.as_ptr(), self.ref_table_offset + index) as usize },
+            OffsetSize::U16 => unsafe { buffer::read::<u16>(self.buf.as_ptr(), self.ref_table_offset + index*2) as usize },
+            OffsetSize::U32 => unsafe { buffer::read::<u32>(self.buf.as_ptr(), self.ref_table_offset + index*4) as usize },
         }
     }
 }
@@ -194,10 +184,12 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
 
     fn try_from(buf: &'a [u8]) -> Result<Self, Self::Error> {
         // validate buf length - minimum 8 bytes
-        if buf.len() < 8 {
-            return Err(Error::InvalidHeaderLength(buf.len()));
+        let len = buf.len();
+        if len < 8 {
+            return Err(Error::InvalidHeaderLength(len));
         }
-        let header = READ_VALUE!(buf, 0, HeaderV1);
+        let p = buf.as_ptr();
+        let header: HeaderV1 = unsafe { buffer::read(p, 0) };   
         if header.magic != constants::MAGIC_V1 {
             return Err(Error::InvalidMagic);
         }
@@ -221,9 +213,9 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
         if header.flags & constants::FLAG_HAS_UNIQUEID != 0 {
             metadata_size += 8;
         }
-        if (metadata_size + 8) as usize > buf.len() {
+        if (metadata_size + 8) as usize > len {
             return Err(Error::InvalidSizeToStoreMetaData((
-                buf.len() as u32,
+                len as u32,
                 (metadata_size + 8) as u32,
             )));
         }
@@ -235,31 +227,31 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             OffsetSize::U32 => field_count * 4,
         };
         let min_size = 8 + metadata_size + hash_table_size + ref_table_size + field_count /* assuming at least one byte for each field */;
-        if min_size > buf.len() {
+        if min_size > len {
             return Err(Error::InvalidSizeToStoreFieldsTable((
-                buf.len() as u32,
+                len as u32,
                 min_size as u32,
             )));
         }
 
         // read the metadata
-        let mut offset = buf.len() - metadata_size;
+        let mut offset = len - metadata_size;
         let timestamp = if header.flags & constants::FLAG_HAS_TIMESTAMP != 0 {
-            let value = NonZeroU64::new(READ_VALUE!(buf, offset, u64));
+            let value = NonZeroU64::new(unsafe { buffer::read::<u64>(p, offset)} );
             offset += 8;
             value
         } else {
             None
         };
         let unique_id = if header.flags & constants::FLAG_HAS_UNIQUEID != 0 {
-            let value = NonZeroU64::new(READ_VALUE!(buf, offset, u64));
+            let value = NonZeroU64::new(unsafe { buffer::read::<u64>(p, offset)} );
             offset += 8;
             value
         } else {
             None
         };
         let name_hash = if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
-            let value = READ_VALUE!(buf, offset, u32);
+            let value = unsafe { buffer::read::<u32>(p, offset)} ;
             #[cfg(feature = "VALIDATE_CRC32")]
             {
                 offset += 4;
@@ -274,7 +266,7 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
         };
         #[cfg(feature = "VALIDATE_CRC32")]
         if header.flags & constants::FLAG_HAS_CRC != 0 {
-            let crc = READ_VALUE!(buf, offset, u32);
+            let crc = unsafe { buffer::read::<u32>(p, offset)} ;
             let calculated_crc = hashes::crc32(&buf[..offset]);
             if crc != calculated_crc {
                 return Err(Error::InvalidHash((crc, calculated_crc)));
@@ -292,8 +284,8 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             name: name_hash,
             buf,
             offset_size,
-            field_table_offset: buf.len() - hash_table_size - ref_table_size - metadata_size,
-            ref_table_offset: buf.len() - ref_table_size - metadata_size,
+            field_table_offset: len - hash_table_size - ref_table_size - metadata_size,
+            ref_table_offset: len - ref_table_size - metadata_size,
         })
     }
 }
