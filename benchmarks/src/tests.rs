@@ -455,3 +455,27 @@ fn check_serde_full_unchecked() {
     assert_eq!(a.metadata.timestamp(), b.metadata.timestamp());
     assert_eq!(a.metadata.unique_id(), b.metadata.unique_id());
 }
+
+#[test]
+fn check_structure_information() {
+    #[flat_message(version: 12)]
+    struct TestStruct {
+        a: u64,
+        b: u32
+    }
+    let a = TestStruct {
+        a: 12,
+        b: 34,
+        metadata: MetaDataBuilder::new()
+            .timestamp(123456)
+            .unique_id(654321)
+            .build(),
+    };
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let si = StructureInformation::try_from(&output).unwrap();
+    assert_eq!(si.timestamp(), Some(123456));
+    assert_eq!(si.unique_id(), Some(654321));
+    assert_eq!(si.version(), Some(12));
+    assert_eq!(si.name(), Some(name!("TestStruct")));
+}

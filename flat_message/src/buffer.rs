@@ -70,3 +70,9 @@ pub(crate) unsafe fn write<T: Sized + Copy>(p: *mut u8, pos: usize, value: T) {
         (p.add(pos) as *mut T).write_unaligned(value);
     }
 }
+
+#[inline(always)]
+pub(crate) unsafe fn read<T: Sized + Copy>(p: *const u8, pos: usize) -> T {
+    let ptr = p.add(pos) as *const T;
+    std::ptr::read_unaligned(ptr)
+}

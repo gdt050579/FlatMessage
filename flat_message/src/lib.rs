@@ -31,6 +31,7 @@ mod flat_message_buffer;
 mod metadata;
 mod serde;
 mod flat_message;
+mod structure_information;
 pub mod headers;
 
 pub use flat_message_proc_macro::*;
@@ -41,6 +42,7 @@ pub use self::metadata::MetaData;
 pub use self::metadata::MetaDataBuilder;
 pub use self::serde::SerDe;
 pub use self::flat_message::FlatMessage;  
+pub use self::structure_information::StructureInformation;
 
 pub use common::hashes::crc32;
 
