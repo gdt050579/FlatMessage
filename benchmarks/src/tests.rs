@@ -419,3 +419,39 @@ fn check_serde_string_into_str() {
     assert_eq!(b.name, a.name.as_str());
     assert_eq!(b.surname, a.surname.as_str());
 }
+
+#[test]
+fn check_serde_full_unchecked() {
+    #[flat_message]
+    struct TestStruct<'a> {
+        name: String,
+        surname: &'a str,
+        math: u8,
+        engligh: u8,
+        passed: bool,
+        average: f64,
+    }
+    let a = TestStruct {
+        name: "John".to_string(),
+        surname: "Doe",
+        math: 100,
+        engligh: 90,
+        passed: true,
+        average: 95.0,
+        metadata: MetaDataBuilder::new()
+            .timestamp(123456)
+            .unique_id(654321)
+            .build(),
+    };
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let b = unsafe { TestStruct::deserialize_from_unchecked(output.as_slice()).unwrap() };
+    assert_eq!(a.name, b.name);
+    assert_eq!(a.surname, b.surname);
+    assert_eq!(a.math, b.math);
+    assert_eq!(a.engligh, b.engligh);
+    assert_eq!(a.passed, b.passed);
+    assert_eq!(a.average, b.average);
+    assert_eq!(a.metadata.timestamp(), b.metadata.timestamp());
+    assert_eq!(a.metadata.unique_id(), b.metadata.unique_id());
+}

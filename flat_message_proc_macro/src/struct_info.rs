@@ -257,24 +257,30 @@ impl<'a> StructInfo<'a> {
                 let mut it = hashes.iter();
         }
     }
-    fn generate_field_deserialize_code(&self, inner_var: &syn::Ident, ty: &syn::Type, field_name_hash: u32)->proc_macro2::TokenStream {
-        let start_boundary_check = quote!{
+    fn generate_field_deserialize_code(&self, inner_var: &syn::Ident, ty: &syn::Type, field_name_hash: u32, unchecked_code: bool)->proc_macro2::TokenStream {
+        let boundary_check = quote!{
             if offset<8 || offset >= hash_table_offset {
                 return Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32)));
             }
         };
         let unsafe_init = quote!{
-            let Some(#inner_var): Option<#ty> = ( unsafe { flat_message::SerDe::from_buffer_unchecked(buffer, offset) } ) 
-            else {
-                return Err(flat_message::Error::FailToDeserialize(#field_name_hash));
-            };
+            let #inner_var: #ty = unsafe { flat_message::SerDe::from_buffer_unchecked(data_buffer, offset) };
         };
         let safe_init = quote!{
             let Some(#inner_var): Option<#ty> = flat_message::SerDe::from_buffer(data_buffer, offset) else {
                 return Err(flat_message::Error::FailToDeserialize(#field_name_hash));
             };
         };
-        
+        let checks_and_init = if unchecked_code {
+            quote! {
+                #unsafe_init
+            }
+        } else {
+            quote! {
+                #boundary_check
+                #safe_init
+            }        
+        };
         quote! {
             loop {
                 if let Some(value) = it.next() {
@@ -288,12 +294,10 @@ impl<'a> StructInfo<'a> {
             };
             let offset = unsafe { ptr::read_unaligned(p_ofs) as usize};
             unsafe { p_ofs = p_ofs.add(1); }
-            #start_boundary_check
-            #safe_init
-
+            #checks_and_init
         }
     }
-    fn generate_fields_deserialize_code(&self, ref_size: u8)->Vec<proc_macro2::TokenStream> {
+    fn generate_fields_deserialize_code(&self, ref_size: u8, unchecked_code: bool)->Vec<proc_macro2::TokenStream> {
         struct HashAndInnerVar {
             hash: u32,
             inner_var: syn::Ident,
@@ -319,7 +323,7 @@ impl<'a> StructInfo<'a> {
             _ => quote! {}
         });
         for obj in hashes {
-            v.push(self.generate_field_deserialize_code(&obj.inner_var, &obj.ty, obj.hash));
+            v.push(self.generate_field_deserialize_code(&obj.inner_var, &obj.ty, obj.hash, unchecked_code));
         }
         v
     }
@@ -430,9 +434,13 @@ impl<'a> StructInfo<'a> {
     }
     fn generate_deserialize_from_methods(&self) -> proc_macro2::TokenStream {
         let header_deserialization_code = self.generate_header_deserialization_code();
-        let deserializaton_code_u8 = self.generate_fields_deserialize_code(1);
-        let deserializaton_code_u16 = self.generate_fields_deserialize_code(2);
-        let deserializaton_code_u32 = self.generate_fields_deserialize_code(4);
+        let deserializaton_code_u8 = self.generate_fields_deserialize_code(1, false);
+        let deserializaton_code_u16 = self.generate_fields_deserialize_code(2, false);
+        let deserializaton_code_u32 = self.generate_fields_deserialize_code(4, false);
+        let deserializaton_code_u8_unchecked = self.generate_fields_deserialize_code(1, true);
+        let deserializaton_code_u16_unchecked = self.generate_fields_deserialize_code(2, true);
+        let deserializaton_code_u32_unchecked = self.generate_fields_deserialize_code(4, true);
+
         let ctor_code = self.generate_struct_construction_code();
         let lifetimes = &self.generics.params;
         quote! {
@@ -450,6 +458,24 @@ impl<'a> StructInfo<'a> {
                     }
                     RefOffsetSize::U32 => {
                         #(#deserializaton_code_u32)*
+                        #ctor_code
+                    }
+                }
+            }
+            unsafe fn deserialize_from_unchecked(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error> 
+            {
+                #header_deserialization_code
+                match ref_offset_size {
+                    RefOffsetSize::U8 => {
+                        #(#deserializaton_code_u8_unchecked)*
+                        #ctor_code
+                    }
+                    RefOffsetSize::U16 => {
+                        #(#deserializaton_code_u16_unchecked)*
+                        #ctor_code
+                    }
+                    RefOffsetSize::U32 => {
+                        #(#deserializaton_code_u32_unchecked)*
                         #ctor_code
                     }
                 }
