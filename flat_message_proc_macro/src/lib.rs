@@ -49,5 +49,5 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
 pub fn name(input: TokenStream) -> TokenStream {
     let value = utils::validate_one_string_parameter(input, "name");
     let hash = common::hashes::fnv_32(&value);
-    TokenStream::from_str(format!("Name::new({})",hash).as_str()).expect("Fail to convert name! to stream")
+    TokenStream::from_str(format!("Name {{ value: {} }}",hash).as_str()).expect("Fail to convert name! to stream")
 }

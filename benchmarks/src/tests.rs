@@ -145,7 +145,6 @@ fn check_flat_message_buffer_unsafe() {
     check_field_value_unsafe!(name!("average"), f64, 95.0, buf);
 }
 
-
 #[test]
 fn check_flat_message_metadata() {
     #[flat_message(version = 5)]
@@ -236,7 +235,6 @@ fn check_flat_message_no_metadata_no_name() {
     assert_eq!(metadata.unique_id(), None);
     assert_eq!(buf.name(), None);
 }
-
 
 #[test]
 fn check_serde_full() {
@@ -461,7 +459,7 @@ fn check_structure_information() {
     #[flat_message(version: 12)]
     struct TestStruct {
         a: u64,
-        b: u32
+        b: u32,
     }
     let a = TestStruct {
         a: 12,
@@ -478,4 +476,27 @@ fn check_structure_information() {
     assert_eq!(si.unique_id(), Some(654321));
     assert_eq!(si.version(), Some(12));
     assert_eq!(si.name(), Some(name!("TestStruct")));
+}
+
+#[test]
+fn check_structure_information_with_match() {
+    #[flat_message(metadata: false)]
+    struct TestStruct {
+        a: u64,
+    }
+    let a = TestStruct { a: 12 };
+
+    let mut output = Vec::new();
+    a.serialize_to(&mut output);
+    let si = StructureInformation::try_from(&output).unwrap();
+    assert_eq!(si.timestamp(), None);
+    assert_eq!(si.unique_id(), None);
+    assert_eq!(si.version(), None);
+    if let Some(name) = si.name() {
+        match name {
+            name!("TestStruct") => {},
+            name!("TestStruct2") => panic!("Invalid name"),
+            _ => panic!("Invalid name"),
+        }
+    }
 }
