@@ -46,6 +46,8 @@ pub use self::structure_information::StructureInformation;
 
 pub use common::hashes::crc32;
 
+pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
+impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
 
 
 
