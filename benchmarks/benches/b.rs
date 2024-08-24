@@ -52,9 +52,15 @@ fn test_json(process: &ProcessCreatedS, output: &mut Vec<u8>) -> usize {
     output.len()
 }
 
-fn test_rmp(process: &ProcessCreatedS, output: &mut Vec<u8>) -> usize {
+fn test_rmp_schema(process: &ProcessCreatedS, output: &mut Vec<u8>) -> usize {
     output.clear();
     rmp_serde::encode::write(output, process).unwrap();
+    output.len()
+}
+
+fn test_rmp_schemaless(process: &ProcessCreatedS, output: &mut Vec<u8>) -> usize {
+    output.clear();
+    rmp_serde::encode::write_named(output, process).unwrap();
     output.len()
 }
 
@@ -70,13 +76,14 @@ fn test_flexbuffers(process: &ProcessCreatedS) -> usize {
 }
 
 pub fn criterion_benchmark(c: &mut Criterion) {
+    let repeat = 100;
     let process = ProcessCreated {
-        name: String::from("C:\\Windows\\System32\\example.exe"),
+        name: String::from("C:\\Windows\\System32\\example.exe").repeat(repeat),
         pid: 1234,
         parent_pid: 1,
-        parent: String::from("C:\\Windows\\System32\\explorer.exe"),
-        user: String::from("Administrator"),
-        command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
+        parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
+        user: String::from("Administrator").repeat(repeat),
+        command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
         metadata: flat_message::MetaDataBuilder::new()
             .timestamp(0xFEFEFEFE)
             .unique_id(0xABABABAB)
@@ -84,12 +91,12 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     };
     let process_s = ProcessCreatedS {
         struct_name: "ProcessCreated",
-        name: String::from("C:\\Windows\\System32\\example.exe"),
+        name: String::from("C:\\Windows\\System32\\example.exe").repeat(repeat),
         pid: 1234,
         parent_pid: 1,
-        parent: String::from("C:\\Windows\\System32\\explorer.exe"),
-        user: String::from("Administrator"),
-        command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
+        parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
+        user: String::from("Administrator").repeat(repeat),
+        command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
         timestamp: NonZeroU64::new(0xFEFEFEFE).unwrap(),
         unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
         version: NonZeroU8::new(1).unwrap(),
@@ -110,8 +117,11 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     group.bench_with_input(BenchmarkId::new("bson", "_"), &(), |b, _| {
         b.iter(|| test_bson(black_box(&process_s)))
     });
-    group.bench_with_input(BenchmarkId::new("rmp", "_"), &(), |b, _| {
-        b.iter(|| test_rmp(black_box(&process_s), black_box(&mut output)))
+    group.bench_with_input(BenchmarkId::new("rmp_schema", "_"), &(), |b, _| {
+        b.iter(|| test_rmp_schema(black_box(&process_s), black_box(&mut output)))
+    });
+    group.bench_with_input(BenchmarkId::new("rmp_schemaless", "_"), &(), |b, _| {
+        b.iter(|| test_rmp_schemaless(black_box(&process_s), black_box(&mut output)))
     });
     group.bench_with_input(BenchmarkId::new("bincode", "_"), &(), |b, _| {
         b.iter(|| test_bincode(black_box(&process_s), black_box(&mut output)))
