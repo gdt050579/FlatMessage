@@ -21,6 +21,19 @@ struct ProcessCreated {
     user: String,
     command_line: String,
 }
+impl Clone for ProcessCreated {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            pid: self.pid.clone(),
+            parent_pid: self.parent_pid.clone(),
+            parent: self.parent.clone(),
+            user: self.user.clone(),
+            command_line: self.command_line.clone(),
+            metadata: self.metadata.clone(),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 struct ProcessCreatedS {
@@ -126,7 +139,6 @@ const ITERATIONS: u32 = 1_000_000;
 
 fn se_bench<T, FS: Fn(&T, &mut Vec<u8>)>(
     test_name: &str,
-    input_name: &str,
     x: &T,
     serialize: FS,
     vec: &mut Vec<u8>,
@@ -140,7 +152,7 @@ fn se_bench<T, FS: Fn(&T, &mut Vec<u8>)>(
     }
     let time = start.elapsed();
     results.push(Result {
-        name: format!("{}~{}", test_name, input_name),
+        name: format!("{}", test_name),
         time,
         time_s: format!("{:.2}", time.as_secs_f64() * 1000.0),
         size: vec.len(),
@@ -177,21 +189,64 @@ fn bench<T, FS: Fn(&T, &mut Vec<u8>), FD: Fn(&[u8]) -> T>(
     de_results: &mut Vec<Result>,
 ) {
     let vec = &mut Vec::with_capacity(4096);
-    se_bench(test_name, input_name, x, serialize, vec, se_results);
+    se_bench(test_name, x, serialize, vec, se_results);
     de_bench(test_name, input_name, deserialize, vec, de_results);
 }
 
-fn add_benches<'a, T: FlatMessageOwned, S: Serialize + DeserializeOwned>(
+fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
     name: &str,
     t: &T,
     s: &S,
     se_results: &mut Vec<Result>,
     de_results: &mut Vec<Result>,
 ) {
+    // Little hack to redirect the deserialize_from to deserialize_from_unchecked
+    // Just for testing, don't actually do this.
+    struct Wrapper<T>(T);
+    impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
+        fn metadata(&self) -> &flat_message::MetaData {
+            todo!()
+        }
+
+        fn update_metada(&mut self, _: flat_message::MetaData) {
+            todo!()
+        }
+
+        fn serialize_to(&self, output: &mut Vec<u8>) {
+            self.0.serialize_to(output)
+        }
+
+        fn deserialize_from(input: &'a [u8]) -> std::result::Result<Self, flat_message::Error>
+        where
+            Self: Sized,
+        {
+            unsafe { Self::deserialize_from_unchecked(input) }
+        }
+
+        unsafe fn deserialize_from_unchecked(
+            input: &'a [u8],
+        ) -> std::result::Result<Self, flat_message::Error>
+        where
+            Self: Sized,
+        {
+            Ok(Wrapper(T::deserialize_from_unchecked(input)?))
+        }
+    }
+    let wrapper = Wrapper(t.clone());
+
     bench(
         "flat_message",
         name,
         t,
+        se_test_flat_message,
+        de_test_flat_message,
+        se_results,
+        de_results,
+    );
+    bench(
+        "flat_message_unchecked",
+        name,
+        &wrapper,
         se_test_flat_message,
         de_test_flat_message,
         se_results,
@@ -266,7 +321,7 @@ fn print_one(input_name: &str, mode: &str, results: &mut Vec<Result>) {
     results.sort_by_key(|x| x.time);
 
     let mut ascii_table = AsciiTable::default();
-    ascii_table.set_max_width(50);
+    ascii_table.set_max_width(100);
     ascii_table
         .column(0)
         .set_header("name")
@@ -289,7 +344,7 @@ fn print_one(input_name: &str, mode: &str, results: &mut Vec<Result>) {
     ascii_table.print(r);
 }
 
-fn do_one<'a, T: FlatMessageOwned, S: Serialize + DeserializeOwned>(
+fn do_one<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
     input_name: &str,
     process: &T,
     process_s: &S,
