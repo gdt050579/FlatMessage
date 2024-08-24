@@ -12,6 +12,8 @@ pub enum Error {
     UnknownHash(u32),
     InvalidFieldOffset((u32, u32)),
     FailToDeserialize(u32),
+    NameNotStored,
+    UnmatchedName,
 }
 
 impl fmt::Display for Error {
@@ -51,6 +53,8 @@ impl fmt::Display for Error {
                 expected, actual
             ),
             Error::FailToDeserialize(hash) => write!(f, "Fail to deserialize field with hash: 0x{:08X}", hash),
+            Error::NameNotStored => write!(f, "The name has was not stored in the deserialization buffer and can not be compared with the nema of the structure !"),
+            Error::UnmatchedName => write!(f, "The structure name does not match the name found in the deserialization buffer !"),
         }
     }
 }

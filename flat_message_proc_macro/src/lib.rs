@@ -18,6 +18,7 @@ pub fn FlatMessage(args: TokenStream, input: TokenStream) -> TokenStream {
 pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut store_name = true;
     let mut add_metadata = true;
+    let mut validate_name = false;
     let mut version = 0u8;
 
     let attrs = attribute_parser::parse(args);
@@ -25,16 +26,21 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
         match attr_name.as_str() {
             "store_name" => store_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
             "metadata" => add_metadata = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
+            "validate_name" => validate_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
             "version" => version = utils::to_version(&attr_value).expect(format!("Invalid version value ('{}') for attribute '{}'. Allowed values are between 1 and 255 !",attr_value, attr_name).as_str()),
             _ => {
-                panic!("Unknown attribute: {}. Supported attributes are: 'store_name', 'metadata' and 'version' !", attr_name);
+                panic!("Unknown attribute: {}. Supported attributes are: 'store_name', 'metadata', 'validate_name' and 'version' !", attr_name);
             }
         }
     }
     let input = parse_macro_input!(input as DeriveInput);
 
+    if (store_name == false) && (validate_name == true) {
+        panic!("You can not use the attribute 'validate_name' with value 'true' unless the attribute 'store_name' is also set to 'true'.  If this was allowed, you will not be able to deserialize a structure of this type !");
+    }
+
     if let syn::Data::Struct(s) = &input.data {
-        let si = match StructInfo::new(&input, s, store_name, add_metadata, version ) {
+        let si = match StructInfo::new(&input, s, store_name, add_metadata, version, validate_name ) {
             Ok(si) => si,
             Err(e) => panic!("Error => {}", e),
         };

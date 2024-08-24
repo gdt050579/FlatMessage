@@ -494,9 +494,45 @@ fn check_structure_information_with_match() {
     assert_eq!(si.version(), None);
     if let Some(name) = si.name() {
         match name {
-            name!("TestStruct") => {},
+            name!("TestStruct") => {}
             name!("TestStruct2") => panic!("Invalid name"),
             _ => panic!("Invalid name"),
         }
     }
+}
+
+#[test]
+fn check_serde_name_validation() {
+    #[flat_message(metadata: false, validate_name: true)]
+    struct TestStruct1 {
+        value: u64,
+    }
+    #[flat_message(metadata: false)]
+    struct TestStruct2 {
+        value: u64,
+    }
+    let a_1 = TestStruct1 { value: 12 };
+    let a_2 = TestStruct2 { value: 24 };
+
+
+    let mut output_1 = Vec::new();
+    let mut output_2 = Vec::new();
+    a_1.serialize_to(&mut output_1);
+    a_2.serialize_to(&mut output_2);
+    
+    // from TestStruct1 to TestStruct1
+    let b = TestStruct1::deserialize_from(output_1.as_slice()).unwrap();
+    assert_eq!(a_1.value, b.value);
+    
+    // from TestStruct1 to TestStruct2 (no validation name required -> should be possible)
+    let b = TestStruct2::deserialize_from(output_1.as_slice()).unwrap();
+    assert_eq!(a_1.value, b.value);
+
+    // from TestStruct2 to TestStruct1 (validation name required -> should not be possible)
+    let b = TestStruct1::deserialize_from(output_2.as_slice());
+    assert_eq!(b.is_err(), true);
+
+    // from TestStruct2 to TestStruct2
+    let b = TestStruct2::deserialize_from(output_2.as_slice()).unwrap();
+    assert_eq!(a_2.value, b.value);
 }

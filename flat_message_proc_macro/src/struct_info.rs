@@ -12,6 +12,7 @@ pub(crate) struct StructInfo<'a> {
     fields: Vec<FieldInfo>,
     store_name: bool,
     add_metadata: bool,
+    validate_name: bool,
     version: u8,
 }
 
@@ -194,6 +195,25 @@ impl<'a> StructInfo<'a> {
             quote! {}
         }
     }
+    fn generate_name_validation_code(&self)->proc_macro2::TokenStream {
+        if self.validate_name {
+            let has_name = constants::FLAG_HAS_NAME_HASH;
+            let has_crc = constants::FLAG_HAS_CRC;
+            let name_hash = hashes::fnv_32(self.name.to_string().as_str());
+            quote! {
+                let name_offset = if header.flags & #has_crc != 0 { len - 8 } else { len - 4 };
+                if header.flags & #has_name == 0 {
+                    return Err(flat_message::Error::NameNotStored);
+                }
+                if unsafe { ptr::read_unaligned(buffer.add(name_offset) as *const u32) } != #name_hash {
+                    return Err(flat_message::Error::UnmatchedName); 
+                }
+
+            }
+        } else {
+            quote! {}
+        }
+    }
     fn generate_header_deserialization_code(&self)->proc_macro2::TokenStream {
         let magic = constants::MAGIC_V1;
         let has_crc = constants::FLAG_HAS_CRC;
@@ -201,6 +221,7 @@ impl<'a> StructInfo<'a> {
         let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
         let has_unique_id = constants::FLAG_HAS_UNIQUEID;
         let metadata_code = self.generate_metadata_deserialization_code();
+        let name_validation = self.generate_name_validation_code();
 
         quote!{
             use ::std::ptr;
@@ -249,6 +270,8 @@ impl<'a> StructInfo<'a> {
                 }
                 // read metada if case
                 #metadata_code
+                // validate name
+                #name_validation
 
                 let hash_table_offset = len - ref_table_size - metadata_size - hash_table_size;
                 let ref_table_offset = hash_table_offset + hash_table_size;  
@@ -524,6 +547,7 @@ impl<'a> StructInfo<'a> {
         store_name: bool,
         add_metadata: bool,
         version: u8,
+        validate_name: bool,
     ) -> Result<Self, String> {
         if let syn::Fields::Named(fields) = &d.fields {
             let mut data_members: Vec<FieldInfo> = Vec::with_capacity(32);
@@ -550,6 +574,7 @@ impl<'a> StructInfo<'a> {
                 store_name,
                 add_metadata,
                 version,
+                validate_name,
                 visibility: &input.vis,
                 generics: &input.generics,
                 name: &input.ident,                
