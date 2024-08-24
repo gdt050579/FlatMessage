@@ -514,16 +514,15 @@ fn check_serde_name_validation() {
     let a_1 = TestStruct1 { value: 12 };
     let a_2 = TestStruct2 { value: 24 };
 
-
     let mut output_1 = Vec::new();
     let mut output_2 = Vec::new();
     a_1.serialize_to(&mut output_1);
     a_2.serialize_to(&mut output_2);
-    
+
     // from TestStruct1 to TestStruct1
     let b = TestStruct1::deserialize_from(output_1.as_slice()).unwrap();
     assert_eq!(a_1.value, b.value);
-    
+
     // from TestStruct1 to TestStruct2 (no validation name required -> should be possible)
     let b = TestStruct2::deserialize_from(output_1.as_slice()).unwrap();
     assert_eq!(a_1.value, b.value);
@@ -537,30 +536,64 @@ fn check_serde_name_validation() {
     assert_eq!(a_2.value, b.value);
 }
 
-
+#[test]
 fn check_serde_version_compatibility_check() {
-    mod V1 {
+    mod v1 {
         use flat_message::*;
         #[flat_message(version: 1, compatible_versions: "1")]
-        struct TestStruct {
-            value: u64,
+        pub struct TestStruct {
+            pub value: u64,
         }
     }
-    mod V2 {
+    mod v2 {
         use flat_message::*;
         #[flat_message(version: 2, compatible_versions: "1,2")]
-        struct TestStruct {
-            value: u64,
-            extra: u64,
+        pub struct TestStruct {
+            pub value: u64,
         }
     }
-    mod V3 {
+    mod v3 {
         use flat_message::*;
         #[flat_message(version: 3, compatible_versions: "<3")]
-        struct TestStruct {
-            value: u64,
-            extra: u64,
-            extra2: u64,
+        pub struct TestStruct {
+            pub value: u64,
         }
     }
+    let mut o1 = Vec::new();
+    let mut o2 = Vec::new();
+    let mut o3 = Vec::new();
+    v3::TestStruct {
+        value: 3,
+        metadata: MetaDataBuilder::new()
+            .timestamp(333)
+            .unique_id(33)
+            .build(),
+    }.serialize_to(&mut o3);
+    v2::TestStruct {
+        value: 2,
+        metadata: MetaDataBuilder::new()
+            .timestamp(222)
+            .unique_id(22)
+            .build(),
+    }.serialize_to(&mut o2);
+    v1::TestStruct {
+        value: 1,
+        metadata: MetaDataBuilder::new()
+            .timestamp(111)
+            .unique_id(11)
+            .build(),
+    }.serialize_to(&mut o1);
+    let v1_from_v3 = v1::TestStruct::deserialize_from(o3.as_slice());
+    let v1_from_v2 = v1::TestStruct::deserialize_from(o2.as_slice());
+    let v2_from_v3 = v2::TestStruct::deserialize_from(o3.as_slice());
+    let v3_from_v1 = v3::TestStruct::deserialize_from(o1.as_slice());
+    let v3_from_v2 = v3::TestStruct::deserialize_from(o2.as_slice());
+    let v2_from_v1 = v2::TestStruct::deserialize_from(o1.as_slice());
+    assert_eq!(v1_from_v2.err(), Some(flat_message::Error::IncompatibleVersion(2)));
+    assert_eq!(v1_from_v3.err(), Some(flat_message::Error::IncompatibleVersion(3)));
+    assert_eq!(v2_from_v3.err(), Some(flat_message::Error::IncompatibleVersion(3)));
+    assert_eq!(v3_from_v1.unwrap().value, 1);
+    assert_eq!(v3_from_v2.unwrap().value, 2);
+    assert_eq!(v2_from_v1.unwrap().value, 1);
+
 }
