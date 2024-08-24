@@ -10,6 +10,7 @@ use version_validator_parser::VersionValidatorParser;
 use syn::{parse_macro_input, DeriveInput};
 use core::panic;
 use std::str::FromStr;
+
 extern crate proc_macro;
 
 #[allow(non_snake_case)]
@@ -34,7 +35,7 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
             "validate_name" => validate_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
             "version" => version = utils::to_version(&attr_value).expect(format!("Invalid version value ('{}') for attribute '{}'. Allowed values are between 1 and 255 !",attr_value, attr_name).as_str()),
             "compatible_versions" => {
-                match VersionValidatorParser::try_from(attr_value.as_str()) {
+                match VersionValidatorParser::try_from(attr_value.replace("\"", "").as_str()) {
                     Ok(cv) => compatible_versions = Some(cv),
                     Err(def) => panic!("Fail to parse compatible_versions: {}", def),
                 }

@@ -224,6 +224,11 @@ impl<'a> StructInfo<'a> {
         let has_unique_id = constants::FLAG_HAS_UNIQUEID;
         let metadata_code = self.generate_metadata_deserialization_code();
         let name_validation = self.generate_name_validation_code();
+        let version_compatibility_check = if let Some(compatible_versions) = &self.compatible_versions {
+            compatible_versions.generate_code()
+        } else {
+            quote! {}
+        };
 
         quote!{
             use ::std::ptr;
@@ -241,6 +246,7 @@ impl<'a> StructInfo<'a> {
                 if header.magic != #magic {
                     return Err(flat_message::Error::InvalidMagic);
                 }
+                #version_compatibility_check
                 let mut metadata_size = 0usize;
                 if header.flags & #has_crc != 0 {
                     metadata_size += 4;

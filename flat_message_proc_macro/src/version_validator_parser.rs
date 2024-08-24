@@ -1,3 +1,5 @@
+use quote::quote;   
+
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum VersionToken {
     Number(u8),
@@ -145,6 +147,39 @@ impl VersionValidatorParser {
                 }
             }
             _ => Err(format!("Unkown version format express: '{}'", expr_name)),
+        }
+    }
+    pub fn generate_code(&self) -> proc_macro2::TokenStream {
+        let mut v = Vec::new();
+        let mut idx = 1;
+        while idx<256 {
+            if self.list[idx] {
+                let start = idx;
+                while idx<256 && self.list[idx] {
+                    idx += 1;
+                }
+                let end = idx - 1;
+                if start == end {
+                    let s_u8 = start as u8;
+                    v.push(quote! {#s_u8 => {}, });
+                } else {
+                    let s_u8 = start as u8;
+                    let e_u8 = end as u8;
+                    v.push(quote! {#s_u8..=#e_u8 => {}, });
+                }
+            } else {
+                idx += 1;
+            }
+        }
+        if v.len() == 0 {
+            quote! {}
+        } else {
+            quote! {
+                match header.version {
+                    #(#v)*
+                    _ => return Err(Error::IncompatibleVersion(header.version)),
+                }
+            }
         }
     }
 }

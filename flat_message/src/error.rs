@@ -9,6 +9,7 @@ pub enum Error {
     InvalidSizeToStoreMetaData((u32, u32)),
     InvalidHash((u32, u32)),
     InvalidSizeToStoreFieldsTable((u32, u32)),
+    IncompatibleVersion(u8),
     UnknownHash(u32),
     InvalidFieldOffset((u32, u32)),
     FailToDeserialize(u32),
@@ -55,6 +56,7 @@ impl fmt::Display for Error {
             Error::FailToDeserialize(hash) => write!(f, "Fail to deserialize field with hash: 0x{:08X}", hash),
             Error::NameNotStored => write!(f, "The name has was not stored in the deserialization buffer and can not be compared with the nema of the structure !"),
             Error::UnmatchedName => write!(f, "The structure name does not match the name found in the deserialization buffer !"),
+            Error::IncompatibleVersion(version) => write!(f, "Incompatible version: '{}'", version),
         }
     }
 }

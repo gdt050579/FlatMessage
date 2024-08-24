@@ -536,3 +536,31 @@ fn check_serde_name_validation() {
     let b = TestStruct2::deserialize_from(output_2.as_slice()).unwrap();
     assert_eq!(a_2.value, b.value);
 }
+
+
+fn check_serde_version_compatibility_check() {
+    mod V1 {
+        use flat_message::*;
+        #[flat_message(version: 1, compatible_versions: "1")]
+        struct TestStruct {
+            value: u64,
+        }
+    }
+    mod V2 {
+        use flat_message::*;
+        #[flat_message(version: 2, compatible_versions: "1,2")]
+        struct TestStruct {
+            value: u64,
+            extra: u64,
+        }
+    }
+    mod V3 {
+        use flat_message::*;
+        #[flat_message(version: 3, compatible_versions: "<3")]
+        struct TestStruct {
+            value: u64,
+            extra: u64,
+            extra2: u64,
+        }
+    }
+}
