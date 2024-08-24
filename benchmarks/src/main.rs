@@ -128,17 +128,26 @@ fn de_test_flexbuffers<S: DeserializeOwned>(input: &[u8]) -> S {
 
 // ----------------------------------------------------------------------------
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+enum Mode {
+    Serialize,
+    Deserialize,
+}
+
 struct Result {
-    name: String,
+    name: &'static str,
+    top_test_name: &'static str,
     time: Duration,
     time_s: String,
     size: usize,
+    mode: Mode,
 }
 
 const ITERATIONS: u32 = 1_000_000;
 
 fn se_bench<T, FS: Fn(&T, &mut Vec<u8>)>(
-    test_name: &str,
+    top_test_name: &'static str,
+    test_name: &'static str,
     x: &T,
     serialize: FS,
     vec: &mut Vec<u8>,
@@ -152,16 +161,18 @@ fn se_bench<T, FS: Fn(&T, &mut Vec<u8>)>(
     }
     let time = start.elapsed();
     results.push(Result {
-        name: format!("{}", test_name),
+        name: test_name,
+        top_test_name,
         time,
         time_s: format!("{:.2}", time.as_secs_f64() * 1000.0),
         size: vec.len(),
+        mode: Mode::Serialize,
     });
 }
 
 fn de_bench<T, FD: Fn(&[u8]) -> T>(
-    test_name: &str,
-    input_name: &str,
+    top_test_name: &'static str,
+    test_name: &'static str,
     deserialize: FD,
     input: &[u8],
     results: &mut Vec<Result>,
@@ -172,33 +183,33 @@ fn de_bench<T, FD: Fn(&[u8]) -> T>(
     }
     let time = start.elapsed();
     results.push(Result {
-        name: format!("{}~{}", test_name, input_name),
+        name: test_name,
+        top_test_name,
         time,
         time_s: format!("{:.2}", time.as_secs_f64() * 1000.0),
         size: 0,
+        mode: Mode::Deserialize,
     });
 }
 
 fn bench<T, FS: Fn(&T, &mut Vec<u8>), FD: Fn(&[u8]) -> T>(
-    test_name: &str,
-    input_name: &str,
+    top_test_name: &'static str,
+    test_name: &'static str,
     x: &T,
     serialize: FS,
     deserialize: FD,
-    se_results: &mut Vec<Result>,
-    de_results: &mut Vec<Result>,
+    results: &mut Vec<Result>,
 ) {
     let vec = &mut Vec::with_capacity(4096);
-    se_bench(test_name, x, serialize, vec, se_results);
-    de_bench(test_name, input_name, deserialize, vec, de_results);
+    se_bench(top_test_name, test_name, x, serialize, vec, results);
+    de_bench(top_test_name, test_name, deserialize, vec, results);
 }
 
 fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
-    name: &str,
+    top_test_name: &'static str,
     t: &T,
     s: &S,
-    se_results: &mut Vec<Result>,
-    de_results: &mut Vec<Result>,
+    results: &mut Vec<Result>,
 ) {
     // Little hack to redirect the deserialize_from to deserialize_from_unchecked
     // Just for testing, don't actually do this.
@@ -235,131 +246,141 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     let wrapper = Wrapper(t.clone());
 
     bench(
+        top_test_name,
         "flat_message",
-        name,
         t,
         se_test_flat_message,
         de_test_flat_message,
-        se_results,
-        de_results,
+        results,
     );
     bench(
+        top_test_name,
         "flat_message_unchecked",
-        name,
         &wrapper,
         se_test_flat_message,
         de_test_flat_message,
-        se_results,
-        de_results,
+        results,
     );
     bench(
+        top_test_name,
         "rmp_schema",
-        name,
         s,
         se_test_rmp_schema,
         de_test_rmp,
-        se_results,
-        de_results,
+        results,
     );
     bench(
+        top_test_name,
         "rmp_schemaless",
-        name,
         s,
         se_test_rmp_schemaless,
         de_test_rmp,
-        se_results,
-        de_results,
+        results,
     );
     bench(
+        top_test_name,
         "bincode",
-        name,
         s,
         se_test_bincode,
         de_test_bincode,
-        se_results,
-        de_results,
+        results,
     );
     bench(
+        top_test_name,
         "flexbuffers",
-        name,
         s,
         se_test_flexbuffers,
         de_test_flexbuffers,
-        se_results,
-        de_results,
+        results,
     );
     bench(
+        top_test_name,
         "cbor",
-        name,
         s,
         se_test_cbor,
         de_test_cbor,
-        se_results,
-        de_results,
+        results,
     );
     bench(
+        top_test_name,
         "bson",
-        name,
         s,
         se_test_bson,
         de_test_bson,
-        se_results,
-        de_results,
+        results,
     );
     bench(
+        top_test_name,
         "json",
-        name,
         s,
         se_test_json,
         de_test_json,
-        se_results,
-        de_results,
+        results,
     );
 }
 
-fn print_one(input_name: &str, mode: &str, results: &mut Vec<Result>) {
-    results.sort_by_key(|x| x.time);
+fn print_results(results: &mut Vec<Result>) {
+    results.sort_by(|x, y| {
+        x.top_test_name
+            .cmp(&y.top_test_name)
+            .then(x.mode.cmp(&y.mode).then(x.time.cmp(&y.time)))
+    });
 
     let mut ascii_table = AsciiTable::default();
     ascii_table.set_max_width(100);
     ascii_table
         .column(0)
-        .set_header("name")
+        .set_header("mode")
         .set_align(Align::Left);
     ascii_table
         .column(1)
+        .set_header("top name")
+        .set_align(Align::Left);
+    ascii_table
+        .column(2)
+        .set_header("name")
+        .set_align(Align::Left);
+    ascii_table
+        .column(3)
         .set_header("size (b)")
         .set_align(Align::Right);
     ascii_table
-        .column(2)
+        .column(4)
         .set_header("time (ms)")
         .set_align(Align::Right);
 
-    let mut r: Vec<[&dyn Display; 3]> = Vec::new();
+    let mut r: Vec<[&dyn Display; 5]> = Vec::new();
+    let mut last = None;
     for i in results {
-        r.push([&i.name, &i.size, &i.time_s]);
+        let current = Some((i.top_test_name, i.mode));
+        if !last.is_none() && last != current {
+            r.push([&"---", &"---", &"---", &"---", &"---"]);
+        }
+        last = current;
+
+        let mode: &dyn Display = match i.mode {
+            Mode::Serialize => &"s",
+            Mode::Deserialize => &"d",
+        };
+        r.push([mode, &i.top_test_name, &i.name, &i.size, &i.time_s]);
+
     }
 
-    println!("-- {} -- {} --", input_name, mode);
     ascii_table.print(r);
 }
 
 fn do_one<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
-    input_name: &str,
+    top_test_name: &'static str,
     process: &T,
     process_s: &S,
+    results: &mut Vec<Result>,
 ) {
-    let se_results = &mut Vec::with_capacity(16);
-    let de_results = &mut Vec::with_capacity(16);
-    add_benches(input_name, process, process_s, se_results, de_results);
-
-    print_one(input_name, "se", se_results);
-    print_one(input_name, "de", de_results);
+    add_benches(top_test_name, process, process_s, results);
 }
 
 fn main() {
     println!("iterations: {}", ITERATIONS);
-
+    let results = &mut Vec::new();
     {
         let process_small = ProcessCreated {
             name: String::from("C:\\Windows\\System32\\example.exe"),
@@ -385,7 +406,7 @@ fn main() {
             unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
             version: NonZeroU8::new(1).unwrap(),
         };
-        do_one("small", &process_small, &process_s_small);
+        do_one("small", &process_small, &process_s_small, results);
     }
     {
         let repeat = 100;
@@ -415,6 +436,8 @@ fn main() {
             unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
             version: NonZeroU8::new(1).unwrap(),
         };
-        do_one("big", &process, &process_s);
+        do_one("big", &process, &process_s, results);
     }
+
+    print_results(results);
 }
