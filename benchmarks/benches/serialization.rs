@@ -103,32 +103,34 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     };
     let mut output = Vec::new();
 
-    let mut group = c.benchmark_group("🐱‍👤");
+    let mut group = c.benchmark_group("serialization");
 
-    group.bench_with_input(BenchmarkId::new("flat_message", "_"), &(), |b, _| {
-        b.iter(|| test_flat_message(black_box(&process), black_box(&mut output)))
-    });
-    group.bench_with_input(BenchmarkId::new("cbor", "_"), &(), |b, _| {
-        b.iter(|| test_cbor(black_box(&process_s), black_box(&mut output)))
-    });
-    group.bench_with_input(BenchmarkId::new("json", "_"), &(), |b, _| {
-        b.iter(|| test_json(black_box(&process_s), black_box(&mut output)))
-    });
-    group.bench_with_input(BenchmarkId::new("bson", "_"), &(), |b, _| {
-        b.iter(|| test_bson(black_box(&process_s)))
-    });
-    group.bench_with_input(BenchmarkId::new("rmp_schema", "_"), &(), |b, _| {
-        b.iter(|| test_rmp_schema(black_box(&process_s), black_box(&mut output)))
-    });
-    group.bench_with_input(BenchmarkId::new("rmp_schemaless", "_"), &(), |b, _| {
-        b.iter(|| test_rmp_schemaless(black_box(&process_s), black_box(&mut output)))
-    });
-    group.bench_with_input(BenchmarkId::new("bincode", "_"), &(), |b, _| {
-        b.iter(|| test_bincode(black_box(&process_s), black_box(&mut output)))
-    });
-    group.bench_with_input(BenchmarkId::new("flexbuffers", "_"), &(), |b, _| {
-        b.iter(|| test_flexbuffers(black_box(&process_s)))
-    });
+    if false {
+        group.bench_with_input(BenchmarkId::new("flat_message", "_"), &(), |b, _| {
+            b.iter(|| test_flat_message(black_box(&process), black_box(&mut output)))
+        });
+        group.bench_with_input(BenchmarkId::new("cbor", "_"), &(), |b, _| {
+            b.iter(|| test_cbor(black_box(&process_s), black_box(&mut output)))
+        });
+        group.bench_with_input(BenchmarkId::new("json", "_"), &(), |b, _| {
+            b.iter(|| test_json(black_box(&process_s), black_box(&mut output)))
+        });
+        group.bench_with_input(BenchmarkId::new("bson", "_"), &(), |b, _| {
+            b.iter(|| test_bson(black_box(&process_s)))
+        });
+        group.bench_with_input(BenchmarkId::new("rmp_schema", "_"), &(), |b, _| {
+            b.iter(|| test_rmp_schema(black_box(&process_s), black_box(&mut output)))
+        });
+        group.bench_with_input(BenchmarkId::new("rmp_schemaless", "_"), &(), |b, _| {
+            b.iter(|| test_rmp_schemaless(black_box(&process_s), black_box(&mut output)))
+        });
+        group.bench_with_input(BenchmarkId::new("bincode", "_"), &(), |b, _| {
+            b.iter(|| test_bincode(black_box(&process_s), black_box(&mut output)))
+        });
+        group.bench_with_input(BenchmarkId::new("flexbuffers", "_"), &(), |b, _| {
+            b.iter(|| test_flexbuffers(black_box(&process_s)))
+        });
+    }
 }
 
 criterion_group!(benches, criterion_benchmark);

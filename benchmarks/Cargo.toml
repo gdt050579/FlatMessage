@@ -20,7 +20,11 @@ ascii_table = "4"
 criterion = "0.5.1"
 
 [[bench]]
-name = "b"
+name = "deserialization"
+harness = false
+
+[[bench]]
+name = "serialization"
 harness = false
 
 [lints]
