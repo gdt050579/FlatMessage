@@ -1,6 +1,7 @@
 use ascii_table::{Align, AsciiTable};
 use flat_message::{flat_message, FlatMessage};
-use serde::Serialize;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::{
     hint::black_box,
@@ -21,9 +22,9 @@ struct ProcessCreated {
     command_line: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct ProcessCreatedS {
-    struct_name: &'static str,
+    struct_name: String,
     name: String,
     pid: u32,
     parent_pid: u32,
@@ -35,37 +36,84 @@ struct ProcessCreatedS {
     version: NonZeroU8,
 }
 
-fn test_flat_message<'a,T:  FlatMessage<'a>>(process: &T, output: &mut Vec<u8>) {
+pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
+impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_flat_message<'a, T: FlatMessage<'a>>(process: &T, output: &mut Vec<u8>) {
     process.serialize_to(output);
 }
 
-fn test_bson<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn de_test_flat_message<T: FlatMessageOwned>(input: &[u8]) -> T {
+    T::deserialize_from(input).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_bson<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     *output = bson::to_vec(&process).unwrap();
 }
 
-fn test_cbor<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn de_test_bson<S: DeserializeOwned>(input: &[u8]) -> S {
+    bson::from_slice(&input).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_cbor<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     ciborium::into_writer(process, &mut *output).unwrap();
 }
 
-fn test_json<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn de_test_cbor<S: DeserializeOwned>(input: &[u8]) -> S {
+    ciborium::from_reader(input).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_json<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     serde_json::to_writer(&mut *output, process).unwrap();
 }
 
-fn test_rmp_schema<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn de_test_json<S: DeserializeOwned>(input: &[u8]) -> S {
+    serde_json::from_slice(input).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_rmp_schema<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     rmp_serde::encode::write(output, process).unwrap();
 }
 
-fn test_rmp_schemaless<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_rmp_schemaless<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     rmp_serde::encode::write_named(output, process).unwrap();
 }
 
-fn test_bincode<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn de_test_rmp<S: DeserializeOwned>(input: &[u8]) -> S {
+    rmp_serde::decode::from_slice(input).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_bincode<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     bincode::serialize_into(&mut *output, process).unwrap();
 }
 
-fn test_flexbuffers<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn de_test_bincode<S: DeserializeOwned>(input: &[u8]) -> S {
+    bincode::deserialize(input).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_flexbuffers<S: Serialize>(process: &S, output: &mut Vec<u8>) {
     *output = flexbuffers::to_vec(process).unwrap();
 }
+
+fn de_test_flexbuffers<S: DeserializeOwned>(input: &[u8]) -> S {
+    flexbuffers::from_slice(input).unwrap()
+}
+
+// ----------------------------------------------------------------------------
 
 struct Result {
     name: String,
@@ -76,18 +124,18 @@ struct Result {
 
 const ITERATIONS: u32 = 1_000_000;
 
-fn bench<T, F: Fn(&T, &mut Vec<u8>)>(
+fn se_bench<T, FS: Fn(&T, &mut Vec<u8>)>(
     test_name: &str,
     input_name: &str,
     x: &T,
-    f: F,
+    serialize: FS,
+    vec: &mut Vec<u8>,
     results: &mut Vec<Result>,
 ) {
-    let mut vec = Vec::with_capacity(4096);
     let start = Instant::now();
     for _ in 0..ITERATIONS {
         vec.clear();
-        black_box(f(x, &mut vec));
+        black_box(serialize(x, vec));
         black_box(vec.len());
     }
     let time = start.elapsed();
@@ -99,20 +147,122 @@ fn bench<T, F: Fn(&T, &mut Vec<u8>)>(
     });
 }
 
-fn add_benches<'a, T: FlatMessage<'a>, S: Serialize>(name: &str, t: &T, s: &S, results: &mut Vec<Result>) {
-    bench("flat_message", name, t, test_flat_message, results);
-    bench("cbor", name, s, test_cbor, results);
-    bench("bson", name, s, test_bson, results);
-    bench("json", name, s, test_json, results);
-    bench("rmp_schema", name, s, test_rmp_schema, results);
-    bench("rmp_schemaless", name, s, test_rmp_schemaless, results);
-    bench("bincode", name, s, test_bincode, results);
-    bench("flexbuffers", name, s, test_flexbuffers, results);
+fn de_bench<T, FD: Fn(&[u8]) -> T>(
+    test_name: &str,
+    input_name: &str,
+    deserialize: FD,
+    input: &[u8],
+    results: &mut Vec<Result>,
+) {
+    let start = Instant::now();
+    for _ in 0..ITERATIONS {
+        black_box(deserialize(black_box(input)));
+    }
+    let time = start.elapsed();
+    results.push(Result {
+        name: format!("{}~{}", test_name, input_name),
+        time,
+        time_s: format!("{:.2}", time.as_secs_f64() * 1000.0),
+        size: 0,
+    });
 }
 
-fn do_one<'a, T: FlatMessage<'a>, S: Serialize>(input_name: &str, process: &T, process_s: &S) {
-    let results = &mut Vec::with_capacity(16);
-    add_benches(input_name, process, process_s, results);
+fn bench<T, FS: Fn(&T, &mut Vec<u8>), FD: Fn(&[u8]) -> T>(
+    test_name: &str,
+    input_name: &str,
+    x: &T,
+    serialize: FS,
+    deserialize: FD,
+    se_results: &mut Vec<Result>,
+    de_results: &mut Vec<Result>,
+) {
+    let vec = &mut Vec::with_capacity(4096);
+    se_bench(test_name, input_name, x, serialize, vec, se_results);
+    de_bench(test_name, input_name, deserialize, vec, de_results);
+}
+
+fn add_benches<'a, T: FlatMessageOwned, S: Serialize + DeserializeOwned>(
+    name: &str,
+    t: &T,
+    s: &S,
+    se_results: &mut Vec<Result>,
+    de_results: &mut Vec<Result>,
+) {
+    bench(
+        "flat_message",
+        name,
+        t,
+        se_test_flat_message,
+        de_test_flat_message,
+        se_results,
+        de_results,
+    );
+    bench(
+        "rmp_schema",
+        name,
+        s,
+        se_test_rmp_schema,
+        de_test_rmp,
+        se_results,
+        de_results,
+    );
+    bench(
+        "rmp_schemaless",
+        name,
+        s,
+        se_test_rmp_schemaless,
+        de_test_rmp,
+        se_results,
+        de_results,
+    );
+    bench(
+        "bincode",
+        name,
+        s,
+        se_test_bincode,
+        de_test_bincode,
+        se_results,
+        de_results,
+    );
+    bench(
+        "flexbuffers",
+        name,
+        s,
+        se_test_flexbuffers,
+        de_test_flexbuffers,
+        se_results,
+        de_results,
+    );
+    bench(
+        "cbor",
+        name,
+        s,
+        se_test_cbor,
+        de_test_cbor,
+        se_results,
+        de_results,
+    );
+    bench(
+        "bson",
+        name,
+        s,
+        se_test_bson,
+        de_test_bson,
+        se_results,
+        de_results,
+    );
+    bench(
+        "json",
+        name,
+        s,
+        se_test_json,
+        de_test_json,
+        se_results,
+        de_results,
+    );
+}
+
+fn print_one(input_name: &str, mode: &str, results: &mut Vec<Result>) {
     results.sort_by_key(|x| x.time);
 
     let mut ascii_table = AsciiTable::default();
@@ -135,14 +285,28 @@ fn do_one<'a, T: FlatMessage<'a>, S: Serialize>(input_name: &str, process: &T, p
         r.push([&i.name, &i.size, &i.time_s]);
     }
 
+    println!("-- {} -- {} --", input_name, mode);
     ascii_table.print(r);
+}
+
+fn do_one<'a, T: FlatMessageOwned, S: Serialize + DeserializeOwned>(
+    input_name: &str,
+    process: &T,
+    process_s: &S,
+) {
+    let se_results = &mut Vec::with_capacity(16);
+    let de_results = &mut Vec::with_capacity(16);
+    add_benches(input_name, process, process_s, se_results, de_results);
+
+    print_one(input_name, "se", se_results);
+    print_one(input_name, "de", de_results);
 }
 
 fn main() {
     println!("iterations: {}", ITERATIONS);
 
     {
-        let process = ProcessCreated {
+        let process_small = ProcessCreated {
             name: String::from("C:\\Windows\\System32\\example.exe"),
             pid: 1234,
             parent_pid: 1,
@@ -154,8 +318,8 @@ fn main() {
                 .unique_id(0xABABABAB)
                 .build(),
         };
-        let process_s = ProcessCreatedS {
-            struct_name: "ProcessCreated",
+        let process_s_small = ProcessCreatedS {
+            struct_name: "ProcessCreated".to_string(),
             name: String::from("C:\\Windows\\System32\\example.exe"),
             pid: 1234,
             parent_pid: 1,
@@ -166,7 +330,7 @@ fn main() {
             unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
             version: NonZeroU8::new(1).unwrap(),
         };
-        do_one("small", &process, &process_s);
+        do_one("small", &process_small, &process_s_small);
     }
     {
         let repeat = 100;
@@ -184,7 +348,7 @@ fn main() {
                 .build(),
         };
         let process_s = ProcessCreatedS {
-            struct_name: "ProcessCreated",
+            struct_name: "ProcessCreated".to_string(),
             name: String::from("C:\\Windows\\System32\\example.exe").repeat(repeat),
             pid: 1234,
             parent_pid: 1,
