@@ -528,7 +528,7 @@ impl<'a> StructInfo<'a> {
             })
         });
         let metadata_field = if self.add_metadata {
-            quote! {metadata: flat_message::MetaData}
+            quote! {#visibility metadata: flat_message::MetaData}
         } else {
             quote! {}
         };
