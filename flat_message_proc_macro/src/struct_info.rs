@@ -1,10 +1,12 @@
 use crate::field_info::FieldInfo;
+use crate::version_validator_parser::VersionValidatorParser;
 use common::hashes;
 use common::constants;
 use quote::quote;
 use syn::{DataStruct, FieldsNamed, DeriveInput};
 
 pub(crate) struct StructInfo<'a> {
+    compatible_versions: Option<VersionValidatorParser>,
     fields_name: &'a FieldsNamed,
     visibility: &'a syn::Visibility,
     generics: &'a syn::Generics,
@@ -548,6 +550,7 @@ impl<'a> StructInfo<'a> {
         add_metadata: bool,
         version: u8,
         validate_name: bool,
+        compatible_versions: Option<VersionValidatorParser>,
     ) -> Result<Self, String> {
         if let syn::Fields::Named(fields) = &d.fields {
             let mut data_members: Vec<FieldInfo> = Vec::with_capacity(32);
@@ -575,6 +578,7 @@ impl<'a> StructInfo<'a> {
                 add_metadata,
                 version,
                 validate_name,
+                compatible_versions,
                 visibility: &input.vis,
                 generics: &input.generics,
                 name: &input.ident,                

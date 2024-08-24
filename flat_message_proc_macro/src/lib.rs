@@ -2,9 +2,13 @@ mod attribute_parser;
 mod field_info;
 mod struct_info;
 mod utils;
+mod version_validator_parser;
+
 use proc_macro::*;
 use struct_info::StructInfo;
+use version_validator_parser::VersionValidatorParser;
 use syn::{parse_macro_input, DeriveInput};
+use core::panic;
 use std::str::FromStr;
 extern crate proc_macro;
 
@@ -20,6 +24,7 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut add_metadata = true;
     let mut validate_name = false;
     let mut version = 0u8;
+    let mut compatible_versions = None;
 
     let attrs = attribute_parser::parse(args);
     for (attr_name, attr_value) in attrs.iter() {
@@ -28,8 +33,14 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
             "metadata" => add_metadata = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
             "validate_name" => validate_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
             "version" => version = utils::to_version(&attr_value).expect(format!("Invalid version value ('{}') for attribute '{}'. Allowed values are between 1 and 255 !",attr_value, attr_name).as_str()),
+            "compatible_versions" => {
+                match VersionValidatorParser::try_from(attr_value.as_str()) {
+                    Ok(cv) => compatible_versions = Some(cv),
+                    Err(def) => panic!("Fail to parse compatible_versions: {}", def),
+                }
+            }
             _ => {
-                panic!("Unknown attribute: {}. Supported attributes are: 'store_name', 'metadata', 'validate_name' and 'version' !", attr_name);
+                panic!("Unknown attribute: {}. Supported attributes are: 'store_name', 'metadata', 'validate_name', 'compatible_versions' and 'version' !", attr_name);
             }
         }
     }
@@ -40,7 +51,7 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 
     if let syn::Data::Struct(s) = &input.data {
-        let si = match StructInfo::new(&input, s, store_name, add_metadata, version, validate_name ) {
+        let si = match StructInfo::new(&input, s, store_name, add_metadata, version, validate_name, compatible_versions ) {
             Ok(si) => si,
             Err(e) => panic!("Error => {}", e),
         };
