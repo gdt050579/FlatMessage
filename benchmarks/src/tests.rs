@@ -564,36 +564,65 @@ fn check_serde_version_compatibility_check() {
     let mut o3 = Vec::new();
     v3::TestStruct {
         value: 3,
-        metadata: MetaDataBuilder::new()
-            .timestamp(333)
-            .unique_id(33)
-            .build(),
-    }.serialize_to(&mut o3);
+        metadata: MetaDataBuilder::new().timestamp(333).unique_id(33).build(),
+    }
+    .serialize_to(&mut o3);
     v2::TestStruct {
         value: 2,
-        metadata: MetaDataBuilder::new()
-            .timestamp(222)
-            .unique_id(22)
-            .build(),
-    }.serialize_to(&mut o2);
+        metadata: MetaDataBuilder::new().timestamp(222).unique_id(22).build(),
+    }
+    .serialize_to(&mut o2);
     v1::TestStruct {
         value: 1,
-        metadata: MetaDataBuilder::new()
-            .timestamp(111)
-            .unique_id(11)
-            .build(),
-    }.serialize_to(&mut o1);
+        metadata: MetaDataBuilder::new().timestamp(111).unique_id(11).build(),
+    }
+    .serialize_to(&mut o1);
     let v1_from_v3 = v1::TestStruct::deserialize_from(o3.as_slice());
     let v1_from_v2 = v1::TestStruct::deserialize_from(o2.as_slice());
     let v2_from_v3 = v2::TestStruct::deserialize_from(o3.as_slice());
     let v3_from_v1 = v3::TestStruct::deserialize_from(o1.as_slice());
     let v3_from_v2 = v3::TestStruct::deserialize_from(o2.as_slice());
     let v2_from_v1 = v2::TestStruct::deserialize_from(o1.as_slice());
-    assert_eq!(v1_from_v2.err(), Some(flat_message::Error::IncompatibleVersion(2)));
-    assert_eq!(v1_from_v3.err(), Some(flat_message::Error::IncompatibleVersion(3)));
-    assert_eq!(v2_from_v3.err(), Some(flat_message::Error::IncompatibleVersion(3)));
+    assert_eq!(
+        v1_from_v2.err(),
+        Some(flat_message::Error::IncompatibleVersion(2))
+    );
+    assert_eq!(
+        v1_from_v3.err(),
+        Some(flat_message::Error::IncompatibleVersion(3))
+    );
+    assert_eq!(
+        v2_from_v3.err(),
+        Some(flat_message::Error::IncompatibleVersion(3))
+    );
     assert_eq!(v3_from_v1.unwrap().value, 1);
     assert_eq!(v3_from_v2.unwrap().value, 2);
     assert_eq!(v2_from_v1.unwrap().value, 1);
+}
 
+#[test]
+fn check_derive() {
+    #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+    #[flat_message]
+    struct TestStruct {
+        a: i32,
+        b: bool,
+        c: u16,
+    }
+    let v1 = TestStruct {
+        a: 1,
+        b: true,
+        c: 123,
+        metadata: MetaDataBuilder::new().timestamp(1).unique_id(2).build(),
+    };
+    let v2 = v1;
+    assert_eq!(v1.a, v2.a);
+    assert_eq!(v1.b, v2.b);
+    assert_eq!(v1.c, v2.c);
+    assert_eq!(v1.metadata, v2.metadata);
+    assert_eq!(v1, v2);
+    let mut storage = Vec::new();
+    v1.serialize_to(&mut storage);
+    let v3 = TestStruct::deserialize_from(storage.as_slice()).unwrap();
+    assert_eq!(v1, v3);
 }
