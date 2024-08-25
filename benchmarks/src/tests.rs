@@ -626,3 +626,27 @@ fn check_derive() {
     let v3 = TestStruct::deserialize_from(storage.as_slice()).unwrap();
     assert_eq!(v1, v3);
 }
+
+#[test]
+fn check_clone() {
+    #[flat_message]
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    struct TestStruct {
+        a: String,
+        b: String,
+    }
+    let v1 = TestStruct {
+        a: "Hello".to_string(),
+        b: "World".to_string(),
+        metadata: MetaDataBuilder::new().timestamp(1).unique_id(2).build(),
+    };
+    let v2 = v1.clone();
+    assert_eq!(v1.a, v2.a);
+    assert_eq!(v1.b, v2.b);
+    assert_eq!(v1.metadata, v2.metadata);
+    assert_eq!(v1, v2);
+    let mut storage = Vec::new();
+    v1.serialize_to(&mut storage);
+    let v3 = TestStruct::deserialize_from(storage.as_slice()).unwrap();
+    assert_eq!(v1, v3);
+}

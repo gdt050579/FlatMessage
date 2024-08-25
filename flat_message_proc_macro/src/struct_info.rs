@@ -3,6 +3,7 @@ use crate::version_validator_parser::VersionValidatorParser;
 use common::hashes;
 use common::constants;
 use quote::quote;
+use syn::Attribute;
 use syn::{DataStruct, FieldsNamed, DeriveInput};
 
 pub(crate) struct StructInfo<'a> {
@@ -16,6 +17,7 @@ pub(crate) struct StructInfo<'a> {
     add_metadata: bool,
     validate_name: bool,
     version: u8,
+    derives: Vec<&'a Attribute>,
 }
 
 impl<'a> StructInfo<'a> {
@@ -535,7 +537,9 @@ impl<'a> StructInfo<'a> {
         let metadata_methods = self.generate_metadata_methods();
         let serialize_to_methods = self.generate_serialize_to_methods();
         let deserialize_from_methods = self.generate_deserialize_from_methods();
+        let derives = &self.derives;
         let new_code = quote! {
+            #(#derives)*
             #visibility struct #name #generics {
                 #(#struct_fields)*
                 #metadata_field
@@ -573,6 +577,15 @@ impl<'a> StructInfo<'a> {
             for (idx, dm) in data_members.iter_mut().enumerate() {
                 dm.hash_table_order = idx as u32;
             }
+
+            // generate a list of derives
+            let mut derives = Vec::new();
+            for attr in input.attrs.iter() {
+                if attr.path().is_ident("derive") {                    
+                    derives.push(attr);
+                }
+            }
+
             // now sort the key backwards based on their serialization alignament
             data_members.sort_unstable_by_key(|field_info| {
                 usize::MAX - field_info.serialization_alignament
@@ -587,7 +600,8 @@ impl<'a> StructInfo<'a> {
                 compatible_versions,
                 visibility: &input.vis,
                 generics: &input.generics,
-                name: &input.ident,                
+                name: &input.ident,  
+                derives,              
             })
         } else {
             Err("Can not read fields from the structure !".to_string())
