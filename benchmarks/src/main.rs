@@ -11,31 +11,9 @@ use std::{
 
 #[cfg(test)]
 mod tests;
+mod structures;
 
-#[flat_message]
-#[derive(Clone)]
-struct ProcessCreated {
-    name: String,
-    pid: u32,
-    parent_pid: u32,
-    parent: String,
-    user: String,
-    command_line: String,
-}
 
-#[derive(Serialize, Deserialize)]
-struct ProcessCreatedS {
-    struct_name: String,
-    name: String,
-    pid: u32,
-    parent_pid: u32,
-    parent: String,
-    user: String,
-    command_line: String,
-    timestamp: NonZeroU64,
-    unique_id: NonZeroU64,
-    version: NonZeroU8,
-}
 
 // ----------------------------------------------------------------------------
 
@@ -367,61 +345,25 @@ fn main() {
     println!("iterations: {}", ITERATIONS);
     let results = &mut Vec::new();
     {
-        let process_small = ProcessCreated {
-            name: String::from("C:\\Windows\\System32\\example.exe"),
-            pid: 1234,
-            parent_pid: 1,
-            parent: String::from("C:\\Windows\\System32\\explorer.exe"),
-            user: String::from("Administrator"),
-            command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
-            metadata: flat_message::MetaDataBuilder::new()
-                .timestamp(0xFEFEFEFE)
-                .unique_id(0xABABABAB)
-                .build(),
-        };
-        let process_s_small = ProcessCreatedS {
-            struct_name: "ProcessCreated".to_string(),
-            name: String::from("C:\\Windows\\System32\\example.exe"),
-            pid: 1234,
-            parent_pid: 1,
-            parent: String::from("C:\\Windows\\System32\\explorer.exe"),
-            user: String::from("Administrator"),
-            command_line: String::from("-help -verbose -debug -output C:\\output.txt"),
-            timestamp: NonZeroU64::new(0xFEFEFEFE).unwrap(),
-            unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
-            version: NonZeroU8::new(1).unwrap(),
-        };
-        do_one("small", &process_small, &process_s_small, results);
+        let process_small = structures::process_create::generate_flat();
+        let process_s_small = structures::process_create::generate_other();
+        do_one("process_create", &process_small, &process_s_small, results);
     }
     {
-        let repeat = 100;
-        let process = ProcessCreated {
-            name: String::from("C:\\Windows\\System32\\example.exe").repeat(repeat),
-            pid: 1234,
-            parent_pid: 1,
-            parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
-            user: String::from("Administrator").repeat(repeat),
-            command_line: String::from("-help -verbose -debug -output C:\\output.txt")
-                .repeat(repeat),
-            metadata: flat_message::MetaDataBuilder::new()
-                .timestamp(0xFEFEFEFE)
-                .unique_id(0xABABABAB)
-                .build(),
-        };
-        let process_s = ProcessCreatedS {
-            struct_name: "ProcessCreated".to_string(),
-            name: String::from("C:\\Windows\\System32\\example.exe").repeat(repeat),
-            pid: 1234,
-            parent_pid: 1,
-            parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
-            user: String::from("Administrator").repeat(repeat),
-            command_line: String::from("-help -verbose -debug -output C:\\output.txt")
-                .repeat(repeat),
-            timestamp: NonZeroU64::new(0xFEFEFEFE).unwrap(),
-            unique_id: NonZeroU64::new(0xABABABAB).unwrap(),
-            version: NonZeroU8::new(1).unwrap(),
-        };
-        do_one("big", &process, &process_s, results);
+        let s = structures::long_strings::generate(100);
+        do_one("long_strings", &s, &s, results);
+    }
+    {
+        let s = structures::point::generate();
+        do_one("point", &s, &s, results);
+    }
+    {
+        let s = structures::one_bool::generate();
+        do_one("one_bool", &s, &s, results);
+    }
+    {
+        let s = structures::multiple_fields::generate();
+        do_one("multiple_fields", &s, &s, results);
     }
 
     print_results(results);
