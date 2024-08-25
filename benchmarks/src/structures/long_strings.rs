@@ -18,7 +18,7 @@ pub fn generate(count: usize)->LongStringStructure {
         string_two: "How are you doing ?".repeat(count),
         string_three: "Testing".repeat(count),
         string_four: "X".repeat(count),
-        value_one: u32::MAX,
-        value_two: u64::MAX,
+        value_one: 1000000,
+        value_two: 1000000000,
     }
 }

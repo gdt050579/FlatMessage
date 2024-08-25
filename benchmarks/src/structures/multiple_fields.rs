@@ -36,12 +36,12 @@ pub struct MultipleFields {
 pub fn generate() -> MultipleFields {
     MultipleFields {
         field_of_type_string: "Hello, World".to_string(),
-        field_of_type_u32: u32::MAX,
-        field_of_type_u64: u64::MAX,
-        field_of_type_i32: i32::MIN,
-        field_of_type_i64: i64::MIN,
-        field_of_type_f32: f32::MAX,
-        field_of_type_f64: f64::MAX,
+        field_of_type_u32: 123456,
+        field_of_type_u64: 123456789,
+        field_of_type_i32: -123456,
+        field_of_type_i64: -123456789,
+        field_of_type_f32: 123.625,
+        field_of_type_f64: 12345.6789,
         field_of_type_bool: false,
         field_of_type_u8: u8::MAX,
         field_of_type_i8: i8::MIN,
@@ -60,7 +60,7 @@ pub fn generate() -> MultipleFields {
         fourth_field_of_type_string: "Here are some possible values".to_string(),
         fourth_field_of_type_u32: 100000,
         fourth_field_of_type_u64: 200000,
-        fourth_field_of_type_i32:300000,
+        fourth_field_of_type_i32: 300000,
         fourth_field_of_type_i64: -100000,
     }
 }

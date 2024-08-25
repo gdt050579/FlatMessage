@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::{
     hint::black_box,
-    num::{NonZeroU64, NonZeroU8},
     time::{Duration, Instant},
 };
 
