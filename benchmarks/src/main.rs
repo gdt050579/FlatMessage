@@ -1,5 +1,5 @@
 use ascii_table::{Align, AsciiTable};
-use flat_message::{flat_message, FlatMessage};
+use flat_message::{flat_message, FlatMessage, FlatMessageOwned};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -13,6 +13,7 @@ use std::{
 mod tests;
 
 #[flat_message]
+#[derive(Clone)]
 struct ProcessCreated {
     name: String,
     pid: u32,
@@ -20,19 +21,6 @@ struct ProcessCreated {
     parent: String,
     user: String,
     command_line: String,
-}
-impl Clone for ProcessCreated {
-    fn clone(&self) -> Self {
-        Self {
-            name: self.name.clone(),
-            pid: self.pid.clone(),
-            parent_pid: self.parent_pid.clone(),
-            parent: self.parent.clone(),
-            user: self.user.clone(),
-            command_line: self.command_line.clone(),
-            metadata: self.metadata.clone(),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -48,9 +36,6 @@ struct ProcessCreatedS {
     unique_id: NonZeroU64,
     version: NonZeroU8,
 }
-
-pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
-impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
 
 // ----------------------------------------------------------------------------
 
