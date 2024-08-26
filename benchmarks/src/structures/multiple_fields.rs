@@ -1,7 +1,7 @@
 use flat_message::*;
 use serde::{Deserialize, Serialize};
 
-#[flat_message(metadata: false)]
+#[flat_message(metadata: false, store_name: false)]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct MultipleFields {
     field_of_type_string: String,

@@ -364,6 +364,9 @@ fn main() {
         let s = structures::multiple_fields::generate();
         do_one("multiple_fields", &s, &s, results);
     }
-
+    {
+        let s = structures::multiple_integers::generate();
+        do_one("multiple_integers", &s, &s, results);
+    }
     print_results(results);
 }

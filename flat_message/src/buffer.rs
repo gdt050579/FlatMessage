@@ -5,7 +5,12 @@ pub(crate) enum WriteSizeMethod {
 }
 
 #[inline(always)]
-pub(crate) unsafe fn write_size(p: *mut u8, pos: usize, value: u32, method: WriteSizeMethod) -> usize {
+pub(crate) unsafe fn write_size(
+    p: *mut u8,
+    pos: usize,
+    value: u32,
+    method: WriteSizeMethod,
+) -> usize {
     match method {
         WriteSizeMethod::DWORD => unsafe {
             (p.add(pos) as *mut u32).write_unaligned(value);
@@ -31,18 +36,68 @@ pub(crate) unsafe fn write_size(p: *mut u8, pos: usize, value: u32, method: Writ
 }
 
 #[inline(always)]
-pub(crate) fn read_size(p: *const u8, pos: usize, method: WriteSizeMethod) -> (usize, usize) {
+pub(crate) unsafe fn read_size_unchecked(
+    p: *const u8,
+    pos: usize,
+    method: WriteSizeMethod,
+) -> (usize, usize) {
     match method {
-        WriteSizeMethod::DWORD => unsafe {
-            ((p.add(pos) as *mut u32).read_unaligned() as usize, 4)
-        },
-        WriteSizeMethod::FEFFMarker => unsafe {
+        WriteSizeMethod::DWORD => ((p.add(pos) as *mut u32).read_unaligned() as usize, 4),
+        WriteSizeMethod::FEFFMarker => {
             let p = p.add(pos);
             let first = p.read_unaligned();
             match first {
                 0xFE => ((p.add(1) as *mut u16).read_unaligned() as usize, 3),
                 0xFF => ((p.add(1) as *mut u32).read_unaligned() as usize, 5),
                 _ => (first as usize, 1),
+            }
+        }
+    }
+}
+
+#[inline(always)]
+pub(crate) fn read_size(
+    p: *const u8,
+    pos: usize,
+    len: usize,
+    method: WriteSizeMethod,
+) -> Option<(usize, usize)> {
+    match method {
+        WriteSizeMethod::DWORD => {
+            if pos + 4 > len {
+                None
+            } else {
+                Some((
+                    unsafe { (p.add(pos) as *mut u32).read_unaligned() as usize },
+                    4,
+                ))
+            }
+        }
+        WriteSizeMethod::FEFFMarker => unsafe {
+            let p = p.add(pos);
+            let first = p.read_unaligned();
+            match first {
+                0xFE => {
+                    if pos + 3 > len {
+                        None
+                    } else {
+                        Some((
+                            (p.add(1) as *mut u16).read_unaligned() as usize,
+                            3,
+                        ))
+                    }
+                },
+                0xFF => {
+                    if pos + 5 > len {
+                        None
+                    } else {
+                        Some((
+                            (p.add(1) as *mut u32).read_unaligned() as usize,
+                            5,
+                        ))
+                    }
+                },
+                _ => Some((first as usize, 1)),
             }
         },
     }
