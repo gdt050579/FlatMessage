@@ -201,7 +201,7 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             _ => return Err(Error::InvalidOffsetSize),
         };
         let mut metadata_size = 0usize;
-        if header.flags & constants::FLAG_HAS_CRC != 0 {
+        if header.flags & constants::FLAG_HAS_CHECKSUM != 0 {
             metadata_size += 4;
         }
         if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
@@ -265,7 +265,7 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             None
         };
         #[cfg(feature = "VALIDATE_CRC32")]
-        if header.flags & constants::FLAG_HAS_CRC != 0 {
+        if header.flags & constants::FLAG_HAS_CHECKSUM != 0 {
             let crc = unsafe { buffer::read::<u32>(p, offset)} ;
             let calculated_crc = hashes::crc32(&buf[..offset]);
             if crc != calculated_crc {

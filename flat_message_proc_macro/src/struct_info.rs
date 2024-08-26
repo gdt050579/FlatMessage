@@ -71,6 +71,7 @@ impl<'a> StructInfo<'a> {
         let timestamp_flag = constants::FLAG_HAS_TIMESTAMP;
         let unique_id_flag = constants::FLAG_HAS_UNIQUEID;
         let name_hash_flag = constants::FLAG_HAS_NAME_HASH;
+        let checksum_flag = constants::FLAG_HAS_CHECKSUM;
         if self.config.metadata {
             lines.push(quote! {
                 let metadata = self.metadata();
@@ -87,6 +88,12 @@ impl<'a> StructInfo<'a> {
         if self.config.namehash {
             lines.push(quote! {
                 flags |= #name_hash_flag;
+                metainfo_size += 4;
+            });
+        }
+        if self.config.checksum {
+            lines.push(quote! {
+                flags |= #checksum_flag;
                 metainfo_size += 4;
             });
         }
@@ -199,7 +206,7 @@ impl<'a> StructInfo<'a> {
     fn generate_name_validation_code(&self)->proc_macro2::TokenStream {
         if self.config.validate_name {
             let has_name = constants::FLAG_HAS_NAME_HASH;
-            let has_crc = constants::FLAG_HAS_CRC;
+            let has_crc = constants::FLAG_HAS_CHECKSUM;
             let name_hash = hashes::fnv_32(self.name.to_string().as_str());
             quote! {
                 let name_offset = if header.flags & #has_crc != 0 { len - 8 } else { len - 4 };
@@ -217,7 +224,7 @@ impl<'a> StructInfo<'a> {
     }
     fn generate_header_deserialization_code(&self)->proc_macro2::TokenStream {
         let magic = constants::MAGIC_V1;
-        let has_crc = constants::FLAG_HAS_CRC;
+        let has_crc = constants::FLAG_HAS_CHECKSUM;
         let has_name = constants::FLAG_HAS_NAME_HASH;
         let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
         let has_unique_id = constants::FLAG_HAS_UNIQUEID;
@@ -391,6 +398,14 @@ impl<'a> StructInfo<'a> {
         let flags_code = self.generate_flags_code();
         let magic = constants::MAGIC_V1;
         let version = self.config.version;
+        let checksum_code = if self.config.checksum {
+            quote! {
+                let checksum = flat_message::crc32(&output[..size - 4]);
+                (buffer.add(size - 4) as *mut u32).write_unaligned(checksum);
+            }
+        } else {
+            quote! {}
+        };
 
         quote! {
             fn serialize_to(&self,output: &mut Vec<u8>) {
@@ -417,11 +432,6 @@ impl<'a> StructInfo<'a> {
                 // Step 4: compute aditional size of metainformation
                 let mut metadata_offset = size;
                 size += metainfo_size;
-                // Step 5: add CRC32 information (if needed)
-                #[cfg(feature = "check_crc32")]
-                {
-                    size += 4;
-                }
                 // Step 6: create a header
                 let header = flat_message::headers::HeaderV1 {
                     magic: #magic,
@@ -453,11 +463,7 @@ impl<'a> StructInfo<'a> {
                     // metadata
                     #(#metadata_serialization_code)*
                     // CRC32 if case
-                    #[cfg(feature = "check_crc32")]
-                    {
-                        let hash = flat_message::crc32(&output[..size - 4]);
-                        buf.add(size - 4).write_unaligned(hash);
-                    }
+                    #checksum_code
                 }
             }
         }

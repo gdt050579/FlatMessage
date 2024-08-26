@@ -650,3 +650,56 @@ fn check_clone() {
     let v3 = TestStruct::deserialize_from(storage.as_slice()).unwrap();
     assert_eq!(v1, v3);
 }
+
+#[test]
+fn check_serialization_checksum() {
+    #[flat_message(checksum: true, store_name: false, metadata: false)]
+    struct TestStruct1 {
+        value: u32,
+    }
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct2 {
+        value: u32,
+    }
+    let v1 = TestStruct1 { value: 123456 };
+    let v2 = TestStruct2 { value: 123456 };
+    let mut storage = Vec::new();
+    v1.serialize_to(&mut storage);
+    let expected_output = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    assert_eq!(storage, expected_output);
+    let len_v1 = storage.len();
+    v2.serialize_to(&mut storage);
+    let expected_output = vec![71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8];
+    assert_eq!(storage, expected_output);
+    let len_v2 = storage.len();
+    // TestStruct1 has 4 bytes more than TestStruct2 (for the checksum)
+    assert_eq!(len_v1, len_v2 + 4);
+}
+
+
+#[test]
+fn check_serde_with_checksum() {
+    #[flat_message(checksum: true, store_name: false, metadata: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b: bool,
+        name: String,
+        surname: &'a str,
+        age: i32
+    }
+    let s= TestStruct {
+        value: 123456,
+        b: true,
+        name: "John".to_string(),
+        surname: "Doe",
+        age: 30
+    };
+    let mut storage = Vec::new();
+    s.serialize_to(&mut storage);
+    let ds = TestStruct::deserialize_from(storage.as_slice()).unwrap();
+    assert_eq!(s.age, ds.age);
+    assert_eq!(s.b, ds.b);
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.name, ds.name);
+    assert_eq!(s.surname, ds.surname);
+}

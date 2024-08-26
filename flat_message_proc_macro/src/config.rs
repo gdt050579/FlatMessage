@@ -15,7 +15,7 @@ impl Config {
     pub(crate) fn new(args: TokenStream) -> Self {
         let mut store_name = true;
         let mut add_metadata = true;
-        let mut add_checksum = true;
+        let mut add_checksum = false;
         let mut validate_name = false;
         let mut version = 0u8;
         let mut compatible_versions = None;
@@ -25,7 +25,7 @@ impl Config {
             match attr_name.as_str() {
                 "store_name" => store_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
                 "metadata" => add_metadata = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
-                "chacksum" => add_checksum = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
+                "checksum" => add_checksum = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
                 "validate_name" => validate_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
                 "version" => version = utils::to_version(&attr_value).expect(format!("Invalid version value ('{}') for attribute '{}'. Allowed values are between 1 and 255 !",attr_value, attr_name).as_str()),
                 "compatible_versions" => {

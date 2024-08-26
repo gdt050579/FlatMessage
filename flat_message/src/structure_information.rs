@@ -38,9 +38,9 @@ impl TryFrom<&[u8]> for StructureInformation {
         let header: headers::HeaderV1 = unsafe { buffer::read(p, 0) };
         if header.magic != constants::MAGIC_V1 {
             return Err(Error::InvalidMagic);
-        }
+        } 
         let mut metadata_size = 0usize;
-        if header.flags & constants::FLAG_HAS_CRC != 0 {
+        if header.flags & constants::FLAG_HAS_CHECKSUM != 0 {
             metadata_size += 4;
         }
         if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
