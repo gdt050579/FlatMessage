@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::field_info::FieldInfo;
 use crate::version_validator_parser::VersionValidatorParser;
 use common::hashes;
@@ -7,22 +8,18 @@ use syn::Attribute;
 use syn::{DataStruct, FieldsNamed, DeriveInput};
 
 pub(crate) struct StructInfo<'a> {
-    compatible_versions: Option<VersionValidatorParser>,
     fields_name: &'a FieldsNamed,
     visibility: &'a syn::Visibility,
     generics: &'a syn::Generics,
     name: &'a syn::Ident,
     fields: Vec<FieldInfo>,
-    store_name: bool,
-    add_metadata: bool,
-    validate_name: bool,
-    version: u8,
+    config: Config,
     derives: Vec<&'a Attribute>,
 }
 
 impl<'a> StructInfo<'a> {
     fn generate_metadata_methods(&self) -> proc_macro2::TokenStream {
-        if self.add_metadata {
+        if self.config.metadata {
             quote! {
                 fn metadata(&self)-> &flat_message::MetaData {
                     &self.metadata
@@ -44,7 +41,7 @@ impl<'a> StructInfo<'a> {
 
     fn generate_metadata_serialization_code(&self) -> Vec<proc_macro2::TokenStream> {
         let mut lines = Vec::with_capacity(8);
-        if self.add_metadata {
+        if self.config.metadata {
             lines.push(quote! {
                 let metadata = self.metadata();
                 if let Some(timestamp) = metadata.timestamp() {
@@ -57,7 +54,7 @@ impl<'a> StructInfo<'a> {
                 }
             });
         }
-        if self.store_name {
+        if self.config.namehash {
             let name_hash = hashes::fnv_32(self.name.to_string().as_str());
             lines.push(quote! {
                 ptr::write_unaligned(buffer.add(metadata_offset) as *mut u32, #name_hash);
@@ -74,7 +71,7 @@ impl<'a> StructInfo<'a> {
         let timestamp_flag = constants::FLAG_HAS_TIMESTAMP;
         let unique_id_flag = constants::FLAG_HAS_UNIQUEID;
         let name_hash_flag = constants::FLAG_HAS_NAME_HASH;
-        if self.add_metadata {
+        if self.config.metadata {
             lines.push(quote! {
                 let metadata = self.metadata();
                 if metadata.timestamp().is_some() {
@@ -87,7 +84,7 @@ impl<'a> StructInfo<'a> {
                 }
             });
         }
-        if self.store_name {
+        if self.config.namehash {
             lines.push(quote! {
                 flags |= #name_hash_flag;
                 metainfo_size += 4;
@@ -179,7 +176,7 @@ impl<'a> StructInfo<'a> {
         v
     }
     fn generate_metadata_deserialization_code(&self)->proc_macro2::TokenStream {
-        if self.add_metadata {
+        if self.config.metadata {
             let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
             let has_unique_id = constants::FLAG_HAS_UNIQUEID;
             quote! {
@@ -200,7 +197,7 @@ impl<'a> StructInfo<'a> {
         }
     }
     fn generate_name_validation_code(&self)->proc_macro2::TokenStream {
-        if self.validate_name {
+        if self.config.validate_name {
             let has_name = constants::FLAG_HAS_NAME_HASH;
             let has_crc = constants::FLAG_HAS_CRC;
             let name_hash = hashes::fnv_32(self.name.to_string().as_str());
@@ -226,7 +223,7 @@ impl<'a> StructInfo<'a> {
         let has_unique_id = constants::FLAG_HAS_UNIQUEID;
         let metadata_code = self.generate_metadata_deserialization_code();
         let name_validation = self.generate_name_validation_code();
-        let version_compatibility_check = if let Some(compatible_versions) = &self.compatible_versions {
+        let version_compatibility_check = if let Some(compatible_versions) = &self.config.compatible_versions {
             compatible_versions.generate_code()
         } else {
             quote! {}
@@ -368,7 +365,7 @@ impl<'a> StructInfo<'a> {
                 #field_name: #iner_value,
             })
         });
-        let metadata_field = if self.add_metadata {
+        let metadata_field = if self.config.metadata {
             quote! {
                 metadata: flat_message::MetaDataBuilder::new().timestamp(timestamp).unique_id(unique_id).build()    
             } 
@@ -393,7 +390,7 @@ impl<'a> StructInfo<'a> {
         let compute_size_code = self.generate_compute_size_code();
         let flags_code = self.generate_flags_code();
         let magic = constants::MAGIC_V1;
-        let version = self.version;
+        let version = self.config.version;
 
         quote! {
             fn serialize_to(&self,output: &mut Vec<u8>) {
@@ -529,7 +526,7 @@ impl<'a> StructInfo<'a> {
                 #field,
             })
         });
-        let metadata_field = if self.add_metadata {
+        let metadata_field = if self.config.metadata {
             quote! {#visibility metadata: flat_message::MetaData}
         } else {
             quote! {}
@@ -556,11 +553,7 @@ impl<'a> StructInfo<'a> {
     pub(crate) fn new(
         input: &'a DeriveInput,
         d: &'a DataStruct,
-        store_name: bool,
-        add_metadata: bool,
-        version: u8,
-        validate_name: bool,
-        compatible_versions: Option<VersionValidatorParser>,
+        config: Config
     ) -> Result<Self, String> {
         if let syn::Fields::Named(fields) = &d.fields {
             let mut data_members: Vec<FieldInfo> = Vec::with_capacity(32);
@@ -593,11 +586,7 @@ impl<'a> StructInfo<'a> {
             Ok(StructInfo {
                 fields_name: fields,
                 fields: data_members,
-                store_name,
-                add_metadata,
-                version,
-                validate_name,
-                compatible_versions,
+                config,
                 visibility: &input.vis,
                 generics: &input.generics,
                 name: &input.ident,  
