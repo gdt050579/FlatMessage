@@ -703,3 +703,83 @@ fn check_serde_with_checksum() {
     assert_eq!(s.name, ds.name);
     assert_eq!(s.surname, ds.surname);
 }
+
+#[test]
+fn check_deserialization_checksum_always() {
+    #[flat_message(checksum: true, store_name: false, metadata: false, validate_checksum: always)]
+    struct TestStruct {
+        value: u32,
+    }
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
+    assert_eq!(v.value, 123456);
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 255, 255, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let v = TestStruct::deserialize_from(buffer.as_slice());
+    match v.err() {
+        Some(flat_message::Error::InvalidChecksum(_)) => {}
+        _ => panic!("Invalid error - expected InvalidChecksum"),
+    }
+}
+
+#[test]
+fn check_deserialization_checksum_auto() {
+    #[flat_message(checksum: true, store_name: false, metadata: false)]
+    struct TestStruct {
+        value: u32,
+    }
+    // valid checksum
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
+    assert_eq!(v.value, 123456);
+    // invalid checksum
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 255, 255, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let v = TestStruct::deserialize_from(buffer.as_slice());
+    match v.err() {
+        Some(flat_message::Error::InvalidChecksum(_)) => {}
+        _ => panic!("Invalid error - expected InvalidChecksum"),
+    }
+    // checksum is missing
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8];
+    let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
+    assert_eq!(v.value, 123456);
+}
+
+#[test]
+fn check_deserialization_checksum_ignore() {
+    #[flat_message(checksum: true, store_name: false, metadata: false, validate_checksum: ignore)]
+    struct TestStruct {
+        value: u32,
+    }
+    // valid checksum
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
+    assert_eq!(v.value, 123456);
+    // invalid checksum (deserialization should still happen)
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 255, 255, 255, 255];
+    let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
+    assert_eq!(v.value, 123456);
+    // checksum is missing
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8];
+    let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
+    assert_eq!(v.value, 123456);
+}
+
+#[test]
+fn check_deserialization_checksum_unchecked_always() {
+    #[flat_message(checksum: true, store_name: false, metadata: false, validate_checksum: always)]
+    struct TestStruct {
+        value: u32,
+    }
+    // valid checksum
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let v = unsafe { TestStruct::deserialize_from_unchecked(buffer.as_slice()).unwrap() };
+    assert_eq!(v.value, 123456);
+    // invalid checksum (deserialization should still happen)
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 255, 255, 255, 255];
+    let v = unsafe { TestStruct::deserialize_from_unchecked(buffer.as_slice()).unwrap() };
+    assert_eq!(v.value, 123456);
+    // checksum is missing (deserialization should still happen)
+    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8];
+    let v = unsafe { TestStruct::deserialize_from_unchecked(buffer.as_slice()).unwrap() };
+    assert_eq!(v.value, 123456);
+}

@@ -15,6 +15,8 @@ pub enum Error {
     FailToDeserialize(u32),
     NameNotStored,
     UnmatchedName,
+    ChecksumNotStored,
+    InvalidChecksum((u32, u32)),
 }
 
 impl fmt::Display for Error {
@@ -57,6 +59,12 @@ impl fmt::Display for Error {
             Error::NameNotStored => write!(f, "The name has was not stored in the deserialization buffer and can not be compared with the nema of the structure !"),
             Error::UnmatchedName => write!(f, "The structure name does not match the name found in the deserialization buffer !"),
             Error::IncompatibleVersion(version) => write!(f, "Incompatible version: '{}'", version),
+            Error::ChecksumNotStored => write!(f, "The checksum was not stored in the deserialization buffer and can not be compared with the checksum of the structure !"),
+            Error::InvalidChecksum((actual, expected)) => write!(
+                f,
+                "Invalid checksum (expected: 0x{:08X} - but found: 0x{:08X})",
+                expected, actual
+            ),
         }
     }
 }

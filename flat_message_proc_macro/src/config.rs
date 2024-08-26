@@ -1,6 +1,8 @@
-use crate::{attribute_parser, utils, version_validator_parser::VersionValidatorParser};
+use crate::{
+    attribute_parser, utils, validate_checksum::{self, ValidateChecksum},
+    version_validator_parser::VersionValidatorParser,
+};
 use proc_macro::*;
-use syn::{parse_macro_input, DeriveInput};
 
 pub(crate) struct Config {
     pub(crate) namehash: bool,
@@ -9,6 +11,7 @@ pub(crate) struct Config {
     pub(crate) version: u8,
     pub(crate) validate_name: bool,
     pub(crate) compatible_versions: Option<VersionValidatorParser>,
+    pub(crate) validate_checksum: ValidateChecksum,
 }
 
 impl Config {
@@ -19,6 +22,7 @@ impl Config {
         let mut validate_name = false;
         let mut version = 0u8;
         let mut compatible_versions = None;
+        let mut validate_checksum = ValidateChecksum::Auto;
 
         let attrs = attribute_parser::parse(args);
         for (attr_name, attr_value) in attrs.iter() {
@@ -26,8 +30,9 @@ impl Config {
                 "store_name" => store_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
                 "metadata" => add_metadata = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
                 "checksum" => add_checksum = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
-                "validate_name" => validate_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
                 "version" => version = utils::to_version(&attr_value).expect(format!("Invalid version value ('{}') for attribute '{}'. Allowed values are between 1 and 255 !",attr_value, attr_name).as_str()),
+                "validate_name" => validate_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
+                "validate_checksum" => validate_checksum = validate_checksum::ValidateChecksum::from_str(attr_value.as_str()),
                 "compatible_versions" => {
                     match VersionValidatorParser::try_from(attr_value.replace("\"", "").as_str()) {
                         Ok(cv) => compatible_versions = Some(cv),
@@ -50,6 +55,7 @@ impl Config {
             checksum: add_checksum,
             version,
             validate_name,
+            validate_checksum,
             compatible_versions,
         }
     }

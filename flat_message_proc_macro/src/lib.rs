@@ -3,6 +3,7 @@ mod field_info;
 mod struct_info;
 mod utils;
 mod version_validator_parser;
+mod validate_checksum;
 mod config;
 
 use proc_macro::*;

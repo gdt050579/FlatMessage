@@ -222,6 +222,29 @@ impl<'a> StructInfo<'a> {
             quote! {}
         }
     }
+    fn generate_checksum_check_code(&self)->proc_macro2::TokenStream {
+        let has_checksum = constants::FLAG_HAS_CHECKSUM; 
+        let check_checksum_code = quote! {
+            let checksum = flat_message::crc32(&input[..len - 4]);
+            if checksum != unsafe { ptr::read_unaligned(buffer.add(len - 4) as *const u32) } {
+                return Err(flat_message::Error::InvalidChecksum((checksum, unsafe { ptr::read_unaligned(buffer.add(len - 4) as *const u32) })));  
+            }
+        };
+        match self.config.validate_checksum {
+            crate::validate_checksum::ValidateChecksum::Always => quote! {
+                if header.flags & #has_checksum == 0 {
+                    return Err(flat_message::Error::ChecksumNotStored);
+                }
+                #check_checksum_code
+            },
+            crate::validate_checksum::ValidateChecksum::Auto => quote! {
+                if header.flags & #has_checksum != 0 {
+                    #check_checksum_code
+                }
+            },
+            crate::validate_checksum::ValidateChecksum::Ignore => quote! {},
+        }
+    }
     fn generate_header_deserialization_code(&self)->proc_macro2::TokenStream {
         let magic = constants::MAGIC_V1;
         let has_crc = constants::FLAG_HAS_CHECKSUM;
@@ -476,6 +499,7 @@ impl<'a> StructInfo<'a> {
         let deserializaton_code_u8_unchecked = self.generate_fields_deserialize_code(1, true);
         let deserializaton_code_u16_unchecked = self.generate_fields_deserialize_code(2, true);
         let deserializaton_code_u32_unchecked = self.generate_fields_deserialize_code(4, true);
+        let checksum_check_code = self.generate_checksum_check_code();
 
         let ctor_code = self.generate_struct_construction_code();
         let lifetimes = &self.generics.params;
@@ -483,6 +507,7 @@ impl<'a> StructInfo<'a> {
             fn deserialize_from(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error> 
             {
                 #header_deserialization_code
+                #checksum_check_code
                 match ref_offset_size {
                     RefOffsetSize::U8 => {
                         #(#deserializaton_code_u8)*
