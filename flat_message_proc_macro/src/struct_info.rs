@@ -1,6 +1,5 @@
 use crate::config::Config;
 use crate::field_info::FieldInfo;
-use crate::version_validator_parser::VersionValidatorParser;
 use common::hashes;
 use common::constants;
 use quote::quote;
