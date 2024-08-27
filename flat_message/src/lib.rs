@@ -33,9 +33,8 @@ mod name;
 mod serde;
 mod structure_information;
 
-use std::ops::Index;
+use std::fmt::Debug;
 use std::slice;
-use std::slice::SliceIndex;
 
 pub use self::config::Config;
 pub use self::config::ConfigBuilder;
@@ -54,14 +53,42 @@ pub use common::hashes::crc32;
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
 
+#[derive(Default)]
 pub struct AlignedVec {
     vec: Vec<u128>,
     size: usize,
 }
 
+impl AlignedVec {
+    pub fn from_buffer(input: &[u8]) -> AlignedVec {
+        let mut r = AlignedVec::default();
+        r.resize_zero(input.len());
+        r.as_mut_slice().copy_from_slice(input);
+        r
+    }
+
+    #[inline]
+    fn as_mut_slice(&mut self) -> &mut [u8] {
+        unsafe { slice::from_raw_parts_mut(self.vec.as_mut_ptr() as *mut u8, self.size) }
+    }
+}
+
+impl Debug for AlignedVec {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(self.as_slice(), f)
+    }
+}
+
+impl PartialEq<AlignedVec> for AlignedVec {
+    fn eq(&self, other: &AlignedVec) -> bool {
+        self.as_slice() == other.as_slice()
+    }
+}
+
 pub trait VecLike {
     fn clear(&mut self);
     fn resize_zero(&mut self, new_len: usize);
+    fn as_ptr(&self) -> *const u8;
     fn as_mut_ptr(&mut self) -> *mut u8;
     fn len(&self) -> usize;
     fn as_slice(&self) -> &[u8];
@@ -76,6 +103,11 @@ impl VecLike for Vec<u8> {
     #[inline]
     fn resize_zero(&mut self, new_len: usize) {
         self.resize(new_len, 0);
+    }
+
+    #[inline]
+    fn as_ptr(&self) -> *const u8 {
+        self.as_ptr() as *mut u8
     }
 
     #[inline]
@@ -105,6 +137,11 @@ impl VecLike for AlignedVec {
     fn resize_zero(&mut self, new_len: usize) {
         self.vec.resize(new_len / size_of::<u128>() + 1, 0);
         self.size = new_len;
+    }
+
+    #[inline]
+    fn as_ptr(&self) -> *const u8 {
+        self.vec.as_ptr() as *const u8
     }
 
     #[inline]

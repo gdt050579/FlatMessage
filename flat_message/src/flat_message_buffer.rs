@@ -1,6 +1,8 @@
 use crate::buffer;
 use crate::headers::HeaderV1;
+use crate::AlignedVec;
 use crate::MetaData;
+use crate::VecLike;
 
 #[cfg(feature = "VALIDATE_CRC32")]
 use super::hashes;
@@ -185,10 +187,11 @@ impl FlatMessageBuffer<'_> {
     }
 }
 
-impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
+impl<'a> TryFrom<&'a AlignedVec> for FlatMessageBuffer<'a> {
     type Error = Error;
 
-    fn try_from(buf: &'a [u8]) -> Result<Self, Self::Error> {
+    fn try_from(buf: &'a AlignedVec) -> Result<Self, Self::Error> {
+        let buf = buf.as_slice();
         // validate buf length - minimum 8 bytes
         let len = buf.len();
         if len < 8 {
