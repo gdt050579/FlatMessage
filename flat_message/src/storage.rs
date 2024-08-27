@@ -1,14 +1,14 @@
 use std::{fmt::Debug, slice};
 
 #[derive(Default)]
-pub struct AlignedVec {
+pub struct Storage {
     vec: Vec<u128>,
     size: usize,
 }
 
-impl AlignedVec {
-    pub fn from_buffer(input: &[u8]) -> AlignedVec {
-        let mut r = AlignedVec::default();
+impl Storage {
+    pub fn from_buffer(input: &[u8]) -> Storage {
+        let mut r = Storage::default();
         r.resize_zero(input.len());
         r.as_mut_slice().copy_from_slice(input);
         r
@@ -19,14 +19,14 @@ impl AlignedVec {
     }
 }
 
-impl Debug for AlignedVec {
+impl Debug for Storage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(self.as_slice(), f)
     }
 }
 
-impl PartialEq<AlignedVec> for AlignedVec {
-    fn eq(&self, other: &AlignedVec) -> bool {
+impl PartialEq<Storage> for Storage {
+    fn eq(&self, other: &Storage) -> bool {
         self.as_slice() == other.as_slice()
     }
 }
@@ -60,7 +60,7 @@ impl VecLike for Vec<u8> {
     }
 }
 
-impl VecLike for AlignedVec {
+impl VecLike for Storage {
     #[inline]
     fn clear(&mut self) {
         self.vec.clear();

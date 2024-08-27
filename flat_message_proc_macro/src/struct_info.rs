@@ -534,7 +534,7 @@ impl<'a> StructInfo<'a> {
         let ctor_code = self.generate_struct_construction_code();
         let lifetimes = &self.generics.params;
         quote! {
-            fn deserialize_from(input: & #lifetimes ::flat_message::AlignedVec) -> core::result::Result<Self,flat_message::Error>
+            fn deserialize_from(input: & #lifetimes ::flat_message::Storage) -> core::result::Result<Self,flat_message::Error>
             {
                 use ::flat_message::VecLike;
                 #header_deserialization_code
@@ -554,7 +554,7 @@ impl<'a> StructInfo<'a> {
                     }
                 }
             }
-            unsafe fn deserialize_from_unchecked(input: & #lifetimes ::flat_message::AlignedVec) -> core::result::Result<Self,flat_message::Error>
+            unsafe fn deserialize_from_unchecked(input: & #lifetimes ::flat_message::Storage) -> core::result::Result<Self,flat_message::Error>
             {
                 use ::flat_message::VecLike;
                 #header_deserialization_code

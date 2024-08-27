@@ -54,5 +54,5 @@ pub use common::hashes::crc32;
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
 
-pub use storage::AlignedVec;
+pub use storage::Storage;
 pub use storage::VecLike;

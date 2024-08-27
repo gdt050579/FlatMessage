@@ -23,7 +23,7 @@ fn check_flat_message_buffer_one_field_i32() {
         my_field: 123456,
         metadata: MetaData::default(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     check_field_value!(name!("my_field"), i32, 123456, buf);
@@ -39,7 +39,7 @@ fn check_flat_message_buffer_one_field_str() {
         my_field: "Hello, World!".to_string(),
         metadata: MetaData::default(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     check_field_value!(name!("my_field"), &str, "Hello, World!", buf);
@@ -57,7 +57,7 @@ fn check_flat_message_buffer_two_fields_i32_i8() {
         dimension: -100,
         metadata: MetaData::default(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     check_field_value!(name!("size"), i32, -12345, buf);
@@ -76,7 +76,7 @@ fn check_flat_message_buffer_two_fields_string_string() {
         surname: "Doe",
         metadata: MetaData::default(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     check_field_value!(name!("name"), &str, "John", buf);
@@ -103,7 +103,7 @@ fn check_flat_message_buffer_safe() {
         average: 95.0,
         metadata: MetaData::default(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     check_field_value!(name!("name"), &str, "John", buf);
@@ -134,7 +134,7 @@ fn check_flat_message_buffer_unsafe() {
         average: 95.0,
         metadata: MetaData::default(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     check_field_value_unsafe!(name!("name"), &str, "John", buf);
@@ -168,7 +168,7 @@ fn check_flat_message_metadata() {
             .unique_id(654321)
             .build(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     let metadata = buf.metadata();
@@ -197,7 +197,7 @@ fn check_flat_message_no_metadata() {
         passed: true,
         average: 95.0,
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     let metadata = buf.metadata();
@@ -226,7 +226,7 @@ fn check_flat_message_no_metadata_no_name() {
         passed: true,
         average: 95.0,
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let buf = FlatMessageBuffer::try_from(&output).unwrap();
     let metadata = buf.metadata();
@@ -259,7 +259,7 @@ fn check_serde_full() {
             .unique_id(654321)
             .build(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestStruct::deserialize_from(&output).unwrap();
     assert_eq!(a.name, b.name);
@@ -304,7 +304,7 @@ fn check_serde_into_smaller_struct() {
             .unique_id(654321)
             .build(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestSmallerStruct::deserialize_from(&output).unwrap();
     assert_eq!(a.name, b.name);
@@ -344,7 +344,7 @@ fn check_serde_into_different_struct() {
             .unique_id(654321)
             .build(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestSmallerStruct::deserialize_from(&output);
     assert_eq!(b.is_err(), true);
@@ -384,7 +384,7 @@ fn check_serde_into_different_type() {
             .unique_id(654321)
             .build(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestStruct2::deserialize_from(&output);
     assert_eq!(b.is_err(), true);
@@ -408,7 +408,7 @@ fn check_serde_string_into_str() {
         name: "John".to_string(),
         surname: "Doe".to_string(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestStruct2::deserialize_from(&output).unwrap();
     // the following lines should not compile
@@ -441,7 +441,7 @@ fn check_serde_full_unchecked() {
             .unique_id(654321)
             .build(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = unsafe { TestStruct::deserialize_from_unchecked(&output).unwrap() };
     assert_eq!(a.name, b.name);
@@ -469,7 +469,7 @@ fn check_structure_information() {
             .unique_id(654321)
             .build(),
     };
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let si = StructureInformation::try_from(&output).unwrap();
     assert_eq!(si.timestamp(), Some(123456));
@@ -486,7 +486,7 @@ fn check_structure_information_with_match() {
     }
     let a = TestStruct { a: 12 };
 
-    let mut output = AlignedVec::default();
+    let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let si = StructureInformation::try_from(&output).unwrap();
     assert_eq!(si.timestamp(), None);
@@ -514,8 +514,8 @@ fn check_serde_name_validation() {
     let a_1 = TestStruct1 { value: 12 };
     let a_2 = TestStruct2 { value: 24 };
 
-    let mut output_1 = AlignedVec::default();
-    let mut output_2 = AlignedVec::default();
+    let mut output_1 = Storage::default();
+    let mut output_2 = Storage::default();
     a_1.serialize_to(&mut output_1, Config::default()).unwrap();
     a_2.serialize_to(&mut output_2, Config::default()).unwrap();
 
@@ -559,9 +559,9 @@ fn check_serde_version_compatibility_check() {
             pub value: u64,
         }
     }
-    let mut o1 = AlignedVec::default();
-    let mut o2 = AlignedVec::default();
-    let mut o3 = AlignedVec::default();
+    let mut o1 = Storage::default();
+    let mut o2 = Storage::default();
+    let mut o3 = Storage::default();
     v3::TestStruct {
         value: 3,
         metadata: MetaDataBuilder::new().timestamp(333).unique_id(33).build(),
@@ -624,7 +624,7 @@ fn check_derive() {
     assert_eq!(v1.c, v2.c);
     assert_eq!(v1.metadata, v2.metadata);
     assert_eq!(v1, v2);
-    let mut storage = AlignedVec::default();
+    let mut storage = Storage::default();
     v1.serialize_to(&mut storage, Config::default()).unwrap();
     let v3 = TestStruct::deserialize_from(&storage).unwrap();
     assert_eq!(v1, v3);
@@ -648,7 +648,7 @@ fn check_clone() {
     assert_eq!(v1.b, v2.b);
     assert_eq!(v1.metadata, v2.metadata);
     assert_eq!(v1, v2);
-    let mut storage = AlignedVec::default();
+    let mut storage = Storage::default();
     v1.serialize_to(&mut storage, Config::default()).unwrap();
     let v3 = TestStruct::deserialize_from(&storage).unwrap();
     assert_eq!(v1, v3);
@@ -666,7 +666,7 @@ fn check_serialization_checksum() {
     }
     let v1 = TestStruct1 { value: 123456 };
     let v2 = TestStruct2 { value: 123456 };
-    let mut storage = AlignedVec::default();
+    let mut storage = Storage::default();
     v1.serialize_to(&mut storage, Config::default()).unwrap();
     let expected_output = vec![
         71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
@@ -698,7 +698,7 @@ fn check_serde_with_checksum() {
         surname: "Doe",
         age: 30,
     };
-    let mut storage = AlignedVec::default();
+    let mut storage = Storage::default();
     s.serialize_to(&mut storage, Config::default()).unwrap();
     let ds = TestStruct::deserialize_from(&storage).unwrap();
     assert_eq!(s.age, ds.age);
@@ -714,12 +714,12 @@ fn check_deserialization_checksum_always() {
     struct TestStruct {
         value: u32,
     }
-    let buffer = AlignedVec::from_buffer(&[
+    let buffer = Storage::from_buffer(&[
         71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
     ]);
     let v = TestStruct::deserialize_from(&buffer).unwrap();
     assert_eq!(v.value, 123456);
-    let buffer = AlignedVec::from_buffer(&[
+    let buffer = Storage::from_buffer(&[
         71, 84, 72, 1, 1, 0, 0, 4, 255, 255, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
     ]);
     let v = TestStruct::deserialize_from(&buffer);
@@ -736,13 +736,13 @@ fn check_deserialization_checksum_auto() {
         value: u32,
     }
     // valid checksum
-    let buffer = AlignedVec::from_buffer(&[
+    let buffer = Storage::from_buffer(&[
         71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
     ]);
     let v = TestStruct::deserialize_from(&buffer).unwrap();
     assert_eq!(v.value, 123456);
     // invalid checksum
-    let buffer = AlignedVec::from_buffer(&[
+    let buffer = Storage::from_buffer(&[
         71, 84, 72, 1, 1, 0, 0, 4, 255, 255, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
     ]);
     let v = TestStruct::deserialize_from(&buffer);
@@ -752,7 +752,7 @@ fn check_deserialization_checksum_auto() {
     }
     // checksum is missing
     let buffer =
-        AlignedVec::from_buffer(&[71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8]);
+        Storage::from_buffer(&[71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8]);
     let v = TestStruct::deserialize_from(&buffer).unwrap();
     assert_eq!(v.value, 123456);
 }
@@ -764,20 +764,20 @@ fn check_deserialization_checksum_ignore() {
         value: u32,
     }
     // valid checksum
-    let buffer = AlignedVec::from_buffer(&[
+    let buffer = Storage::from_buffer(&[
         71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
     ]);
     let v = TestStruct::deserialize_from(&buffer).unwrap();
     assert_eq!(v.value, 123456);
     // invalid checksum (deserialization should still happen)
-    let buffer = AlignedVec::from_buffer(&[
+    let buffer = Storage::from_buffer(&[
         71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 255, 255, 255, 255,
     ]);
     let v = TestStruct::deserialize_from(&buffer).unwrap();
     assert_eq!(v.value, 123456);
     // checksum is missing
     let buffer =
-        AlignedVec::from_buffer(&[71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8]);
+        Storage::from_buffer(&[71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8]);
     let v = TestStruct::deserialize_from(&buffer).unwrap();
     assert_eq!(v.value, 123456);
 }
@@ -789,20 +789,20 @@ fn check_deserialization_checksum_unchecked_always() {
         value: u32,
     }
     // valid checksum
-    let buffer = AlignedVec::from_buffer(&[
+    let buffer = Storage::from_buffer(&[
         71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
     ]);
     let v = unsafe { TestStruct::deserialize_from_unchecked(&buffer).unwrap() };
     assert_eq!(v.value, 123456);
     // invalid checksum (deserialization should still happen)
-    let buffer = AlignedVec::from_buffer(&[
+    let buffer = Storage::from_buffer(&[
         71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 255, 255, 255, 255,
     ]);
     let v = unsafe { TestStruct::deserialize_from_unchecked(&buffer).unwrap() };
     assert_eq!(v.value, 123456);
     // checksum is missing (deserialization should still happen)
     let buffer =
-        AlignedVec::from_buffer(&[71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8]);
+        Storage::from_buffer(&[71, 84, 72, 1, 1, 0, 0, 0, 64, 226, 1, 0, 3, 211, 94, 66, 8]);
     let v = unsafe { TestStruct::deserialize_from_unchecked(&buffer).unwrap() };
     assert_eq!(v.value, 123456);
 }
@@ -813,7 +813,7 @@ fn check_max_size_for_serialization() {
     struct TestStruct {
         value: u32,
     }
-    let mut v = AlignedVec::default();
+    let mut v = Storage::default();
     let s = TestStruct {
         value: 123456,
         metadata: MetaData::default(),
@@ -836,7 +836,7 @@ fn check_serde_buffer_i8() {
         b1: &'a [i8],
         b2: Vec<i8>,
     }
-    let mut v = AlignedVec::default();
+    let mut v = Storage::default();
     let s = TestStruct {
         value: 123456,
         b1: &[-10i8, -20, -30],
@@ -857,7 +857,7 @@ fn check_serde_buffer_u8() {
         b1: &'a [u8],
         b2: Vec<u8>,
     }
-    let mut v = AlignedVec::default();
+    let mut v = Storage::default();
     let s = TestStruct {
         value: 123456,
         b1: &[200, 201, 202, 203, 255, 255, 255],
@@ -892,7 +892,7 @@ fn check_serde_buffer_u16() {
         b1: &'a [u16],
         b2: Vec<u16>,
     }
-    let mut v = AlignedVec::default();
+    let mut v = Storage::default();
     let s = TestStruct {
         value: 123456,
         b1: &[200,201,202,203,255,255,255],

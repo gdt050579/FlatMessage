@@ -2,7 +2,7 @@ use std::num::{NonZeroU64, NonZeroU8};
 
 use criterion::BenchmarkId;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use flat_message::{AlignedVec, FlatMessage, VecLike};
+use flat_message::{Storage, FlatMessage, VecLike};
 use serde::{Deserialize, Serialize};
 
 #[flat_message::flat_message]
@@ -31,14 +31,14 @@ struct ProcessCreatedS {
 
 // ----------------------------------------------------------------------------
 
-fn se_test_flat_message(process: &ProcessCreated, output: &mut AlignedVec) {
+fn se_test_flat_message(process: &ProcessCreated, output: &mut Storage) {
     output.clear();
     process
         .serialize_to(output, flat_message::Config::default())
         .unwrap();
 }
 
-fn de_test_flat_message(input: &AlignedVec) -> ProcessCreated {
+fn de_test_flat_message(input: &Storage) -> ProcessCreated {
     ProcessCreated::deserialize_from(input).unwrap()
 }
 
@@ -135,7 +135,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         version: NonZeroU8::new(1).unwrap(),
     };
     let mut data = Vec::new();
-    let mut the_other_data = AlignedVec::default();
+    let mut the_other_data = Storage::default();
 
     let mut group = c.benchmark_group("deserialization");
 
