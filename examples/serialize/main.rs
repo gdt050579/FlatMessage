@@ -20,7 +20,7 @@ fn main() {
         d: &s,
     };
     let mut output = Vec::new();
-    a.serialize_to(&mut output);
+    a.serialize_to(&mut output, Config::default()).unwrap();
     println!("Size = {}", output.len());
     println!("{:?}", output);
 }

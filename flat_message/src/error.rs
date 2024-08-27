@@ -17,6 +17,7 @@ pub enum Error {
     UnmatchedName,
     ChecksumNotStored,
     InvalidChecksum((u32, u32)),
+    ExceedMaxSize((u32,u32)),
 }
 
 impl fmt::Display for Error {
@@ -64,6 +65,11 @@ impl fmt::Display for Error {
                 f,
                 "Invalid checksum (expected: 0x{:08X} - but found: 0x{:08X})",
                 expected, actual
+            ),
+            Error::ExceedMaxSize((actual, max_size)) => write!(
+                f,
+                "Exceed maximum size (maximum size allowed: {} bytes - but found: {})",
+                max_size, actual
             ),
         }
     }

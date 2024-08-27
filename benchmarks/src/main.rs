@@ -1,7 +1,7 @@
 use ascii_table::{Align, AsciiTable};
-use flat_message::{flat_message, FlatMessage, FlatMessageOwned};
+use flat_message::{FlatMessage, FlatMessageOwned};
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use std::fmt::Display;
 use std::{
     hint::black_box,
@@ -17,7 +17,7 @@ mod structures;
 // ----------------------------------------------------------------------------
 
 fn se_test_flat_message<'a, T: FlatMessage<'a>>(process: &T, output: &mut Vec<u8>) {
-    process.serialize_to(output);
+    process.serialize_to(output, flat_message::Config::default()).unwrap();
 }
 
 fn de_test_flat_message<T: FlatMessageOwned>(input: &[u8]) -> T {
@@ -185,8 +185,8 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
             todo!()
         }
 
-        fn serialize_to(&self, output: &mut Vec<u8>) {
-            self.0.serialize_to(output)
+        fn serialize_to(&self, output: &mut Vec<u8>, config: flat_message::Config) -> std::result::Result<(), flat_message::Error> {
+            self.0.serialize_to(output, config)
         }
 
         fn deserialize_from(input: &'a [u8]) -> std::result::Result<Self, flat_message::Error>

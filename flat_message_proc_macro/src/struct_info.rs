@@ -1,6 +1,5 @@
 use crate::config::Config;
 use crate::field_info::FieldInfo;
-use crate::version_validator_parser::VersionValidatorParser;
 use common::hashes;
 use common::constants;
 use quote::quote;
@@ -431,7 +430,7 @@ impl<'a> StructInfo<'a> {
         };
 
         quote! {
-            fn serialize_to(&self,output: &mut Vec<u8>) {
+            fn serialize_to(&self,output: &mut Vec<u8>, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
                 use ::std::ptr;
                 enum RefOffsetSize {
                     U8,
@@ -463,6 +462,9 @@ impl<'a> StructInfo<'a> {
                     flags,
                 };  
                 // Step 7: allocate memory
+                if size > config.max_size() as usize {
+                    return Err(flat_message::Error::ExceedMaxSize((size as u32,config.max_size())));
+                }
                 output.resize(size, 0);
                 // Step 8: write data directly to a raw pointer
                 let buffer: *mut u8 = output.as_mut_ptr();
@@ -488,6 +490,7 @@ impl<'a> StructInfo<'a> {
                     // CRC32 if case
                     #checksum_code
                 }
+                Ok(())
             }
         }
     }
