@@ -54,7 +54,10 @@ pub(crate) fn parse(attr: TokenStream) -> HashMap<String, String> {
                 }
             }
             _ => {
-                panic!("Expecting an attribute name, or no attribute at all, but found '{}' !", token.to_string())
+                panic!(
+                    "Expecting an attribute name, or no attribute at all, but found '{}' !",
+                    token.to_string()
+                )
             }
         }
     }

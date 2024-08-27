@@ -15,7 +15,9 @@ mod tests;
 // ----------------------------------------------------------------------------
 
 fn se_test_flat_message<'a, T: FlatMessage<'a>>(process: &T, output: &mut Vec<u8>) {
-    process.serialize_to(output, flat_message::Config::default()).unwrap();
+    process
+        .serialize_to(output, flat_message::Config::default())
+        .unwrap();
 }
 
 fn de_test_flat_message<T: FlatMessageOwned>(input: &[u8]) -> T {
@@ -186,7 +188,11 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
             todo!()
         }
 
-        fn serialize_to(&self, output: &mut Vec<u8>, config: flat_message::Config) -> std::result::Result<(), flat_message::Error> {
+        fn serialize_to(
+            &self,
+            output: &mut Vec<u8>,
+            config: flat_message::Config,
+        ) -> std::result::Result<(), flat_message::Error> {
             self.0.serialize_to(output, config)
         }
 

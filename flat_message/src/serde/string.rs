@@ -16,7 +16,12 @@ unsafe impl<'a> SerDe<'a> for &'a str {
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
-        let (len, slen) = buffer::read_size(buf.as_ptr(), pos, buf.len(), buffer::WriteSizeMethod::FEFFMarker)?;
+        let (len, slen) = buffer::read_size(
+            buf.as_ptr(),
+            pos,
+            buf.len(),
+            buffer::WriteSizeMethod::FEFFMarker,
+        )?;
         let end = pos + slen + len;
         if end > buf.len() {
             None

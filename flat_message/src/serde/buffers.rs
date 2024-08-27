@@ -62,7 +62,6 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
     };
 }
 
-
 macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
     ($t:ty, $data_format:ident) => {
         unsafe impl SerDe<'_> for Vec<$t> {
@@ -71,12 +70,12 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
-                let res:&[$t] = SerDe::from_buffer_unchecked(buf, pos);
+                let res: &[$t] = SerDe::from_buffer_unchecked(buf, pos);
                 res.to_vec()
             }
             #[inline(always)]
             fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
-                let res:&[$t] = SerDe::from_buffer(buf, pos)?;
+                let res: &[$t] = SerDe::from_buffer(buf, pos)?;
                 Some(res.to_vec())
             }
             #[inline(always)]

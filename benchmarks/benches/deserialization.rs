@@ -33,7 +33,9 @@ struct ProcessCreatedS {
 
 fn se_test_flat_message(process: &ProcessCreated, output: &mut Vec<u8>) {
     output.clear();
-    process.serialize_to(output, flat_message::Config::default()).unwrap();
+    process
+        .serialize_to(output, flat_message::Config::default())
+        .unwrap();
 }
 
 fn de_test_flat_message(input: &[u8]) -> ProcessCreated {

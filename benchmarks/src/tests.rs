@@ -836,8 +836,8 @@ fn check_serde_buffer_i8() {
     let mut v = Vec::new();
     let s = TestStruct {
         value: 123456,
-        b1: &[-10i8,-20,-30],
-        b2: [1,2,3,4].to_vec(),
+        b1: &[-10i8, -20, -30],
+        b2: [1, 2, 3, 4].to_vec(),
     };
     s.serialize_to(&mut v, Config::default()).unwrap();
     let ds = TestStruct::deserialize_from(v.as_slice()).unwrap();
@@ -845,7 +845,6 @@ fn check_serde_buffer_i8() {
     assert_eq!(s.b1, ds.b1);
     assert_eq!(s.b2, ds.b2);
 }
-
 
 #[test]
 fn check_serde_buffer_u8() {
@@ -858,8 +857,8 @@ fn check_serde_buffer_u8() {
     let mut v = Vec::new();
     let s = TestStruct {
         value: 123456,
-        b1: &[200,201,202,203,255,255,255],
-        b2: [1,2,3,4,6,7,8,9,10].to_vec(),
+        b1: &[200, 201, 202, 203, 255, 255, 255],
+        b2: [1, 2, 3, 4, 6, 7, 8, 9, 10].to_vec(),
     };
     s.serialize_to(&mut v, Config::default()).unwrap();
     let ds = TestStruct::deserialize_from(v.as_slice()).unwrap();

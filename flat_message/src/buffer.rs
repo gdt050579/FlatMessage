@@ -81,22 +81,16 @@ pub(crate) fn read_size(
                     if pos + 3 > len {
                         None
                     } else {
-                        Some((
-                            (p.add(1) as *mut u16).read_unaligned() as usize,
-                            3,
-                        ))
+                        Some(((p.add(1) as *mut u16).read_unaligned() as usize, 3))
                     }
-                },
+                }
                 0xFF => {
                     if pos + 5 > len {
                         None
                     } else {
-                        Some((
-                            (p.add(1) as *mut u32).read_unaligned() as usize,
-                            5,
-                        ))
+                        Some(((p.add(1) as *mut u32).read_unaligned() as usize, 5))
                     }
-                },
+                }
                 _ => Some((first as usize, 1)),
             }
         },

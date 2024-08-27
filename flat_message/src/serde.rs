@@ -2,8 +2,8 @@ use common::data_format::DataFormat;
 
 mod basic_types;
 mod bool;
-mod string;
 mod buffers;
+mod string;
 
 pub unsafe trait SerDe<'a> {
     fn data_format() -> DataFormat;

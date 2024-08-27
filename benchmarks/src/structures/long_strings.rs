@@ -12,7 +12,7 @@ pub struct LongStringStructure {
     value_two: u64,
 }
 
-pub fn generate(count: usize)->LongStringStructure {
+pub fn generate(count: usize) -> LongStringStructure {
     LongStringStructure {
         string_one: "Hello, World".repeat(count),
         string_two: "How are you doing ?".repeat(count),

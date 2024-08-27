@@ -1,5 +1,6 @@
 use crate::{
-    attribute_parser, utils, validate_checksum::{self, ValidateChecksum},
+    attribute_parser, utils,
+    validate_checksum::{self, ValidateChecksum},
     version_validator_parser::VersionValidatorParser,
 };
 use proc_macro::*;

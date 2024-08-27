@@ -13,10 +13,7 @@ impl MetaData {
         unique_id: None,
     };
     // public to crate alone (to be used by FlatMessageBuffer)
-    pub(crate) fn new(
-        timestamp: Option<NonZeroU64>,
-        unique_id: Option<NonZeroU64>,
-    ) -> Self {
+    pub(crate) fn new(timestamp: Option<NonZeroU64>, unique_id: Option<NonZeroU64>) -> Self {
         Self {
             timestamp,
             unique_id,

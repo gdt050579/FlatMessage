@@ -172,9 +172,15 @@ impl FlatMessageBuffer<'_> {
     #[inline(always)]
     fn index_to_offset(&self, index: usize) -> usize {
         match self.offset_size {
-            OffsetSize::U8 => unsafe { buffer::read::<u8>(self.buf.as_ptr(), self.ref_table_offset + index) as usize },
-            OffsetSize::U16 => unsafe { buffer::read::<u16>(self.buf.as_ptr(), self.ref_table_offset + index*2) as usize },
-            OffsetSize::U32 => unsafe { buffer::read::<u32>(self.buf.as_ptr(), self.ref_table_offset + index*4) as usize },
+            OffsetSize::U8 => unsafe {
+                buffer::read::<u8>(self.buf.as_ptr(), self.ref_table_offset + index) as usize
+            },
+            OffsetSize::U16 => unsafe {
+                buffer::read::<u16>(self.buf.as_ptr(), self.ref_table_offset + index * 2) as usize
+            },
+            OffsetSize::U32 => unsafe {
+                buffer::read::<u32>(self.buf.as_ptr(), self.ref_table_offset + index * 4) as usize
+            },
         }
     }
 }
@@ -189,7 +195,7 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
             return Err(Error::InvalidHeaderLength(len));
         }
         let p = buf.as_ptr();
-        let header: HeaderV1 = unsafe { buffer::read(p, 0) };   
+        let header: HeaderV1 = unsafe { buffer::read(p, 0) };
         if header.magic != constants::MAGIC_V1 {
             return Err(Error::InvalidMagic);
         }
@@ -237,21 +243,21 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
         // read the metadata
         let mut offset = len - metadata_size;
         let timestamp = if header.flags & constants::FLAG_HAS_TIMESTAMP != 0 {
-            let value = NonZeroU64::new(unsafe { buffer::read::<u64>(p, offset)} );
+            let value = NonZeroU64::new(unsafe { buffer::read::<u64>(p, offset) });
             offset += 8;
             value
         } else {
             None
         };
         let unique_id = if header.flags & constants::FLAG_HAS_UNIQUEID != 0 {
-            let value = NonZeroU64::new(unsafe { buffer::read::<u64>(p, offset)} );
+            let value = NonZeroU64::new(unsafe { buffer::read::<u64>(p, offset) });
             offset += 8;
             value
         } else {
             None
         };
         let name_hash = if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
-            let value = unsafe { buffer::read::<u32>(p, offset)} ;
+            let value = unsafe { buffer::read::<u32>(p, offset) };
             #[cfg(feature = "VALIDATE_CRC32")]
             {
                 offset += 4;
@@ -266,7 +272,7 @@ impl<'a> TryFrom<&'a [u8]> for FlatMessageBuffer<'a> {
         };
         #[cfg(feature = "VALIDATE_CRC32")]
         if header.flags & constants::FLAG_HAS_CHECKSUM != 0 {
-            let crc = unsafe { buffer::read::<u32>(p, offset)} ;
+            let crc = unsafe { buffer::read::<u32>(p, offset) };
             let calculated_crc = hashes::crc32(&buf[..offset]);
             if crc != calculated_crc {
                 return Err(Error::InvalidHash((crc, calculated_crc)));

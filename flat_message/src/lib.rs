@@ -22,36 +22,30 @@
 /// | +?     | Name Hash   | u32  | Hash of the structure name (only if NameHash flag is set)|
 /// | Last   | CRC32 value | u32  | Last 4 bytes, only if CRC32 flags is set                 |
 /// |--------|-------------|------|----------------------------------------------------------|
-
-
 mod buffer;
-mod error;
-mod name;
-mod flat_message_buffer;
-mod metadata;
-mod serde;
-mod flat_message;
-mod structure_information;
 mod config;
+mod error;
+mod flat_message;
+mod flat_message_buffer;
 pub mod headers;
+mod metadata;
+mod name;
+mod serde;
+mod structure_information;
 
-pub use flat_message_proc_macro::*;
+pub use self::config::Config;
+pub use self::config::ConfigBuilder;
 pub use self::error::Error;
-pub use self::name::Name;
+pub use self::flat_message::FlatMessage;
 pub use self::flat_message_buffer::FlatMessageBuffer;
 pub use self::metadata::MetaData;
 pub use self::metadata::MetaDataBuilder;
+pub use self::name::Name;
 pub use self::serde::SerDe;
-pub use self::flat_message::FlatMessage;  
 pub use self::structure_information::StructureInformation;
-pub use self::config::Config;
-pub use self::config::ConfigBuilder;
+pub use flat_message_proc_macro::*;
 
 pub use common::hashes::crc32;
 
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
-
-
-
-

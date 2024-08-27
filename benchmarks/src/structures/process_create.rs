@@ -1,4 +1,4 @@
-use std::num::{NonZeroU64,NonZeroU8};
+use std::num::{NonZeroU64, NonZeroU8};
 
 use flat_message::flat_message;
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,7 @@ pub struct ProcessCreatedS {
     version: NonZeroU8,
 }
 
-pub fn generate_flat()->ProcessCreated {
+pub fn generate_flat() -> ProcessCreated {
     ProcessCreated {
         name: String::from("C:\\Windows\\System32\\example.exe"),
         pid: 1234,
@@ -42,7 +42,7 @@ pub fn generate_flat()->ProcessCreated {
             .build(),
     }
 }
-pub fn generate_other()->ProcessCreatedS {
+pub fn generate_other() -> ProcessCreatedS {
     ProcessCreatedS {
         struct_name: "ProcessCreated".to_string(),
         name: String::from("C:\\Windows\\System32\\example.exe"),

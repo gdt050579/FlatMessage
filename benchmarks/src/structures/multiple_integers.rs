@@ -22,7 +22,7 @@ pub struct MultipleIntegers {
 }
 
 pub fn generate() -> MultipleIntegers {
-    MultipleIntegers { 
+    MultipleIntegers {
         a: 1,
         b: 2,
         c: 30,
@@ -37,6 +37,6 @@ pub fn generate() -> MultipleIntegers {
         l: 12000000,
         m: 130000000,
         n: 1400000000,
-        o: 1500000000,                
-     }
+        o: 1500000000,
+    }
 }

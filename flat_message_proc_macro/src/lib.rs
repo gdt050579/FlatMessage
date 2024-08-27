@@ -1,17 +1,17 @@
 mod attribute_parser;
+mod config;
 mod field_info;
 mod struct_info;
 mod utils;
-mod version_validator_parser;
 mod validate_checksum;
-mod config;
+mod version_validator_parser;
 
+use config::Config;
+use core::panic;
 use proc_macro::*;
+use std::str::FromStr;
 use struct_info::StructInfo;
 use syn::{parse_macro_input, DeriveInput};
-use core::panic;
-use config::Config;
-use std::str::FromStr;
 
 extern crate proc_macro;
 
@@ -37,10 +37,10 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-
 #[proc_macro]
 pub fn name(input: TokenStream) -> TokenStream {
     let value = utils::validate_one_string_parameter(input, "name");
     let hash = common::hashes::fnv_32(&value);
-    TokenStream::from_str(format!("Name {{ value: {} }}",hash).as_str()).expect("Fail to convert name! to stream")
+    TokenStream::from_str(format!("Name {{ value: {} }}", hash).as_str())
+        .expect("Fail to convert name! to stream")
 }
