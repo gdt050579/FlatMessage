@@ -783,3 +783,21 @@ fn check_deserialization_checksum_unchecked_always() {
     let v = unsafe { TestStruct::deserialize_from_unchecked(buffer.as_slice()).unwrap() };
     assert_eq!(v.value, 123456);
 }
+
+#[test]
+fn check_max_size_for_serialization() {
+    #[flat_message]
+    struct TestStruct {
+        value: u32,
+    }
+    let mut v = Vec::new();
+    let s = TestStruct { value: 123456, metadata: MetaData::default() };
+    let result = s.serialize_to(&mut v, Config::default());
+    assert!(result.is_ok());
+    let result = s.serialize_to(&mut v, ConfigBuilder::new().max_size(4).build());
+    assert!(result.is_err());
+    match result.err() {
+        Some(flat_message::Error::ExceedMaxSize(_)) => {}
+        _ => panic!("Invalid error - expected MaxSizeExceeded"),
+    }
+}
