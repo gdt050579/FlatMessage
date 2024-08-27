@@ -892,14 +892,14 @@ fn check_serde_buffer_u16() {
         b1: &'a [u16],
         b2: Vec<u16>,
     }
-    let mut v = Vec::new();
+    let mut v = AlignedVec::default();
     let s = TestStruct {
         value: 123456,
         b1: &[200,201,202,203,255,255,255],
         b2: [1,2,3,4,6,7,8,9,10].to_vec(),
     };
     s.serialize_to(&mut v, Config::default()).unwrap();
-    let ds = TestStruct::deserialize_from(v.as_slice()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
     assert_eq!(s.value, ds.value);
     assert_eq!(s.b1, ds.b1);
     assert_eq!(s.b2, ds.b2);

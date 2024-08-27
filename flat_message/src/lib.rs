@@ -135,7 +135,7 @@ impl VecLike for AlignedVec {
 
     #[inline]
     fn resize_zero(&mut self, new_len: usize) {
-        self.vec.resize(new_len / size_of::<u128>() + 1, 0);
+        self.vec.resize(new_len / std::mem::size_of::<u128>() + 1, 0);
         self.size = new_len;
     }
 
