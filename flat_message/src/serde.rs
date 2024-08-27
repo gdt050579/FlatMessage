@@ -3,7 +3,8 @@ use common::data_format::DataFormat;
 mod basic_types;
 mod bool;
 mod string;
-mod buffers;
+mod buffers_8bits;
+mod buffers_16bits;
 
 pub unsafe trait SerDe<'a> {
     fn data_format() -> DataFormat;

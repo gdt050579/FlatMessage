@@ -1,6 +1,7 @@
 #[derive(Copy, Clone)]
 pub(crate) enum WriteSizeMethod {
-    FEFFMarker,
+    ByteAlignamentSize,
+    WordAlignamentSize,
     DWORD,
 }
 
@@ -16,7 +17,18 @@ pub(crate) unsafe fn write_size(
             (p.add(pos) as *mut u32).write_unaligned(value);
             4
         },
-        WriteSizeMethod::FEFFMarker => unsafe {
+        WriteSizeMethod::WordAlignamentSize => unsafe {
+            if value < 0xFFFF {
+                (p.add(pos) as *mut u16).write_unaligned(value as u16);
+                2
+            } else {
+                let p = p.add(pos);
+                (p as *mut u16).write_unaligned(0xFFFFu16);
+                (p.add(2) as *mut u32).write_unaligned(value);
+                6
+            }
+        },
+        WriteSizeMethod::ByteAlignamentSize => unsafe {
             if value < 0xFE {
                 p.add(pos).write_unaligned(value as u8);
                 1
@@ -43,7 +55,16 @@ pub(crate) unsafe fn read_size_unchecked(
 ) -> (usize, usize) {
     match method {
         WriteSizeMethod::DWORD => ((p.add(pos) as *mut u32).read_unaligned() as usize, 4),
-        WriteSizeMethod::FEFFMarker => {
+        WriteSizeMethod::WordAlignamentSize => {
+            let p = p.add(pos);
+            let first = (p as *const u16).read_unaligned();
+            if first < 0xFFFF {
+                (first as usize, 2)
+            } else {
+                ((p.add(2) as *mut u32).read_unaligned() as usize, 6)
+            }
+        }
+        WriteSizeMethod::ByteAlignamentSize => {
             let p = p.add(pos);
             let first = p.read_unaligned();
             match first {
@@ -73,7 +94,25 @@ pub(crate) fn read_size(
                 ))
             }
         }
-        WriteSizeMethod::FEFFMarker => unsafe {
+        WriteSizeMethod::WordAlignamentSize => {
+            if pos + 2 > len {
+                None
+            } else {
+                let p = unsafe { p.add(pos) };
+                let first = unsafe { (p as *const u16).read_unaligned() };
+                if first < 0xFFFF {
+                    Some((first as usize, 2))
+                } else if pos + 6 > len {
+                    None
+                } else {
+                    Some((
+                        unsafe { (p.add(2) as *mut u32).read_unaligned() as usize },
+                        6,
+                    ))
+                }
+            }
+        }
+        WriteSizeMethod::ByteAlignamentSize => unsafe {
             let p = p.add(pos);
             let first = p.read_unaligned();
             match first {
@@ -81,22 +120,16 @@ pub(crate) fn read_size(
                     if pos + 3 > len {
                         None
                     } else {
-                        Some((
-                            (p.add(1) as *mut u16).read_unaligned() as usize,
-                            3,
-                        ))
+                        Some(((p.add(1) as *mut u16).read_unaligned() as usize, 3))
                     }
-                },
+                }
                 0xFF => {
                     if pos + 5 > len {
                         None
                     } else {
-                        Some((
-                            (p.add(1) as *mut u32).read_unaligned() as usize,
-                            5,
-                        ))
+                        Some(((p.add(1) as *mut u32).read_unaligned() as usize, 5))
                     }
-                },
+                }
                 _ => Some((first as usize, 1)),
             }
         },
@@ -107,13 +140,20 @@ pub(crate) fn read_size(
 pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
     match method {
         WriteSizeMethod::DWORD => 4,
-        WriteSizeMethod::FEFFMarker => {
+        WriteSizeMethod::ByteAlignamentSize => {
             if value < 0xFE {
                 1
             } else if value < 0x10000 {
                 3
             } else {
                 5
+            }
+        }
+        WriteSizeMethod::WordAlignamentSize => {
+            if value < 0xFFFF {
+                2
+            } else {
+                6
             }
         }
     }

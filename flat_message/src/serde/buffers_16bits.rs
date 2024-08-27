@@ -11,26 +11,29 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
             #[inline(always)]
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
                 let p = buf.as_ptr();
-                let (len, buf_len) =
-                    buffer::read_size_unchecked(p, pos, buffer::WriteSizeMethod::FEFFMarker);
-                std::slice::from_raw_parts(p.add(pos + buf_len) as *const $ptr_type, len)
+                let (count, size_len) = buffer::read_size_unchecked(
+                    p,
+                    pos,
+                    buffer::WriteSizeMethod::WordAlignamentSize,
+                );
+                std::slice::from_raw_parts(p.add(pos + size_len) as *const $ptr_type, count)
             }
             #[inline(always)]
             fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
-                let (len, buf_len) = buffer::read_size(
+                let (count, size_len) = buffer::read_size(
                     buf.as_ptr(),
                     pos,
                     buf.len(),
-                    buffer::WriteSizeMethod::FEFFMarker,
+                    buffer::WriteSizeMethod::WordAlignamentSize,
                 )?;
-                let end = pos + buf_len + len;
+                let end = pos + size_len + count * std::mem::size_of::<$ptr_type>();
                 if end > buf.len() {
                     None
                 } else {
                     Some(unsafe {
                         std::slice::from_raw_parts(
-                            buf.as_ptr().add(pos + buf_len) as *const $ptr_type,
-                            len,
+                            buf.as_ptr().add(pos + size_len) as *const $ptr_type,
+                            count,
                         )
                     })
                 }
@@ -39,29 +42,34 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
             unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
                 let len = self.len() as u32;
                 unsafe {
-                    let buf_len =
-                        buffer::write_size(p, pos, len, buffer::WriteSizeMethod::FEFFMarker);
+                    let size_len = buffer::write_size(
+                        p,
+                        pos,
+                        len,
+                        buffer::WriteSizeMethod::WordAlignamentSize,
+                    );
                     std::ptr::copy_nonoverlapping(
                         self.as_ptr() as *mut u8,
-                        p.add(pos + buf_len),
-                        self.len(),
+                        p.add(pos + size_len),
+                        self.len() * std::mem::size_of::<$ptr_type>(),
                     );
-                    pos + buf_len + len as usize
+                    pos + size_len + (len as usize) * std::mem::size_of::<$ptr_type>()
                 }
             }
             #[inline(always)]
             fn size(&self) -> usize {
-                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::FEFFMarker)
-                    + self.len()
+                buffer::size_len(
+                    self.len() as u32,
+                    buffer::WriteSizeMethod::WordAlignamentSize,
+                ) + self.len() * std::mem::size_of::<$ptr_type>()
             }
             #[inline(always)]
             fn align_offset(&self, offset: usize) -> usize {
-                offset
+                (offset + 1usize) & !(1usize)
             }
         }
     };
 }
-
 
 macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
     ($t:ty, $data_format:ident) => {
@@ -71,12 +79,12 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
-                let res:&[$t] = SerDe::from_buffer_unchecked(buf, pos);
+                let res: &[$t] = SerDe::from_buffer_unchecked(buf, pos);
                 res.to_vec()
             }
             #[inline(always)]
             fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
-                let res:&[$t] = SerDe::from_buffer(buf, pos)?;
+                let res: &[$t] = SerDe::from_buffer(buf, pos)?;
                 Some(res.to_vec())
             }
             #[inline(always)]
@@ -85,18 +93,20 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             fn size(&self) -> usize {
-                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::FEFFMarker)
-                    + self.len()
+                buffer::size_len(
+                    self.len() as u32,
+                    buffer::WriteSizeMethod::WordAlignamentSize,
+                ) + self.len() * std::mem::size_of::<$t>()
             }
             #[inline(always)]
             fn align_offset(&self, offset: usize) -> usize {
-                offset
+                (offset + 1usize) & !(1usize)
             }
         }
     };
 }
 
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u8], VecU8, u8);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i8], VecI8, i8);
-IMPLEMENT_SERDE_FOR_VECTOR!(u8, VecU8);
-IMPLEMENT_SERDE_FOR_VECTOR!(i8, VecI8);
+IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u16], VecU16, u16);
+IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i16], VecI16, i16);
+IMPLEMENT_SERDE_FOR_VECTOR!(u16, VecU16);
+IMPLEMENT_SERDE_FOR_VECTOR!(i16, VecI16);

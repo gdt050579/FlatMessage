@@ -867,3 +867,38 @@ fn check_serde_buffer_u8() {
     assert_eq!(s.b1, ds.b1);
     assert_eq!(s.b2, ds.b2);
 }
+
+#[test]
+fn check_buffer_format_u16() {
+    #[flat_message(metadata: false,store_name: false)]
+    struct TestStruct {
+        b2: Vec<u16>,
+    }
+    let mut v = Vec::new();
+    let s = TestStruct {
+        b2: [1,2,3].to_vec(),
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    assert_eq!(v, vec![71, 84, 72, 1, 1, 0, 0, 0, 3, 0, 1, 0, 2, 0, 3, 0, 16, 41, 44, 143, 8]);
+}
+
+#[test]
+fn check_serde_buffer_u16() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b1: &'a [u16],
+        b2: Vec<u16>,
+    }
+    let mut v = Vec::new();
+    let s = TestStruct {
+        value: 123456,
+        b1: &[200,201,202,203,255,255,255],
+        b2: [1,2,3,4,6,7,8,9,10].to_vec(),
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(v.as_slice()).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.b1, ds.b1);
+    assert_eq!(s.b2, ds.b2);
+}
