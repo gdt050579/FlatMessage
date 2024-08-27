@@ -12,6 +12,13 @@ fn crc(input: &[u8]) -> u32 {
 }
 
 pub fn criterion_benchmark(c: &mut Criterion) {
+    println!(
+        "crc_of_unknown_origins={}\ncrc={}\ncrc32fast:{}\n",
+        common::hashes::crc32(SMALL),
+        crc(SMALL),
+        crc32fast::hash(SMALL),
+    );
+
     let mut group = c.benchmark_group("hashes");
 
     let big = SMALL.repeat(1_000);

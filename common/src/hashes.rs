@@ -49,7 +49,7 @@ static LOWER_CASE_TABLE: [u8; 256] = [
     245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
 ];
 
-pub fn crc32(buffer: &[u8]) -> u32 {
+pub fn crc32_old(buffer: &[u8]) -> u32 {
     let mut resulted_hash = 0xFFFFFFFFu32;
 
     for value in buffer {
@@ -58,6 +58,11 @@ pub fn crc32(buffer: &[u8]) -> u32 {
     }
 
     !resulted_hash
+}
+
+#[inline]
+pub fn crc32(buffer: &[u8]) -> u32 {
+    crc32fast::hash(buffer)
 }
 
 pub fn fnv_32(text: &str) -> u32 {
