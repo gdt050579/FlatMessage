@@ -8,11 +8,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+mod structures;
 #[cfg(test)]
 mod tests;
-mod structures;
-
-
 
 // ----------------------------------------------------------------------------
 
@@ -90,71 +88,53 @@ fn de_test_flexbuffers<S: DeserializeOwned>(input: &[u8]) -> S {
 
 // ----------------------------------------------------------------------------
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-enum Mode {
-    Serialize,
-    Deserialize,
-}
-
 struct Result {
     name: &'static str,
     top_test_name: &'static str,
-    time: Duration,
-    time_s: String,
     size: usize,
-    mode: Mode,
+    time_se_de: Duration,
+    time_se_ms: String,
+    time_de_ms: String,
+    time_se_de_ms: String,
 }
 
 const ITERATIONS: u32 = 1_000_000;
 
-fn se_bench<T, FS: Fn(&T, &mut Vec<u8>)>(
-    top_test_name: &'static str,
-    test_name: &'static str,
-    x: &T,
-    serialize: FS,
-    vec: &mut Vec<u8>,
-    results: &mut Vec<Result>,
-) {
+fn se_bench<T, FS: Fn(&T, &mut Vec<u8>)>(x: &T, serialize: FS, vec: &mut Vec<u8>) -> Duration {
     let start = Instant::now();
     for _ in 0..ITERATIONS {
         vec.clear();
         black_box(serialize(x, vec));
         black_box(vec.len());
     }
-    let time = start.elapsed();
-    results.push(Result {
-        name: test_name,
-        top_test_name,
-        time,
-        time_s: format!("{:.2}", time.as_secs_f64() * 1000.0),
-        size: vec.len(),
-        mode: Mode::Serialize,
-    });
+    start.elapsed()
 }
 
-fn de_bench<T, FD: Fn(&[u8]) -> T>(
-    top_test_name: &'static str,
-    test_name: &'static str,
-    deserialize: FD,
-    input: &[u8],
-    results: &mut Vec<Result>,
-) {
+fn de_bench<T, FD: Fn(&[u8]) -> T>(deserialize: FD, input: &[u8]) -> Duration {
     let start = Instant::now();
     for _ in 0..ITERATIONS {
         black_box(deserialize(black_box(input)));
     }
-    let time = start.elapsed();
-    results.push(Result {
-        name: test_name,
-        top_test_name,
-        time,
-        time_s: format!("{:.2}", time.as_secs_f64() * 1000.0),
-        size: 0,
-        mode: Mode::Deserialize,
-    });
+    start.elapsed()
 }
 
-fn bench<T, FS: Fn(&T, &mut Vec<u8>), FD: Fn(&[u8]) -> T>(
+fn se_de_bench<T, FS: Fn(&T, &mut Vec<u8>), FD: Fn(&[u8]) -> T>(
+    x: &T,
+    serialize: FS,
+    deserialize: FD,
+    vec: &mut Vec<u8>,
+) -> Duration {
+    let start = Instant::now();
+    for _ in 0..ITERATIONS {
+        vec.clear();
+        black_box(serialize(x, vec));
+        black_box(vec.len());
+        black_box(deserialize(black_box(vec)));
+    }
+    start.elapsed()
+}
+
+fn bench<T, FS: Fn(&T, &mut Vec<u8>) + Clone, FD: Fn(&[u8]) -> T + Clone>(
     top_test_name: &'static str,
     test_name: &'static str,
     x: &T,
@@ -163,8 +143,19 @@ fn bench<T, FS: Fn(&T, &mut Vec<u8>), FD: Fn(&[u8]) -> T>(
     results: &mut Vec<Result>,
 ) {
     let vec = &mut Vec::with_capacity(4096);
-    se_bench(top_test_name, test_name, x, serialize, vec, results);
-    de_bench(top_test_name, test_name, deserialize, vec, results);
+    let time_se = se_bench(x, serialize.clone(), vec);
+    let time_de = de_bench(deserialize.clone(), vec);
+    let time_se_de = se_de_bench(x, serialize, deserialize, vec);
+
+    results.push(Result {
+        name: test_name,
+        top_test_name,
+        size: vec.len(),
+        time_se_de,
+        time_se_ms: format!("{:.2}", time_se.as_secs_f64() * 1000.0),
+        time_de_ms: format!("{:.2}", time_de.as_secs_f64() * 1000.0),
+        time_se_de_ms: format!("{:.2}", time_se_de.as_secs_f64() * 1000.0),
+    });
 }
 
 fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
@@ -285,47 +276,53 @@ fn print_results(results: &mut Vec<Result>) {
     results.sort_by(|x, y| {
         x.top_test_name
             .cmp(&y.top_test_name)
-            .then(x.mode.cmp(&y.mode).then(x.time.cmp(&y.time)))
+            .then(x.time_se_de.cmp(&y.time_se_de))
     });
 
     let mut ascii_table = AsciiTable::default();
-    ascii_table.set_max_width(100);
+    ascii_table.set_max_width(150);
     ascii_table
         .column(0)
-        .set_header("mode")
-        .set_align(Align::Left);
-    ascii_table
-        .column(1)
         .set_header("top name")
         .set_align(Align::Left);
     ascii_table
-        .column(2)
+        .column(1)
         .set_header("name")
         .set_align(Align::Left);
     ascii_table
-        .column(3)
+        .column(2)
         .set_header("size (b)")
         .set_align(Align::Right);
     ascii_table
+        .column(3)
+        .set_header("se time (ms)")
+        .set_align(Align::Right);
+    ascii_table
         .column(4)
-        .set_header("time (ms)")
+        .set_header("de time (ms)")
+        .set_align(Align::Right);
+    ascii_table
+        .column(5)
+        .set_header("se + de time (ms)")
         .set_align(Align::Right);
 
-    let mut r: Vec<[&dyn Display; 5]> = Vec::new();
+    let mut r: Vec<[&dyn Display; 6]> = Vec::new();
     let mut last = None;
     for i in results {
-        let current = Some((i.top_test_name, i.mode));
+        let current = Some(i.top_test_name);
         if !last.is_none() && last != current {
-            r.push([&"---", &"---", &"---", &"---", &"---"]);
+            r.push([&"---", &"---", &"---", &"---", &"---", &"---"]);
         }
         last = current;
 
-        let mode: &dyn Display = match i.mode {
-            Mode::Serialize => &"s",
-            Mode::Deserialize => &"d",
-        };
-        r.push([mode, &i.top_test_name, &i.name, &i.size, &i.time_s]);
-
+        r.push([
+            &i.top_test_name,
+            &i.name,
+            &i.size,
+            &i.time_se_ms,
+            &i.time_de_ms,
+            &i.time_se_de_ms,
+        ]);
     }
 
     ascii_table.print(r);

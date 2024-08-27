@@ -18,7 +18,7 @@
 /// | +?     | Offsets     | ?    | 1/2/4 bytes x FieldsCount depending on Offset Type flag  |
 /// |--------|-------------|------|----------------------------------------------------------|
 /// | +?     | TimeStamp   | u64  | TimeStamp (only if TimeStamp flag is set)                |
-/// | +?     | UniquID     | u64  | UniqueID (only if UniqueID flag is set)                  |
+/// | +?     | UniqueID    | u64  | UniqueID (only if UniqueID flag is set)                  |
 /// | +?     | Name Hash   | u32  | Hash of the structure name (only if NameHash flag is set)|
 /// | Last   | CRC32 value | u32  | Last 4 bytes, only if CRC32 flags is set                 |
 /// |--------|-------------|------|----------------------------------------------------------|
