@@ -447,7 +447,7 @@ impl<'a> StructInfo<'a> {
         let version = self.config.version;
         let checksum_code = if self.config.checksum {
             quote! {
-                let checksum = flat_message::crc32(&output[..size - 4]);
+                let checksum = flat_message::crc32(&output.as_slice()[..size - 4]);
                 (buffer.add(size - 4) as *mut u32).write_unaligned(checksum);
             }
         } else {
@@ -455,7 +455,7 @@ impl<'a> StructInfo<'a> {
         };
 
         quote! {
-            fn serialize_to(&self,output: &mut Vec<u8>, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
+            fn serialize_to<V: ::flat_message::VecLike>(&self,output: &mut V, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
                 use ::std::ptr;
                 enum RefOffsetSize {
                     U8,

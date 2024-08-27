@@ -1,5 +1,5 @@
 use ascii_table::{Align, AsciiTable};
-use flat_message::{FlatMessage, FlatMessageOwned};
+use flat_message::{FlatMessage, FlatMessageOwned, VecLike};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Display;
@@ -188,9 +188,9 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
             todo!()
         }
 
-        fn serialize_to(
+        fn serialize_to<V: VecLike>(
             &self,
-            output: &mut Vec<u8>,
+            output: &mut V,
             config: flat_message::Config,
         ) -> std::result::Result<(), flat_message::Error> {
             self.0.serialize_to(output, config)

@@ -33,6 +33,9 @@ mod name;
 mod serde;
 mod structure_information;
 
+use std::ops::Index;
+use std::slice::SliceIndex;
+
 pub use self::config::Config;
 pub use self::config::ConfigBuilder;
 pub use self::error::Error;
@@ -49,3 +52,43 @@ pub use common::hashes::crc32;
 
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
+
+pub struct AlignedVec {
+    vec: Vec<u128>,
+    size: usize,
+}
+
+pub trait VecLike {
+    fn clear(&mut self);
+    fn resize(&mut self, new_len: usize, value: u8);
+    fn as_mut_ptr(&mut self) -> *mut u8;
+    fn len(&self) -> usize;
+    fn as_slice(&self) -> &[u8];
+}
+
+impl VecLike for Vec<u8> {
+    #[inline]
+    fn clear(&mut self) {
+        self.clear();
+    }
+
+    #[inline]
+    fn resize(&mut self, new_len: usize, value: u8) {
+        self.resize(new_len, value);
+    }
+
+    #[inline]
+    fn as_mut_ptr(&mut self) -> *mut u8 {
+        self.as_mut_ptr()
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    #[inline]
+    fn as_slice(&self) -> &[u8] {
+        self
+    }
+}
