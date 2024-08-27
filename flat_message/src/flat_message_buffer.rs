@@ -1,6 +1,6 @@
 use crate::buffer;
 use crate::headers::HeaderV1;
-use crate::AlignedVec;
+use crate::Storage;
 use crate::MetaData;
 use crate::VecLike;
 
@@ -186,10 +186,10 @@ impl FlatMessageBuffer<'_> {
     }
 }
 
-impl<'a> TryFrom<&'a AlignedVec> for FlatMessageBuffer<'a> {
+impl<'a> TryFrom<&'a Storage> for FlatMessageBuffer<'a> {
     type Error = Error;
 
-    fn try_from(buf: &'a AlignedVec) -> Result<Self, Self::Error> {
+    fn try_from(buf: &'a Storage) -> Result<Self, Self::Error> {
         let buf = buf.as_slice();
         // validate buf length - minimum 8 bytes
         let len = buf.len();

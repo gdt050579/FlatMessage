@@ -1,4 +1,4 @@
-use crate::{buffer, headers, AlignedVec, Error, Name, VecLike};
+use crate::{buffer, headers, Storage, Error, Name, VecLike};
 use common::constants;
 use std::mem::size_of;
 use std::num::{NonZeroU32, NonZeroU64, NonZeroU8};
@@ -25,10 +25,10 @@ impl StructureInformation {
     }
 }
 
-impl TryFrom<&AlignedVec> for StructureInformation {
+impl TryFrom<&Storage> for StructureInformation {
     type Error = Error;
 
-    fn try_from(buf: &AlignedVec) -> Result<Self, Self::Error> {
+    fn try_from(buf: &Storage) -> Result<Self, Self::Error> {
         // validate buf length - minimum 8 bytes
         let buf = buf.as_slice();
         let len = buf.len();

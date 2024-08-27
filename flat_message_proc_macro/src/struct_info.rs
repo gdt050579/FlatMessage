@@ -448,7 +448,7 @@ impl<'a> StructInfo<'a> {
         let version = self.config.version;
         let checksum_code = if self.config.checksum {
             quote! {
-                let checksum = flat_message::crc32(&output.as_slice()[..size - 4]);
+                let checksum = flat_message::crc32(&output[..size - 4]);
                 (buffer.add(size - 4) as *mut u32).write_unaligned(checksum);
             }
         } else {
@@ -463,7 +463,6 @@ impl<'a> StructInfo<'a> {
                     U16,
                     U32,
                 }
-                output.clear();
                 // basic header (magic + fields count + flags + version)
                 let mut buf_pos = 8usize;
                 let mut size = 8usize;
@@ -491,7 +490,9 @@ impl<'a> StructInfo<'a> {
                 if size > config.max_size() as usize {
                     return Err(flat_message::Error::ExceedMaxSize((size as u32,config.max_size())));
                 }
+                output.clear();
                 output.resize_zero(size);
+                let output = output.as_mut_slice();
                 // Step 8: write data directly to a raw pointer
                 let buffer: *mut u8 = output.as_mut_ptr();
                 unsafe {
@@ -533,7 +534,7 @@ impl<'a> StructInfo<'a> {
         let ctor_code = self.generate_struct_construction_code();
         let lifetimes = &self.generics.params;
         quote! {
-            fn deserialize_from(input: & #lifetimes ::flat_message::AlignedVec) -> core::result::Result<Self,flat_message::Error>
+            fn deserialize_from(input: & #lifetimes ::flat_message::Storage) -> core::result::Result<Self,flat_message::Error>
             {
                 use ::flat_message::VecLike;
                 #header_deserialization_code
@@ -553,7 +554,7 @@ impl<'a> StructInfo<'a> {
                     }
                 }
             }
-            unsafe fn deserialize_from_unchecked(input: & #lifetimes ::flat_message::AlignedVec) -> core::result::Result<Self,flat_message::Error>
+            unsafe fn deserialize_from_unchecked(input: & #lifetimes ::flat_message::Storage) -> core::result::Result<Self,flat_message::Error>
             {
                 use ::flat_message::VecLike;
                 #header_deserialization_code
