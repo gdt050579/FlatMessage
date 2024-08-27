@@ -566,17 +566,20 @@ fn check_serde_version_compatibility_check() {
         value: 3,
         metadata: MetaDataBuilder::new().timestamp(333).unique_id(33).build(),
     }
-    .serialize_to(&mut o3, Config::default()).unwrap();
+    .serialize_to(&mut o3, Config::default())
+    .unwrap();
     v2::TestStruct {
         value: 2,
         metadata: MetaDataBuilder::new().timestamp(222).unique_id(22).build(),
     }
-    .serialize_to(&mut o2, Config::default()).unwrap();
+    .serialize_to(&mut o2, Config::default())
+    .unwrap();
     v1::TestStruct {
         value: 1,
         metadata: MetaDataBuilder::new().timestamp(111).unique_id(11).build(),
     }
-    .serialize_to(&mut o1, Config::default()).unwrap();
+    .serialize_to(&mut o1, Config::default())
+    .unwrap();
     let v1_from_v3 = v1::TestStruct::deserialize_from(o3.as_slice());
     let v1_from_v2 = v1::TestStruct::deserialize_from(o2.as_slice());
     let v2_from_v3 = v2::TestStruct::deserialize_from(o3.as_slice());
@@ -665,7 +668,9 @@ fn check_serialization_checksum() {
     let v2 = TestStruct2 { value: 123456 };
     let mut storage = Vec::new();
     v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let expected_output = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let expected_output = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
+    ];
     assert_eq!(storage, expected_output);
     let len_v1 = storage.len();
     v2.serialize_to(&mut storage, Config::default()).unwrap();
@@ -676,7 +681,6 @@ fn check_serialization_checksum() {
     assert_eq!(len_v1, len_v2 + 4);
 }
 
-
 #[test]
 fn check_serde_with_checksum() {
     #[flat_message(checksum: true, store_name: false, metadata: false)]
@@ -685,14 +689,14 @@ fn check_serde_with_checksum() {
         b: bool,
         name: String,
         surname: &'a str,
-        age: i32
+        age: i32,
     }
-    let s= TestStruct {
+    let s = TestStruct {
         value: 123456,
         b: true,
         name: "John".to_string(),
         surname: "Doe",
-        age: 30
+        age: 30,
     };
     let mut storage = Vec::new();
     s.serialize_to(&mut storage, Config::default()).unwrap();
@@ -710,10 +714,14 @@ fn check_deserialization_checksum_always() {
     struct TestStruct {
         value: u32,
     }
-    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let buffer = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
+    ];
     let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
     assert_eq!(v.value, 123456);
-    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 255, 255, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let buffer = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 255, 255, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
+    ];
     let v = TestStruct::deserialize_from(buffer.as_slice());
     match v.err() {
         Some(flat_message::Error::InvalidChecksum(_)) => {}
@@ -728,11 +736,15 @@ fn check_deserialization_checksum_auto() {
         value: u32,
     }
     // valid checksum
-    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let buffer = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
+    ];
     let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
     assert_eq!(v.value, 123456);
     // invalid checksum
-    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 255, 255, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let buffer = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 255, 255, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
+    ];
     let v = TestStruct::deserialize_from(buffer.as_slice());
     match v.err() {
         Some(flat_message::Error::InvalidChecksum(_)) => {}
@@ -751,11 +763,15 @@ fn check_deserialization_checksum_ignore() {
         value: u32,
     }
     // valid checksum
-    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let buffer = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
+    ];
     let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
     assert_eq!(v.value, 123456);
     // invalid checksum (deserialization should still happen)
-    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 255, 255, 255, 255];
+    let buffer = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 255, 255, 255, 255,
+    ];
     let v = TestStruct::deserialize_from(buffer.as_slice()).unwrap();
     assert_eq!(v.value, 123456);
     // checksum is missing
@@ -771,11 +787,15 @@ fn check_deserialization_checksum_unchecked_always() {
         value: u32,
     }
     // valid checksum
-    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132];
+    let buffer = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 149, 163, 180, 132,
+    ];
     let v = unsafe { TestStruct::deserialize_from_unchecked(buffer.as_slice()).unwrap() };
     assert_eq!(v.value, 123456);
     // invalid checksum (deserialization should still happen)
-    let buffer = vec![71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 255, 255, 255, 255];
+    let buffer = vec![
+        71, 84, 72, 1, 1, 0, 0, 4, 64, 226, 1, 0, 3, 211, 94, 66, 8, 255, 255, 255, 255,
+    ];
     let v = unsafe { TestStruct::deserialize_from_unchecked(buffer.as_slice()).unwrap() };
     assert_eq!(v.value, 123456);
     // checksum is missing (deserialization should still happen)
@@ -791,7 +811,10 @@ fn check_max_size_for_serialization() {
         value: u32,
     }
     let mut v = Vec::new();
-    let s = TestStruct { value: 123456, metadata: MetaData::default() };
+    let s = TestStruct {
+        value: 123456,
+        metadata: MetaData::default(),
+    };
     let result = s.serialize_to(&mut v, Config::default());
     assert!(result.is_ok());
     let result = s.serialize_to(&mut v, ConfigBuilder::new().max_size(4).build());
@@ -800,4 +823,47 @@ fn check_max_size_for_serialization() {
         Some(flat_message::Error::ExceedMaxSize(_)) => {}
         _ => panic!("Invalid error - expected MaxSizeExceeded"),
     }
+}
+
+#[test]
+fn check_serde_buffer_i8() {
+    #[flat_message(metadata: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b1: &'a [i8],
+        b2: Vec<i8>,
+    }
+    let mut v = Vec::new();
+    let s = TestStruct {
+        value: 123456,
+        b1: &[-10i8,-20,-30],
+        b2: [1,2,3,4].to_vec(),
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(v.as_slice()).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.b1, ds.b1);
+    assert_eq!(s.b2, ds.b2);
+}
+
+
+#[test]
+fn check_serde_buffer_u8() {
+    #[flat_message(metadata: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b1: &'a [u8],
+        b2: Vec<u8>,
+    }
+    let mut v = Vec::new();
+    let s = TestStruct {
+        value: 123456,
+        b1: &[200,201,202,203,255,255,255],
+        b2: [1,2,3,4,6,7,8,9,10].to_vec(),
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(v.as_slice()).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.b1, ds.b1);
+    assert_eq!(s.b2, ds.b2);
 }

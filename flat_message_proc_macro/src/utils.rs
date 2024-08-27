@@ -54,6 +54,19 @@ pub(crate) fn type_name_formatter(name: &mut String) {
     while let Some(ofs) = name.find("& ") {
         name.replace_range(ofs..ofs + 2, "&");
     }
+    // remove generics
+    while let Some(ofs) = name.find("< ") {
+        name.replace_range(ofs..ofs + 2, "<");
+    }
+    while let Some(ofs) = name.find("> ") {
+        name.replace_range(ofs..ofs + 2, ">");
+    }
+    while let Some(ofs) = name.find(" <") {
+        name.replace_range(ofs..ofs + 2, "<");
+    }
+    while let Some(ofs) = name.find(" >") {
+        name.replace_range(ofs..ofs + 2, ">");
+    }
 }
 
 pub(crate) fn validate_one_string_parameter(input: TokenStream, name: &str) -> String {
