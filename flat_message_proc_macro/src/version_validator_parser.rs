@@ -1,4 +1,4 @@
-use quote::quote;   
+use quote::quote;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum VersionToken {
@@ -32,9 +32,9 @@ impl VersionToken {
                 ".." => Ok(VersionToken::Interval),
                 _ => {
                     return Err(format!(
-                            "Invalid operator '{}' (accepted operators are '<', '..', '-', ':') !",
-                            value
-                        ));
+                        "Invalid operator '{}' (accepted operators are '<', '..', '-', ':') !",
+                        value
+                    ));
                 }
             },
             CharType::Space => Ok(VersionToken::Skip),
@@ -73,9 +73,7 @@ pub struct VersionValidatorParser {
 }
 impl Default for VersionValidatorParser {
     fn default() -> Self {
-        Self {
-            list: [false; 256],
-        }
+        Self { list: [false; 256] }
     }
 }
 impl VersionValidatorParser {
@@ -152,10 +150,10 @@ impl VersionValidatorParser {
     pub fn generate_code(&self) -> proc_macro2::TokenStream {
         let mut v = Vec::new();
         let mut idx = 1;
-        while idx<256 {
+        while idx < 256 {
             if self.list[idx] {
                 let start = idx;
-                while idx<256 && self.list[idx] {
+                while idx < 256 && self.list[idx] {
                     idx += 1;
                 }
                 let end = idx - 1;

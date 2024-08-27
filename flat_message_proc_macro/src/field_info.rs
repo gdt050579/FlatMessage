@@ -9,7 +9,7 @@ pub(crate) struct FieldInfo {
     pub(crate) name: String,
     pub(crate) hash: u32,
     pub(crate) hash_table_order: u32,
-    pub(crate) serialization_alignament: usize,
+    pub(crate) serialization_alignment: usize,
     pub(crate) ty: Type,
 }
 impl FieldInfo {
@@ -39,7 +39,7 @@ impl TryFrom<&Field> for FieldInfo {
             name,
             hash,
             hash_table_order: 0,
-            serialization_alignament: data_format.serialization_alignament(),
+            serialization_alignment: data_format.serialization_alignment(),
             ty: ty.clone(),
         })
     }

@@ -4,7 +4,7 @@ pub use std::fmt;
 pub enum Error {
     InvalidHeaderLength(usize),
     InvalidMagic,
-    InvalidSize((u32,u32)),
+    InvalidSize((u32, u32)),
     InvalidOffsetSize,
     InvalidSizeToStoreMetaData((u32, u32)),
     InvalidHash((u32, u32)),
@@ -17,7 +17,7 @@ pub enum Error {
     UnmatchedName,
     ChecksumNotStored,
     InvalidChecksum((u32, u32)),
-    ExceedMaxSize((u32,u32)),
+    ExceedMaxSize((u32, u32)),
 }
 
 impl fmt::Display for Error {

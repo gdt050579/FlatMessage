@@ -1,10 +1,10 @@
 use crate::config::Config;
 use crate::field_info::FieldInfo;
-use common::hashes;
 use common::constants;
+use common::hashes;
 use quote::quote;
 use syn::Attribute;
-use syn::{DataStruct, FieldsNamed, DeriveInput};
+use syn::{DataStruct, DeriveInput, FieldsNamed};
 
 pub(crate) struct StructInfo<'a> {
     fields_name: &'a FieldsNamed,
@@ -149,39 +149,44 @@ impl<'a> StructInfo<'a> {
         }
         v
     }
-    fn generate_fields_serialize_code(&self, ref_size: u8)->Vec<Option<proc_macro2::TokenStream>> {
+    fn generate_fields_serialize_code(
+        &self,
+        ref_size: u8,
+    ) -> Vec<Option<proc_macro2::TokenStream>> {
         let v: Vec<_> = self.fields.iter().map(|field| {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
             let hash_table_order = field.hash_table_order as usize;
             match ref_size {
-                1 => 
+                1 => {
                     Some(quote! {
                         buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u8;
                         ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order) as *mut u8, offset);
                         buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
-                    }),
-        
-                2 => 
+                    })
+                }
+                2 => {
                     Some(quote! {
                         buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u16;
                         ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*2) as *mut u16, offset);
                         buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
-                    }),
-                4 => 
+                    })
+                }
+                4 => {
                     Some(quote! {
                         buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
                         let offset = buf_pos as u32;
                         ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*4) as *mut u32, offset);
                         buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
-                    }),
+                    })
+                }
                 _ => None
             }
         }).collect();
         v
     }
-    fn generate_metadata_deserialization_code(&self)->proc_macro2::TokenStream {
+    fn generate_metadata_deserialization_code(&self) -> proc_macro2::TokenStream {
         if self.config.metadata {
             let has_timestamp = constants::FLAG_HAS_TIMESTAMP;
             let has_unique_id = constants::FLAG_HAS_UNIQUEID;
@@ -194,15 +199,15 @@ impl<'a> StructInfo<'a> {
                 } else { 0 };
                 let unique_id = if header.flags & #has_unique_id != 0 {
                     unsafe { ptr::read_unaligned(metadata_ptr) }
-                } else { 
-                    0 
+                } else {
+                    0
                 };
             }
         } else {
             quote! {}
         }
     }
-    fn generate_name_validation_code(&self)->proc_macro2::TokenStream {
+    fn generate_name_validation_code(&self) -> proc_macro2::TokenStream {
         if self.config.validate_name {
             let has_name = constants::FLAG_HAS_NAME_HASH;
             let has_crc = constants::FLAG_HAS_CHECKSUM;
@@ -213,7 +218,7 @@ impl<'a> StructInfo<'a> {
                     return Err(flat_message::Error::NameNotStored);
                 }
                 if unsafe { ptr::read_unaligned(buffer.add(name_offset) as *const u32) } != #name_hash {
-                    return Err(flat_message::Error::UnmatchedName); 
+                    return Err(flat_message::Error::UnmatchedName);
                 }
 
             }
@@ -221,12 +226,12 @@ impl<'a> StructInfo<'a> {
             quote! {}
         }
     }
-    fn generate_checksum_check_code(&self)->proc_macro2::TokenStream {
-        let has_checksum = constants::FLAG_HAS_CHECKSUM; 
+    fn generate_checksum_check_code(&self) -> proc_macro2::TokenStream {
+        let has_checksum = constants::FLAG_HAS_CHECKSUM;
         let check_checksum_code = quote! {
             let checksum = flat_message::crc32(&input[..len - 4]);
             if checksum != unsafe { ptr::read_unaligned(buffer.add(len - 4) as *const u32) } {
-                return Err(flat_message::Error::InvalidChecksum((checksum, unsafe { ptr::read_unaligned(buffer.add(len - 4) as *const u32) })));  
+                return Err(flat_message::Error::InvalidChecksum((checksum, unsafe { ptr::read_unaligned(buffer.add(len - 4) as *const u32) })));
             }
         };
         match self.config.validate_checksum {
@@ -244,7 +249,7 @@ impl<'a> StructInfo<'a> {
             crate::validate_checksum::ValidateChecksum::Ignore => quote! {},
         }
     }
-    fn generate_header_deserialization_code(&self)->proc_macro2::TokenStream {
+    fn generate_header_deserialization_code(&self) -> proc_macro2::TokenStream {
         let magic = constants::MAGIC_V1;
         let has_crc = constants::FLAG_HAS_CHECKSUM;
         let has_name = constants::FLAG_HAS_NAME_HASH;
@@ -252,14 +257,16 @@ impl<'a> StructInfo<'a> {
         let has_unique_id = constants::FLAG_HAS_UNIQUEID;
         let metadata_code = self.generate_metadata_deserialization_code();
         let name_validation = self.generate_name_validation_code();
-        let version_compatibility_check = if let Some(compatible_versions) = &self.config.compatible_versions {
-            compatible_versions.generate_code()
-        } else {
-            quote! {}
-        };
+        let version_compatibility_check =
+            if let Some(compatible_versions) = &self.config.compatible_versions {
+                compatible_versions.generate_code()
+            } else {
+                quote! {}
+            };
 
-        quote!{
-            use ::std::ptr;
+        quote! {
+                use ::std::ptr;
+                let input = input.as_slice();
                 enum RefOffsetSize {
                     U8,
                     U16,
@@ -293,7 +300,7 @@ impl<'a> StructInfo<'a> {
                     1 => RefOffsetSize::U16,
                     2 => RefOffsetSize::U32,
                     _ => return Err(flat_message::Error::InvalidOffsetSize),
-                }; 
+                };
                 let ref_table_size =  match ref_offset_size {
                     RefOffsetSize::U8 => header.fields_count as usize,
                     RefOffsetSize::U16 =>header.fields_count as usize * 2,
@@ -310,22 +317,28 @@ impl<'a> StructInfo<'a> {
                 #name_validation
 
                 let hash_table_offset = len - ref_table_size - metadata_size - hash_table_size;
-                let ref_table_offset = hash_table_offset + hash_table_size;  
-                let data_buffer = &input[..hash_table_offset];              
+                let ref_table_offset = hash_table_offset + hash_table_size;
+                let data_buffer = &input[..hash_table_offset];
                 let hashes = unsafe { core::slice::from_raw_parts(buffer.add(hash_table_offset) as *const u32, header.fields_count as usize) };
                 let mut it = hashes.iter();
         }
     }
-    fn generate_field_deserialize_code(&self, inner_var: &syn::Ident, ty: &syn::Type, field_name_hash: u32, unchecked_code: bool)->proc_macro2::TokenStream {
-        let boundary_check = quote!{
+    fn generate_field_deserialize_code(
+        &self,
+        inner_var: &syn::Ident,
+        ty: &syn::Type,
+        field_name_hash: u32,
+        unchecked_code: bool,
+    ) -> proc_macro2::TokenStream {
+        let boundary_check = quote! {
             if offset<8 || offset >= hash_table_offset {
                 return Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32)));
             }
         };
-        let unsafe_init = quote!{
+        let unsafe_init = quote! {
             let #inner_var: #ty = unsafe { flat_message::SerDe::from_buffer_unchecked(data_buffer, offset) };
         };
-        let safe_init = quote!{
+        let safe_init = quote! {
             let Some(#inner_var): Option<#ty> = flat_message::SerDe::from_buffer(data_buffer, offset) else {
                 return Err(flat_message::Error::FailToDeserialize(#field_name_hash));
             };
@@ -338,7 +351,7 @@ impl<'a> StructInfo<'a> {
             quote! {
                 #boundary_check
                 #safe_init
-            }        
+            }
         };
         quote! {
             loop {
@@ -356,20 +369,28 @@ impl<'a> StructInfo<'a> {
             #checks_and_init
         }
     }
-    fn generate_fields_deserialize_code(&self, ref_size: u8, unchecked_code: bool)->Vec<proc_macro2::TokenStream> {
+    fn generate_fields_deserialize_code(
+        &self,
+        ref_size: u8,
+        unchecked_code: bool,
+    ) -> Vec<proc_macro2::TokenStream> {
         struct HashAndInnerVar {
             hash: u32,
             inner_var: syn::Ident,
             ty: syn::Type,
         }
         let mut v = Vec::with_capacity(4);
-        let mut hashes:Vec<_> = self.fields.iter().map(|field| HashAndInnerVar {
-            hash: field.hash,
-            inner_var: field.inner_var(),
-            ty: field.ty.clone(),
-        }).collect();
+        let mut hashes: Vec<_> = self
+            .fields
+            .iter()
+            .map(|field| HashAndInnerVar {
+                hash: field.hash,
+                inner_var: field.inner_var(),
+                ty: field.ty.clone(),
+            })
+            .collect();
         hashes.sort_by_key(|hash| hash.hash);
-        v.push (match ref_size {
+        v.push(match ref_size {
             1 => quote! {
                 let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const u8 };
             },
@@ -379,14 +400,19 @@ impl<'a> StructInfo<'a> {
             4 => quote! {
                 let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const u32 };
             },
-            _ => quote! {}
+            _ => quote! {},
         });
         for obj in hashes {
-            v.push(self.generate_field_deserialize_code(&obj.inner_var, &obj.ty, obj.hash, unchecked_code));
+            v.push(self.generate_field_deserialize_code(
+                &obj.inner_var,
+                &obj.ty,
+                obj.hash,
+                unchecked_code,
+            ));
         }
         v
     }
-    fn generate_struct_construction_code(&self)->proc_macro2::TokenStream {
+    fn generate_struct_construction_code(&self) -> proc_macro2::TokenStream {
         let struct_fields = self.fields.iter().map(|field| {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
             let iner_value = field.inner_var();
@@ -396,8 +422,8 @@ impl<'a> StructInfo<'a> {
         });
         let metadata_field = if self.config.metadata {
             quote! {
-                metadata: flat_message::MetaDataBuilder::new().timestamp(timestamp).unique_id(unique_id).build()    
-            } 
+                metadata: flat_message::MetaDataBuilder::new().timestamp(timestamp).unique_id(unique_id).build()
+            }
         } else {
             quote! {}
         };
@@ -422,7 +448,7 @@ impl<'a> StructInfo<'a> {
         let version = self.config.version;
         let checksum_code = if self.config.checksum {
             quote! {
-                let checksum = flat_message::crc32(&output[..size - 4]);
+                let checksum = flat_message::crc32(&output.as_slice()[..size - 4]);
                 (buffer.add(size - 4) as *mut u32).write_unaligned(checksum);
             }
         } else {
@@ -430,7 +456,7 @@ impl<'a> StructInfo<'a> {
         };
 
         quote! {
-            fn serialize_to(&self,output: &mut Vec<u8>, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
+            fn serialize_to<V: ::flat_message::VecLike>(&self,output: &mut V, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
                 use ::std::ptr;
                 enum RefOffsetSize {
                     U8,
@@ -460,12 +486,12 @@ impl<'a> StructInfo<'a> {
                     fields_count: #fields_count,
                     version: #version,
                     flags,
-                };  
+                };
                 // Step 7: allocate memory
                 if size > config.max_size() as usize {
                     return Err(flat_message::Error::ExceedMaxSize((size as u32,config.max_size())));
                 }
-                output.resize(size, 0);
+                output.resize_zero(size);
                 // Step 8: write data directly to a raw pointer
                 let buffer: *mut u8 = output.as_mut_ptr();
                 unsafe {
@@ -507,8 +533,9 @@ impl<'a> StructInfo<'a> {
         let ctor_code = self.generate_struct_construction_code();
         let lifetimes = &self.generics.params;
         quote! {
-            fn deserialize_from(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error> 
+            fn deserialize_from(input: & #lifetimes ::flat_message::AlignedVec) -> core::result::Result<Self,flat_message::Error>
             {
+                use ::flat_message::VecLike;
                 #header_deserialization_code
                 #checksum_check_code
                 match ref_offset_size {
@@ -526,8 +553,9 @@ impl<'a> StructInfo<'a> {
                     }
                 }
             }
-            unsafe fn deserialize_from_unchecked(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error> 
+            unsafe fn deserialize_from_unchecked(input: & #lifetimes ::flat_message::AlignedVec) -> core::result::Result<Self,flat_message::Error>
             {
+                use ::flat_message::VecLike;
                 #header_deserialization_code
                 match ref_offset_size {
                     RefOffsetSize::U8 => {
@@ -587,7 +615,7 @@ impl<'a> StructInfo<'a> {
     pub(crate) fn new(
         input: &'a DeriveInput,
         d: &'a DataStruct,
-        config: Config
+        config: Config,
     ) -> Result<Self, String> {
         if let syn::Fields::Named(fields) = &d.fields {
             let mut data_members: Vec<FieldInfo> = Vec::with_capacity(32);
@@ -598,7 +626,7 @@ impl<'a> StructInfo<'a> {
             if data_members.len() > 0xFFFF {
                 return Err(format!("Structs with more than 65535 fields are not supported ! (Current structure has {} fields)", data_members.len()));
             }
-            // sort the fields again (based on hash)          
+            // sort the fields again (based on hash)
             data_members.sort_by_key(|field_info| field_info.hash);
             // compute the order
             for (idx, dm) in data_members.iter_mut().enumerate() {
@@ -608,23 +636,22 @@ impl<'a> StructInfo<'a> {
             // generate a list of derives
             let mut derives = Vec::new();
             for attr in input.attrs.iter() {
-                if attr.path().is_ident("derive") {                    
+                if attr.path().is_ident("derive") {
                     derives.push(attr);
                 }
             }
 
-            // now sort the key backwards based on their serialization alignament
-            data_members.sort_unstable_by_key(|field_info| {
-                usize::MAX - field_info.serialization_alignament
-            });
+            // now sort the key backwards based on their serialization alignment
+            data_members
+                .sort_unstable_by_key(|field_info| usize::MAX - field_info.serialization_alignment);
             Ok(StructInfo {
                 fields_name: fields,
                 fields: data_members,
                 config,
                 visibility: &input.vis,
                 generics: &input.generics,
-                name: &input.ident,  
-                derives,              
+                name: &input.ident,
+                derives,
             })
         } else {
             Err("Can not read fields from the structure !".to_string())

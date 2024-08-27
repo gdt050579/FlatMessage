@@ -31,36 +31,30 @@ pub enum DataFormat {
     VecString,
 }
 impl DataFormat {
-    pub fn serialization_alignament(&self) -> usize {
+    pub fn serialization_alignment(&self) -> usize {
         match self {
-            DataFormat::U8 => 1,
-            DataFormat::U16 => 1,
-            DataFormat::U32 => 1,
-            DataFormat::U64 => 1,
-            DataFormat::U128 => 1,
-            DataFormat::I8 => 1,
-            DataFormat::I16 => 1,
-            DataFormat::I32 => 1,
-            DataFormat::I64 => 1,
-            DataFormat::I128 => 1,
-            DataFormat::F32 => 1,
-            DataFormat::F64 => 1,
-            DataFormat::Bool => 1,
-            DataFormat::String => 1,
-            DataFormat::VecU8 => 1,
-            DataFormat::VecU16 => 2,
-            DataFormat::VecU32 => 4,
-            DataFormat::VecU64 => 8,
-            DataFormat::VecU128 => 16,
-            DataFormat::VecI8 => 1,
-            DataFormat::VecI16 => 2,
-            DataFormat::VecI32 => 4,
-            DataFormat::VecI64 => 8,
-            DataFormat::VecI128 => 16,
-            DataFormat::VecF32 => 4,
-            DataFormat::VecF64 => 8,
-            DataFormat::VecBool => 1,
-            DataFormat::VecString => 1,
+            DataFormat::U8
+            | DataFormat::U16
+            | DataFormat::U32
+            | DataFormat::U64
+            | DataFormat::U128
+            | DataFormat::I8
+            | DataFormat::I16
+            | DataFormat::I32
+            | DataFormat::I64
+            | DataFormat::I128
+            | DataFormat::F32
+            | DataFormat::F64
+            | DataFormat::Bool
+            | DataFormat::String
+            | DataFormat::VecBool
+            | DataFormat::VecString
+            | DataFormat::VecU8
+            | DataFormat::VecI8 => 1,
+            DataFormat::VecU16 | DataFormat::VecI16 => 2,
+            DataFormat::VecU32 | DataFormat::VecI32 | DataFormat::VecF32 => 4,
+            DataFormat::VecU64 | DataFormat::VecI64 | DataFormat::VecF64 => 8,
+            DataFormat::VecU128 | DataFormat::VecI128 => 16,
         }
     }
 }

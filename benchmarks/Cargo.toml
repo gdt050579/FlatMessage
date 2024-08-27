@@ -15,9 +15,14 @@ rmp = "0.8.14"
 rmp-serde = "1"
 bincode = "1"
 ascii_table = "4"
+postcard = { version = "1", features = ["use-std"] }
 
 [dev-dependencies]
+common = {path = "../common"}
 criterion = "0.5.1"
+crc = "3"
+crc32fast = "1"
+xxhash-rust = { version = "0.8.12", features = ["xxh32", "xxh3"] }
 
 [[bench]]
 name = "deserialization"
@@ -25,6 +30,10 @@ harness = false
 
 [[bench]]
 name = "serialization"
+harness = false
+
+[[bench]]
+name = "hashes"
 harness = false
 
 [lints]

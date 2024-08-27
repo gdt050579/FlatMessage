@@ -2,7 +2,7 @@ use std::num::{NonZeroU64, NonZeroU8};
 
 use criterion::BenchmarkId;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use flat_message::FlatMessage;
+use flat_message::{AlignedVec, FlatMessage, VecLike};
 use serde::{Deserialize, Serialize};
 
 #[flat_message::flat_message]
@@ -31,12 +31,14 @@ struct ProcessCreatedS {
 
 // ----------------------------------------------------------------------------
 
-fn se_test_flat_message(process: &ProcessCreated, output: &mut Vec<u8>) {
+fn se_test_flat_message(process: &ProcessCreated, output: &mut AlignedVec) {
     output.clear();
-    process.serialize_to(output, flat_message::Config::default()).unwrap();
+    process
+        .serialize_to(output, flat_message::Config::default())
+        .unwrap();
 }
 
-fn de_test_flat_message(input: &[u8]) -> ProcessCreated {
+fn de_test_flat_message(input: &AlignedVec) -> ProcessCreated {
     ProcessCreated::deserialize_from(input).unwrap()
 }
 
@@ -133,13 +135,14 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         version: NonZeroU8::new(1).unwrap(),
     };
     let mut data = Vec::new();
+    let mut the_other_data = AlignedVec::default();
 
     let mut group = c.benchmark_group("deserialization");
 
     data.clear();
-    se_test_flat_message(&process, &mut data);
+    se_test_flat_message(&process, &mut the_other_data);
     group.bench_with_input(BenchmarkId::new("flat_message", "_"), &(), |b, _| {
-        b.iter(|| black_box(de_test_flat_message(black_box(&data))))
+        b.iter(|| black_box(de_test_flat_message(black_box(&the_other_data))))
     });
 
     data.clear();

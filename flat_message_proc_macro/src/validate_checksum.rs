@@ -1,7 +1,7 @@
 pub enum ValidateChecksum {
     Always,
     Auto,
-    Ignore
+    Ignore,
 }
 impl ValidateChecksum {
     pub fn from_str(s: &str) -> Self {
