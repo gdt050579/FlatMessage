@@ -448,7 +448,7 @@ impl<'a> StructInfo<'a> {
         let version = self.config.version;
         let checksum_code = if self.config.checksum {
             quote! {
-                let checksum = flat_message::crc32(&output.as_slice()[..size - 4]);
+                let checksum = flat_message::crc32(&output[..size - 4]);
                 (buffer.add(size - 4) as *mut u32).write_unaligned(checksum);
             }
         } else {
@@ -463,7 +463,6 @@ impl<'a> StructInfo<'a> {
                     U16,
                     U32,
                 }
-                output.clear();
                 // basic header (magic + fields count + flags + version)
                 let mut buf_pos = 8usize;
                 let mut size = 8usize;
@@ -491,7 +490,9 @@ impl<'a> StructInfo<'a> {
                 if size > config.max_size() as usize {
                     return Err(flat_message::Error::ExceedMaxSize((size as u32,config.max_size())));
                 }
+                output.clear();
                 output.resize_zero(size);
+                let output = output.as_mut_slice();
                 // Step 8: write data directly to a raw pointer
                 let buffer: *mut u8 = output.as_mut_ptr();
                 unsafe {

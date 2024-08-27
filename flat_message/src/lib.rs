@@ -67,9 +67,8 @@ impl AlignedVec {
         r
     }
 
-    #[inline]
-    fn as_mut_slice(&mut self) -> &mut [u8] {
-        unsafe { slice::from_raw_parts_mut(self.vec.as_mut_ptr() as *mut u8, self.size) }
+    pub fn len(&self) -> usize {
+        self.size
     }
 }
 
@@ -88,10 +87,8 @@ impl PartialEq<AlignedVec> for AlignedVec {
 pub trait VecLike {
     fn clear(&mut self);
     fn resize_zero(&mut self, new_len: usize);
-    fn as_ptr(&self) -> *const u8;
-    fn as_mut_ptr(&mut self) -> *mut u8;
-    fn len(&self) -> usize;
     fn as_slice(&self) -> &[u8];
+    fn as_mut_slice(&mut self) -> &mut [u8];
 }
 
 impl VecLike for Vec<u8> {
@@ -106,22 +103,12 @@ impl VecLike for Vec<u8> {
     }
 
     #[inline]
-    fn as_ptr(&self) -> *const u8 {
-        self.as_ptr() as *mut u8
-    }
-
-    #[inline]
-    fn as_mut_ptr(&mut self) -> *mut u8 {
-        self.as_mut_ptr()
-    }
-
-    #[inline]
-    fn len(&self) -> usize {
-        self.len()
-    }
-
-    #[inline]
     fn as_slice(&self) -> &[u8] {
+        self
+    }
+
+    #[inline]
+    fn as_mut_slice(&mut self) -> &mut [u8] {
         self
     }
 }
@@ -140,22 +127,12 @@ impl VecLike for AlignedVec {
     }
 
     #[inline]
-    fn as_ptr(&self) -> *const u8 {
-        self.vec.as_ptr() as *const u8
-    }
-
-    #[inline]
-    fn as_mut_ptr(&mut self) -> *mut u8 {
-        self.vec.as_mut_ptr() as *mut u8
-    }
-
-    #[inline]
-    fn len(&self) -> usize {
-        self.size
-    }
-
-    #[inline]
     fn as_slice(&self) -> &[u8] {
         unsafe { slice::from_raw_parts(self.vec.as_ptr() as *const u8, self.size) }
+    }
+
+    #[inline]
+    fn as_mut_slice(&mut self) -> &mut [u8] {
+        unsafe { slice::from_raw_parts_mut(self.vec.as_mut_ptr() as *mut u8, self.size) }
     }
 }
