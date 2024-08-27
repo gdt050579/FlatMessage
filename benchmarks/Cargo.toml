@@ -15,6 +15,7 @@ rmp = "0.8.14"
 rmp-serde = "1"
 bincode = "1"
 ascii_table = "4"
+postcard = { version = "1", features = ["use-std"] }
 
 [dev-dependencies]
 criterion = "0.5.1"

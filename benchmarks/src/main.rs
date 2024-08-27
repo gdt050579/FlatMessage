@@ -88,6 +88,16 @@ fn de_test_flexbuffers<S: DeserializeOwned>(input: &[u8]) -> S {
 
 // ----------------------------------------------------------------------------
 
+fn se_test_postcard<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+    postcard::to_io(process, output).unwrap();
+}
+
+fn de_test_postcard<S: DeserializeOwned>(input: &[u8]) -> S {
+    postcard::from_bytes(input).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
 struct Result {
     name: &'static str,
     top_test_name: &'static str,
@@ -268,6 +278,14 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_json,
         de_test_json,
+        results,
+    );
+    bench(
+        top_test_name,
+        "postcard",
+        s,
+        se_test_postcard,
+        de_test_postcard,
         results,
     );
 }
