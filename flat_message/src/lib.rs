@@ -34,9 +34,6 @@ mod serde;
 mod structure_information;
 mod storage;
 
-use std::fmt::Debug;
-use std::slice;
-
 pub use self::config::Config;
 pub use self::config::ConfigBuilder;
 pub use self::error::Error;
