@@ -31,7 +31,7 @@ pub enum DataFormat {
     VecString,
 }
 impl DataFormat {
-    pub fn serialization_alignament(&self) -> usize {
+    pub fn serialization_alignment(&self) -> usize {
         match self {
             DataFormat::U8
             | DataFormat::U16

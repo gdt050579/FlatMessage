@@ -638,9 +638,9 @@ impl<'a> StructInfo<'a> {
                 }
             }
 
-            // now sort the key backwards based on their serialization alignament
+            // now sort the key backwards based on their serialization alignment
             data_members.sort_unstable_by_key(|field_info| {
-                usize::MAX - field_info.serialization_alignament
+                usize::MAX - field_info.serialization_alignment
             });
             Ok(StructInfo {
                 fields_name: fields,
