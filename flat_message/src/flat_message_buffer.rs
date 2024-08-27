@@ -4,8 +4,7 @@ use crate::AlignedVec;
 use crate::MetaData;
 use crate::VecLike;
 
-#[cfg(feature = "VALIDATE_CRC32")]
-use super::hashes;
+use common::hashes;
 use super::Error;
 use super::Name;
 use super::SerDe;
@@ -261,10 +260,7 @@ impl<'a> TryFrom<&'a AlignedVec> for FlatMessageBuffer<'a> {
         };
         let name_hash = if header.flags & constants::FLAG_HAS_NAME_HASH != 0 {
             let value = unsafe { buffer::read::<u32>(p, offset) };
-            #[cfg(feature = "VALIDATE_CRC32")]
-            {
-                offset += 4;
-            }
+            offset += 4;
             if value != 0 {
                 Some(Name { value })
             } else {
@@ -273,7 +269,6 @@ impl<'a> TryFrom<&'a AlignedVec> for FlatMessageBuffer<'a> {
         } else {
             None
         };
-        #[cfg(feature = "VALIDATE_CRC32")]
         if header.flags & constants::FLAG_HAS_CHECKSUM != 0 {
             let crc = unsafe { buffer::read::<u32>(p, offset) };
             let calculated_crc = hashes::crc32(&buf[..offset]);

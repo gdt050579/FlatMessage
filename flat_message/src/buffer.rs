@@ -2,7 +2,7 @@
 pub(crate) enum WriteSizeMethod {
     ByteAlignamentSize,
     WordAlignamentSize,
-    DWORD,
+    _DWord,
 }
 
 #[inline(always)]
@@ -13,7 +13,7 @@ pub(crate) unsafe fn write_size(
     method: WriteSizeMethod,
 ) -> usize {
     match method {
-        WriteSizeMethod::DWORD => unsafe {
+        WriteSizeMethod::_DWord => unsafe {
             (p.add(pos) as *mut u32).write_unaligned(value);
             4
         },
@@ -54,7 +54,7 @@ pub(crate) unsafe fn read_size_unchecked(
     method: WriteSizeMethod,
 ) -> (usize, usize) {
     match method {
-        WriteSizeMethod::DWORD => ((p.add(pos) as *mut u32).read_unaligned() as usize, 4),
+        WriteSizeMethod::_DWord => ((p.add(pos) as *mut u32).read_unaligned() as usize, 4),
         WriteSizeMethod::WordAlignamentSize => {
             let p = p.add(pos);
             let first = (p as *const u16).read_unaligned();
@@ -84,7 +84,7 @@ pub(crate) fn read_size(
     method: WriteSizeMethod,
 ) -> Option<(usize, usize)> {
     match method {
-        WriteSizeMethod::DWORD => {
+        WriteSizeMethod::_DWord => {
             if pos + 4 > len {
                 None
             } else {
@@ -139,7 +139,7 @@ pub(crate) fn read_size(
 #[inline(always)]
 pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
     match method {
-        WriteSizeMethod::DWORD => 4,
+        WriteSizeMethod::_DWord => 4,
         WriteSizeMethod::ByteAlignamentSize => {
             if value < 0xFE {
                 1
@@ -159,12 +159,12 @@ pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
     }
 }
 
-#[inline(always)]
-pub(crate) unsafe fn write<T: Sized + Copy>(p: *mut u8, pos: usize, value: T) {
-    unsafe {
-        (p.add(pos) as *mut T).write_unaligned(value);
-    }
-}
+// #[inline(always)]
+// pub(crate) unsafe fn write<T: Sized + Copy>(p: *mut u8, pos: usize, value: T) {
+//     unsafe {
+//         (p.add(pos) as *mut T).write_unaligned(value);
+//     }
+// }
 
 #[inline(always)]
 pub(crate) unsafe fn read<T: Sized + Copy>(p: *const u8, pos: usize) -> T {
