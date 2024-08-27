@@ -1,5 +1,5 @@
 use ascii_table::{Align, AsciiTable};
-use flat_message::{FlatMessage, FlatMessageOwned};
+use flat_message::{AlignedVec, FlatMessage, FlatMessageOwned, VecLike};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Display;
@@ -14,87 +14,91 @@ mod tests;
 
 // ----------------------------------------------------------------------------
 
-fn se_test_flat_message<'a, T: FlatMessage<'a>>(process: &T, output: &mut Vec<u8>) {
+fn se_test_flat_message<'a, T: FlatMessage<'a>>(
+    process: &T,
+    output: &mut Vec<u8>,
+    _: &mut AlignedVec,
+) {
     process
         .serialize_to(output, flat_message::Config::default())
         .unwrap();
 }
 
-fn de_test_flat_message<T: FlatMessageOwned>(input: &[u8]) -> T {
-    T::deserialize_from(input).unwrap()
+fn de_test_flat_message<T: FlatMessageOwned>(_: &[u8], input_aligned: &AlignedVec) -> T {
+    T::deserialize_from(input_aligned).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_bson<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_bson<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut AlignedVec) {
     *output = bson::to_vec(&process).unwrap();
 }
 
-fn de_test_bson<S: DeserializeOwned>(input: &[u8]) -> S {
+fn de_test_bson<S: DeserializeOwned>(input: &[u8], _: &AlignedVec) -> S {
     bson::from_slice(&input).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_cbor<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_cbor<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut AlignedVec) {
     ciborium::into_writer(process, &mut *output).unwrap();
 }
 
-fn de_test_cbor<S: DeserializeOwned>(input: &[u8]) -> S {
+fn de_test_cbor<S: DeserializeOwned>(input: &[u8], _: &AlignedVec) -> S {
     ciborium::from_reader(input).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_json<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_json<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut AlignedVec) {
     serde_json::to_writer(&mut *output, process).unwrap();
 }
 
-fn de_test_json<S: DeserializeOwned>(input: &[u8]) -> S {
+fn de_test_json<S: DeserializeOwned>(input: &[u8], _: &AlignedVec) -> S {
     serde_json::from_slice(input).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_rmp_schema<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_rmp_schema<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut AlignedVec) {
     rmp_serde::encode::write(output, process).unwrap();
 }
 
-fn se_test_rmp_schemaless<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_rmp_schemaless<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut AlignedVec) {
     rmp_serde::encode::write_named(output, process).unwrap();
 }
 
-fn de_test_rmp<S: DeserializeOwned>(input: &[u8]) -> S {
+fn de_test_rmp<S: DeserializeOwned>(input: &[u8], _: &AlignedVec) -> S {
     rmp_serde::decode::from_slice(input).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_bincode<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_bincode<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut AlignedVec) {
     bincode::serialize_into(&mut *output, process).unwrap();
 }
 
-fn de_test_bincode<S: DeserializeOwned>(input: &[u8]) -> S {
+fn de_test_bincode<S: DeserializeOwned>(input: &[u8], _: &AlignedVec) -> S {
     bincode::deserialize(input).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_flexbuffers<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_flexbuffers<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut AlignedVec) {
     *output = flexbuffers::to_vec(process).unwrap();
 }
 
-fn de_test_flexbuffers<S: DeserializeOwned>(input: &[u8]) -> S {
+fn de_test_flexbuffers<S: DeserializeOwned>(input: &[u8], _: &AlignedVec) -> S {
     flexbuffers::from_slice(input).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_postcard<S: Serialize>(process: &S, output: &mut Vec<u8>) {
+fn se_test_postcard<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut AlignedVec) {
     postcard::to_io(process, output).unwrap();
 }
 
-fn de_test_postcard<S: DeserializeOwned>(input: &[u8]) -> S {
+fn de_test_postcard<S: DeserializeOwned>(input: &[u8], _: &AlignedVec) -> S {
     postcard::from_bytes(input).unwrap()
 }
 
@@ -112,41 +116,59 @@ struct Result {
 
 const ITERATIONS: u32 = 1_000_000;
 
-fn se_bench<T, FS: Fn(&T, &mut Vec<u8>)>(x: &T, serialize: FS, vec: &mut Vec<u8>) -> Duration {
-    let start = Instant::now();
-    for _ in 0..ITERATIONS {
-        vec.clear();
-        black_box(serialize(x, vec));
-        black_box(vec.len());
-    }
-    start.elapsed()
-}
-
-fn de_bench<T, FD: Fn(&[u8]) -> T>(deserialize: FD, input: &[u8]) -> Duration {
-    let start = Instant::now();
-    for _ in 0..ITERATIONS {
-        black_box(deserialize(black_box(input)));
-    }
-    start.elapsed()
-}
-
-fn se_de_bench<T, FS: Fn(&T, &mut Vec<u8>), FD: Fn(&[u8]) -> T>(
+fn se_bench<T, FS: Fn(&T, &mut Vec<u8>, &mut AlignedVec) + Clone>(
     x: &T,
     serialize: FS,
-    deserialize: FD,
     vec: &mut Vec<u8>,
+    aligned_vec: &mut AlignedVec,
 ) -> Duration {
     let start = Instant::now();
     for _ in 0..ITERATIONS {
         vec.clear();
-        black_box(serialize(x, vec));
+        black_box(serialize(x, vec, aligned_vec));
         black_box(vec.len());
-        black_box(deserialize(black_box(vec)));
     }
     start.elapsed()
 }
 
-fn bench<T, FS: Fn(&T, &mut Vec<u8>) + Clone, FD: Fn(&[u8]) -> T + Clone>(
+fn de_bench<T, FD: Fn(&[u8], &AlignedVec) -> T>(
+    deserialize: FD,
+    input: &[u8],
+    input_aligned: &AlignedVec,
+) -> Duration {
+    let start = Instant::now();
+    for _ in 0..ITERATIONS {
+        black_box(deserialize(black_box(input), black_box(input_aligned)));
+    }
+    start.elapsed()
+}
+
+fn se_de_bench<
+    T,
+    FS: Fn(&T, &mut Vec<u8>, &mut AlignedVec) + Clone,
+    FD: Fn(&[u8], &AlignedVec) -> T + Clone,
+>(
+    x: &T,
+    serialize: FS,
+    deserialize: FD,
+    vec: &mut Vec<u8>,
+    aligned_vec: &mut AlignedVec,
+) -> Duration {
+    let start = Instant::now();
+    for _ in 0..ITERATIONS {
+        vec.clear();
+        black_box(serialize(x, vec, aligned_vec));
+        black_box(vec.len());
+        black_box(deserialize(black_box(vec), black_box(aligned_vec)));
+    }
+    start.elapsed()
+}
+
+fn bench<
+    T,
+    FS: Fn(&T, &mut Vec<u8>, &mut AlignedVec) + Clone,
+    FD: Fn(&[u8], &AlignedVec) -> T + Clone,
+>(
     top_test_name: &'static str,
     test_name: &'static str,
     x: &T,
@@ -154,10 +176,11 @@ fn bench<T, FS: Fn(&T, &mut Vec<u8>) + Clone, FD: Fn(&[u8]) -> T + Clone>(
     deserialize: FD,
     results: &mut Vec<Result>,
 ) {
-    let vec = &mut Vec::with_capacity(4096);
-    let time_se = se_bench(x, serialize.clone(), vec);
-    let time_de = de_bench(deserialize.clone(), vec);
-    let time_se_de = se_de_bench(x, serialize, deserialize, vec);
+    let vec = &mut Vec::default();
+    let aligned_vec = &mut AlignedVec::default();
+    let time_se = se_bench(x, serialize.clone(), vec, aligned_vec);
+    let time_de = de_bench(deserialize.clone(), vec, aligned_vec);
+    let time_se_de = se_de_bench(x, serialize, deserialize, vec, aligned_vec);
 
     results.push(Result {
         name: test_name,
@@ -188,15 +211,15 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
             todo!()
         }
 
-        fn serialize_to(
+        fn serialize_to<V: VecLike>(
             &self,
-            output: &mut Vec<u8>,
+            output: &mut V,
             config: flat_message::Config,
         ) -> std::result::Result<(), flat_message::Error> {
             self.0.serialize_to(output, config)
         }
 
-        fn deserialize_from(input: &'a [u8]) -> std::result::Result<Self, flat_message::Error>
+        fn deserialize_from(input: &'a AlignedVec) -> std::result::Result<Self, flat_message::Error>
         where
             Self: Sized,
         {
@@ -204,7 +227,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         }
 
         unsafe fn deserialize_from_unchecked(
-            input: &'a [u8],
+            input: &'a AlignedVec,
         ) -> std::result::Result<Self, flat_message::Error>
         where
             Self: Sized,

@@ -265,7 +265,8 @@ impl<'a> StructInfo<'a> {
             };
 
         quote! {
-            use ::std::ptr;
+                use ::std::ptr;
+                let input = input.as_slice();
                 enum RefOffsetSize {
                     U8,
                     U16,
@@ -447,7 +448,7 @@ impl<'a> StructInfo<'a> {
         let version = self.config.version;
         let checksum_code = if self.config.checksum {
             quote! {
-                let checksum = flat_message::crc32(&output[..size - 4]);
+                let checksum = flat_message::crc32(&output.as_slice()[..size - 4]);
                 (buffer.add(size - 4) as *mut u32).write_unaligned(checksum);
             }
         } else {
@@ -455,7 +456,7 @@ impl<'a> StructInfo<'a> {
         };
 
         quote! {
-            fn serialize_to(&self,output: &mut Vec<u8>, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
+            fn serialize_to<V: ::flat_message::VecLike>(&self,output: &mut V, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
                 use ::std::ptr;
                 enum RefOffsetSize {
                     U8,
@@ -490,7 +491,7 @@ impl<'a> StructInfo<'a> {
                 if size > config.max_size() as usize {
                     return Err(flat_message::Error::ExceedMaxSize((size as u32,config.max_size())));
                 }
-                output.resize(size, 0);
+                output.resize_zero(size);
                 // Step 8: write data directly to a raw pointer
                 let buffer: *mut u8 = output.as_mut_ptr();
                 unsafe {
@@ -532,8 +533,9 @@ impl<'a> StructInfo<'a> {
         let ctor_code = self.generate_struct_construction_code();
         let lifetimes = &self.generics.params;
         quote! {
-            fn deserialize_from(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error>
+            fn deserialize_from(input: & #lifetimes ::flat_message::AlignedVec) -> core::result::Result<Self,flat_message::Error>
             {
+                use ::flat_message::VecLike;
                 #header_deserialization_code
                 #checksum_check_code
                 match ref_offset_size {
@@ -551,8 +553,9 @@ impl<'a> StructInfo<'a> {
                     }
                 }
             }
-            unsafe fn deserialize_from_unchecked(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error>
+            unsafe fn deserialize_from_unchecked(input: & #lifetimes ::flat_message::AlignedVec) -> core::result::Result<Self,flat_message::Error>
             {
+                use ::flat_message::VecLike;
                 #header_deserialization_code
                 match ref_offset_size {
                     RefOffsetSize::U8 => {
@@ -639,9 +642,8 @@ impl<'a> StructInfo<'a> {
             }
 
             // now sort the key backwards based on their serialization alignment
-            data_members.sort_unstable_by_key(|field_info| {
-                usize::MAX - field_info.serialization_alignment
-            });
+            data_members
+                .sort_unstable_by_key(|field_info| usize::MAX - field_info.serialization_alignment);
             Ok(StructInfo {
                 fields_name: fields,
                 fields: data_members,
