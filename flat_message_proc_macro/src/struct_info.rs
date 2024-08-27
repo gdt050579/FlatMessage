@@ -490,7 +490,7 @@ impl<'a> StructInfo<'a> {
                 if size > config.max_size() as usize {
                     return Err(flat_message::Error::ExceedMaxSize((size as u32,config.max_size())));
                 }
-                output.resize(size, 0);
+                output.resize_zero(size);
                 // Step 8: write data directly to a raw pointer
                 let buffer: *mut u8 = output.as_mut_ptr();
                 unsafe {

@@ -34,6 +34,7 @@ mod serde;
 mod structure_information;
 
 use std::ops::Index;
+use std::slice;
 use std::slice::SliceIndex;
 
 pub use self::config::Config;
@@ -60,7 +61,7 @@ pub struct AlignedVec {
 
 pub trait VecLike {
     fn clear(&mut self);
-    fn resize(&mut self, new_len: usize, value: u8);
+    fn resize_zero(&mut self, new_len: usize);
     fn as_mut_ptr(&mut self) -> *mut u8;
     fn len(&self) -> usize;
     fn as_slice(&self) -> &[u8];
@@ -73,8 +74,8 @@ impl VecLike for Vec<u8> {
     }
 
     #[inline]
-    fn resize(&mut self, new_len: usize, value: u8) {
-        self.resize(new_len, value);
+    fn resize_zero(&mut self, new_len: usize) {
+        self.resize(new_len, 0);
     }
 
     #[inline]
@@ -90,5 +91,34 @@ impl VecLike for Vec<u8> {
     #[inline]
     fn as_slice(&self) -> &[u8] {
         self
+    }
+}
+
+impl VecLike for AlignedVec {
+    #[inline]
+    fn clear(&mut self) {
+        self.vec.clear();
+        self.size = 0;
+    }
+
+    #[inline]
+    fn resize_zero(&mut self, new_len: usize) {
+        self.vec.resize(new_len / size_of::<u128>() + 1, 0);
+        self.size = new_len;
+    }
+
+    #[inline]
+    fn as_mut_ptr(&mut self) -> *mut u8 {
+        self.vec.as_mut_ptr() as *mut u8
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        self.size
+    }
+
+    #[inline]
+    fn as_slice(&self) -> &[u8] {
+        unsafe { slice::from_raw_parts(self.vec.as_ptr() as *const u8, self.size) }
     }
 }
