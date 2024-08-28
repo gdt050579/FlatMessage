@@ -1,14 +1,14 @@
 use crate::buffer;
 use crate::headers::HeaderV1;
-use crate::Storage;
 use crate::MetaData;
+use crate::Storage;
 use crate::VecLike;
 
-use common::hashes;
 use super::Error;
 use super::Name;
 use super::SerDe;
 use common::constants;
+use common::hashes;
 use std::num::NonZeroU64;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

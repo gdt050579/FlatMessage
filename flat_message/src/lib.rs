@@ -31,8 +31,8 @@ pub mod headers;
 mod metadata;
 mod name;
 mod serde;
-mod structure_information;
 mod storage;
+mod structure_information;
 
 pub use self::config::Config;
 pub use self::config::ConfigBuilder;

@@ -16,7 +16,7 @@ pub struct LargeVectors {
 
 fn create_vector<T>(size: usize, start: T, end: T, step: T) -> Vec<T>
 where
-    T: Copy + Clone + Add<Output=T> + PartialOrd,
+    T: Copy + Clone + Add<Output = T> + PartialOrd,
 {
     let mut vec = Vec::with_capacity(size);
     let mut val = start.clone();
@@ -30,13 +30,12 @@ where
     vec
 }
 
-
 pub fn generate() -> LargeVectors {
     LargeVectors {
-        buffer: create_vector(2000,200,220,1),
-        ints: create_vector(10000, -1_000_000, 1_000_000,10000),
-        floats: create_vector(15000, 30_000.0, 1_000_000.0,5000.0),
-        shorts: create_vector(20000, 0, 30000,123),
+        buffer: create_vector(2000, 200, 220, 1),
+        ints: create_vector(10000, -1_000_000, 1_000_000, 10000),
+        floats: create_vector(15000, 30_000.0, 1_000_000.0, 5000.0),
+        shorts: create_vector(20000, 0, 30000, 123),
         uints: create_vector(25000, 0, 1_000_000, 10000),
         small_ints: create_vector(30000, 0, 255, 1),
     }

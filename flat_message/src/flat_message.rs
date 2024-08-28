@@ -1,6 +1,6 @@
 use crate::error::Error;
 use crate::metadata::MetaData;
-use crate::{Storage, Config, VecLike};
+use crate::{Config, Storage, VecLike};
 
 pub trait FlatMessage<'a> {
     fn metadata(&self) -> &MetaData;

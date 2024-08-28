@@ -1,5 +1,6 @@
 use ascii_table::{Align, AsciiTable};
-use flat_message::{Storage, FlatMessage, FlatMessageOwned, VecLike};
+use clap::Parser;
+use flat_message::{FlatMessage, FlatMessageOwned, Storage, VecLike};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Display;
@@ -12,94 +13,96 @@ mod structures;
 #[cfg(test)]
 mod tests;
 
+struct TestData {
+    vec: Vec<u8>,
+    storage: Storage,
+    iterations: u32,
+}
+
 // ----------------------------------------------------------------------------
 
-fn se_test_flat_message<'a, T: FlatMessage<'a>>(
-    process: &T,
-    _: &mut Vec<u8>,
-    output: &mut Storage,
-) {
+fn se_test_flat_message<'a, T: FlatMessage<'a>>(process: &T, data: &mut TestData) {
     process
-        .serialize_to(output, flat_message::Config::default())
+        .serialize_to(&mut data.storage, flat_message::Config::default())
         .unwrap();
 }
 
-fn de_test_flat_message<T: FlatMessageOwned>(_: &[u8], input_aligned: &Storage) -> T {
-    T::deserialize_from(input_aligned).unwrap()
+fn de_test_flat_message<T: FlatMessageOwned>(data: &TestData) -> T {
+    T::deserialize_from(&data.storage).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_bson<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut Storage) {
-    *output = bson::to_vec(&process).unwrap();
+fn se_test_bson<S: Serialize>(process: &S, data: &mut TestData) {
+    data.vec = bson::to_vec(&process).unwrap();
 }
 
-fn de_test_bson<S: DeserializeOwned>(input: &[u8], _: &Storage) -> S {
-    bson::from_slice(&input).unwrap()
-}
-
-// ----------------------------------------------------------------------------
-
-fn se_test_cbor<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut Storage) {
-    ciborium::into_writer(process, &mut *output).unwrap();
-}
-
-fn de_test_cbor<S: DeserializeOwned>(input: &[u8], _: &Storage) -> S {
-    ciborium::from_reader(input).unwrap()
+fn de_test_bson<S: DeserializeOwned>(data: &TestData) -> S {
+    bson::from_slice(&data.vec).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_json<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut Storage) {
-    serde_json::to_writer(&mut *output, process).unwrap();
+fn se_test_cbor<S: Serialize>(process: &S, data: &mut TestData) {
+    ciborium::into_writer(process, &mut data.vec).unwrap();
 }
 
-fn de_test_json<S: DeserializeOwned>(input: &[u8], _: &Storage) -> S {
-    serde_json::from_slice(input).unwrap()
-}
-
-// ----------------------------------------------------------------------------
-
-fn se_test_rmp_schema<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut Storage) {
-    rmp_serde::encode::write(output, process).unwrap();
-}
-
-fn se_test_rmp_schemaless<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut Storage) {
-    rmp_serde::encode::write_named(output, process).unwrap();
-}
-
-fn de_test_rmp<S: DeserializeOwned>(input: &[u8], _: &Storage) -> S {
-    rmp_serde::decode::from_slice(input).unwrap()
+fn de_test_cbor<S: DeserializeOwned>(data: &TestData) -> S {
+    ciborium::from_reader(data.vec.as_slice()).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_bincode<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut Storage) {
-    bincode::serialize_into(&mut *output, process).unwrap();
+fn se_test_json<S: Serialize>(process: &S, data: &mut TestData) {
+    serde_json::to_writer(&mut data.vec, process).unwrap();
 }
 
-fn de_test_bincode<S: DeserializeOwned>(input: &[u8], _: &Storage) -> S {
-    bincode::deserialize(input).unwrap()
-}
-
-// ----------------------------------------------------------------------------
-
-fn se_test_flexbuffers<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut Storage) {
-    *output = flexbuffers::to_vec(process).unwrap();
-}
-
-fn de_test_flexbuffers<S: DeserializeOwned>(input: &[u8], _: &Storage) -> S {
-    flexbuffers::from_slice(input).unwrap()
+fn de_test_json<S: DeserializeOwned>(data: &TestData) -> S {
+    serde_json::from_slice(&data.vec).unwrap()
 }
 
 // ----------------------------------------------------------------------------
 
-fn se_test_postcard<S: Serialize>(process: &S, output: &mut Vec<u8>, _: &mut Storage) {
-    postcard::to_io(process, output).unwrap();
+fn se_test_rmp_schema<S: Serialize>(process: &S, data: &mut TestData) {
+    rmp_serde::encode::write(&mut data.vec, process).unwrap();
 }
 
-fn de_test_postcard<S: DeserializeOwned>(input: &[u8], _: &Storage) -> S {
-    postcard::from_bytes(input).unwrap()
+fn se_test_rmp_schemaless<S: Serialize>(process: &S, data: &mut TestData) {
+    rmp_serde::encode::write_named(&mut data.vec, process).unwrap();
+}
+
+fn de_test_rmp<S: DeserializeOwned>(data: &TestData) -> S {
+    rmp_serde::decode::from_slice(&data.vec).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_bincode<S: Serialize>(process: &S, data: &mut TestData) {
+    bincode::serialize_into(&mut data.vec, process).unwrap();
+}
+
+fn de_test_bincode<S: DeserializeOwned>(data: &TestData) -> S {
+    bincode::deserialize(&data.vec).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_flexbuffers<S: Serialize>(process: &S, data: &mut TestData) {
+    data.vec = flexbuffers::to_vec(process).unwrap();
+}
+
+fn de_test_flexbuffers<S: DeserializeOwned>(data: &TestData) -> S {
+    flexbuffers::from_slice(&data.vec).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
+fn se_test_postcard<S: Serialize>(process: &S, data: &mut TestData) {
+    postcard::to_io(process, &mut data.vec).unwrap();
+}
+
+fn de_test_postcard<S: DeserializeOwned>(data: &TestData) -> S {
+    postcard::from_bytes(&data.vec).unwrap()
 }
 
 // ----------------------------------------------------------------------------
@@ -114,82 +117,70 @@ struct Result {
     time_se_de_ms: String,
 }
 
-const ITERATIONS: u32 = 1_000_000;
-
-fn se_bench<T, FS: Fn(&T, &mut Vec<u8>, &mut Storage) + Clone>(
+fn se_bench<T, FS: Fn(&T, &mut TestData) + Clone>(
     x: &T,
     serialize: FS,
-    vec: &mut Vec<u8>,
-    aligned_vec: &mut Storage,
+    data: &mut TestData,
 ) -> Duration {
     let start = Instant::now();
-    for _ in 0..ITERATIONS {
-        vec.clear();
-        aligned_vec.clear();
-        black_box(serialize(x, vec, aligned_vec));
-        black_box(vec.len());
-        black_box(aligned_vec.len());
+    for _ in 0..data.iterations {
+        data.vec.clear();
+        data.storage.clear();
+        black_box(serialize(x, data));
+        black_box(data.vec.len());
+        black_box(data.storage.len());
     }
     start.elapsed()
 }
 
-fn de_bench<T, FD: Fn(&[u8], &Storage) -> T>(
-    deserialize: FD,
-    input: &[u8],
-    input_aligned: &Storage,
-) -> Duration {
+fn de_bench<T, FD: Fn(&TestData) -> T>(deserialize: FD, data: &TestData) -> Duration {
     let start = Instant::now();
-    for _ in 0..ITERATIONS {
-        black_box(deserialize(black_box(input), black_box(input_aligned)));
+    for _ in 0..data.iterations {
+        black_box(deserialize(black_box(data)));
     }
     start.elapsed()
 }
 
-fn se_de_bench<
-    T,
-    FS: Fn(&T, &mut Vec<u8>, &mut Storage) + Clone,
-    FD: Fn(&[u8], &Storage) -> T + Clone,
->(
+fn se_de_bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     x: &T,
     serialize: FS,
     deserialize: FD,
-    vec: &mut Vec<u8>,
-    aligned_vec: &mut Storage,
+    data: &mut TestData,
 ) -> Duration {
     let start = Instant::now();
-    for _ in 0..ITERATIONS {
-        vec.clear();
-        aligned_vec.clear();
-        black_box(serialize(x, vec, aligned_vec));
-        black_box(vec.len());
-        black_box(aligned_vec.len());
-        black_box(deserialize(black_box(vec), black_box(aligned_vec)));
+    for _ in 0..data.iterations {
+        data.vec.clear();
+        data.storage.clear();
+        black_box(serialize(x, data));
+        black_box(data.vec.len());
+        black_box(data.storage.len());
+        black_box(deserialize(black_box(data)));
     }
     start.elapsed()
 }
 
-fn bench<
-    T,
-    FS: Fn(&T, &mut Vec<u8>, &mut Storage) + Clone,
-    FD: Fn(&[u8], &Storage) -> T + Clone,
->(
+fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     top_test_name: &'static str,
     test_name: &'static str,
     x: &T,
     serialize: FS,
     deserialize: FD,
     results: &mut Vec<Result>,
+    iterations: u32,
 ) {
-    let vec = &mut Vec::default();
-    let aligned_vec = &mut Storage::default();
-    let time_se = se_bench(x, serialize.clone(), vec, aligned_vec);
-    let time_de = de_bench(deserialize.clone(), vec, aligned_vec);
-    let time_se_de = se_de_bench(x, serialize, deserialize, vec, aligned_vec);
+    let mut data = TestData {
+        vec: Vec::default(),
+        storage: Storage::default(),
+        iterations,
+    };
+    let time_se = se_bench(x, serialize.clone(), &mut data);
+    let time_de = de_bench(deserialize.clone(), &data);
+    let time_se_de = se_de_bench(x, serialize, deserialize, &mut data);
 
     results.push(Result {
         name: test_name,
         top_test_name,
-        size: vec.len().max(aligned_vec.len()),
+        size: data.vec.len().max(data.storage.len()),
         time_se_de,
         time_se_ms: format!("{:.2}", time_se.as_secs_f64() * 1000.0),
         time_de_ms: format!("{:.2}", time_de.as_secs_f64() * 1000.0),
@@ -202,6 +193,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     t: &T,
     s: &S,
     results: &mut Vec<Result>,
+    iterations: u32,
 ) {
     // Little hack to redirect the deserialize_from to deserialize_from_unchecked
     // Just for testing, don't actually do this.
@@ -248,6 +240,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_flat_message,
         de_test_flat_message,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -256,6 +249,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_flat_message,
         de_test_flat_message,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -264,6 +258,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_rmp_schema,
         de_test_rmp,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -272,6 +267,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_rmp_schemaless,
         de_test_rmp,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -280,6 +276,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_bincode,
         de_test_bincode,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -288,6 +285,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_flexbuffers,
         de_test_flexbuffers,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -296,6 +294,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_cbor,
         de_test_cbor,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -304,6 +303,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_bson,
         de_test_bson,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -312,6 +312,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_json,
         de_test_json,
         results,
+        iterations,
     );
     bench(
         top_test_name,
@@ -320,6 +321,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         se_test_postcard,
         de_test_postcard,
         results,
+        iterations,
     );
 }
 
@@ -384,45 +386,59 @@ fn do_one<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
     process: &T,
     process_s: &S,
     results: &mut Vec<Result>,
+    iterations: u32,
 ) {
-    add_benches(top_test_name, process, process_s, results);
+    add_benches(top_test_name, process, process_s, results, iterations);
+}
+
+#[derive(clap::Parser)]
+struct Args {
+    #[arg(long, short, default_value_t = 1_000_000)]
+    iterations: u32,
 }
 
 fn main() {
-    println!("iterations: {}", ITERATIONS);
+    let args = Args::parse();
+    println!("iterations: {}", args.iterations);
     let results = &mut Vec::new();
     {
         let process_small = structures::process_create::generate_flat();
         let process_s_small = structures::process_create::generate_other();
-        do_one("process_create", &process_small, &process_s_small, results);
+        do_one(
+            "process_create",
+            &process_small,
+            &process_s_small,
+            results,
+            args.iterations,
+        );
     }
     {
         let s = structures::long_strings::generate(100);
-        do_one("long_strings", &s, &s, results);
+        do_one("long_strings", &s, &s, results, args.iterations);
     }
     {
         let s = structures::point::generate();
-        do_one("point", &s, &s, results);
+        do_one("point", &s, &s, results, args.iterations);
     }
     {
         let s = structures::one_bool::generate();
-        do_one("one_bool", &s, &s, results);
+        do_one("one_bool", &s, &s, results, args.iterations);
     }
     {
         let s = structures::multiple_fields::generate();
-        do_one("multiple_fields", &s, &s, results);
+        do_one("multiple_fields", &s, &s, results, args.iterations);
     }
     {
         let s = structures::multiple_integers::generate();
-        do_one("multiple_integers", &s, &s, results);
+        do_one("multiple_integers", &s, &s, results, args.iterations);
     }
     {
         let s = structures::vectors::generate();
-        do_one("vectors", &s, &s, results);
+        do_one("vectors", &s, &s, results, args.iterations);
     }
     {
         let s = structures::large_vectors::generate();
-        do_one("large_vectors", &s, &s, results);
+        do_one("large_vectors", &s, &s, results, args.iterations);
     }
     print_results(results);
 }

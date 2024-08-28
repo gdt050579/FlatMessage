@@ -2,9 +2,9 @@ use common::data_format::DataFormat;
 
 mod basic_types;
 mod bool;
-mod string;
-mod buffers_8bits;
 mod buffers;
+mod buffers_8bits;
+mod string;
 
 pub unsafe trait SerDe<'a> {
     fn data_format() -> DataFormat;

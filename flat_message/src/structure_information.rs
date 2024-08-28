@@ -1,4 +1,4 @@
-use crate::{buffer, headers, Storage, Error, Name, VecLike};
+use crate::{buffer, headers, Error, Name, Storage, VecLike};
 use common::constants;
 use std::mem::size_of;
 use std::num::{NonZeroU32, NonZeroU64, NonZeroU8};
