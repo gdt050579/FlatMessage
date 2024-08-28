@@ -16,8 +16,8 @@ mod tests;
 
 fn se_test_flat_message<'a, T: FlatMessage<'a>>(
     process: &T,
-    output: &mut Vec<u8>,
-    _: &mut Storage,
+    _: &mut Vec<u8>,
+    output: &mut Storage,
 ) {
     process
         .serialize_to(output, flat_message::Config::default())
