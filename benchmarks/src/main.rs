@@ -3,7 +3,7 @@ use clap::Parser;
 use flat_message::{FlatMessage, FlatMessageOwned, Storage, VecLike};
 use rkyv::ser::serializers::{AlignedSerializer, BufferScratch, CompositeSerializer};
 use rkyv::ser::Serializer;
-use rkyv::{AlignedVec, Infallible};
+use rkyv::{AlignedVec, Deserialize, Infallible};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Display;
@@ -112,11 +112,11 @@ fn de_test_postcard<S: DeserializeOwned>(data: &TestData) -> S {
 
 // ----------------------------------------------------------------------------
 
-type RykvS<'x> = CompositeSerializer<AlignedSerializer<&'x mut AlignedVec>, BufferScratch<&'x mut AlignedVec>>;
+type RykvS<'x> =
+    CompositeSerializer<AlignedSerializer<&'x mut AlignedVec>, BufferScratch<&'x mut AlignedVec>>;
 
-fn se_test_rykv<'x, __S, T>(x: &T, data: &'x mut TestData)
+fn se_test_rykv<'x, T>(x: &T, data: &'x mut TestData)
 where
-    __S: rkyv::Fallible + ?Sized,
     T: serde::Serialize + rkyv::Serialize<RykvS<'x>> + rkyv::Fallible,
 {
     let mut serializer: RykvS = CompositeSerializer::new(
@@ -127,8 +127,14 @@ where
     serializer.serialize_value(x).unwrap();
 }
 
-fn de_test_rykv<S: DeserializeOwned>(data: &TestData) -> S {
-    postcard::from_bytes(&data.vec).unwrap()
+fn de_test_rykv<'x, T>(data: &TestData) -> T
+where
+    T: rkyv::Archive,
+    T::Archived: for<'a> rkyv::CheckBytes<rkyv::validation::validators::DefaultValidator<'a>>
+        + rkyv::Deserialize<T, Infallible>,
+{
+    let archived = rkyv::check_archived_root::<T>(&data.rykv_buffer).unwrap();
+    archived.deserialize(&mut rkyv::Infallible).unwrap()
 }
 
 // ----------------------------------------------------------------------------
@@ -353,6 +359,15 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         results,
         iterations,
     );
+    // bench(
+    //     top_test_name,
+    //     "rykv",
+    //     s,
+    //     se_test_rykv,
+    //     de_test_rykv,
+    //     results,
+    //     iterations,
+    // );
 }
 
 fn print_results(results: &mut Vec<Result>) {
@@ -411,14 +426,13 @@ fn print_results(results: &mut Vec<Result>) {
     ascii_table.print(r);
 }
 
-fn do_one<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
+fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: &'static str,
-    process: &T,
-    process_s: &S,
+    x: &T,
     results: &mut Vec<Result>,
     iterations: u32,
 ) {
-    add_benches(top_test_name, process, process_s, results, iterations);
+    add_benches(top_test_name, x, x, results, iterations);
 }
 
 #[derive(clap::Parser)]
@@ -433,42 +447,35 @@ fn main() {
     let results = &mut Vec::new();
     {
         let process_small = structures::process_create::generate_flat();
-        let process_s_small = structures::process_create::generate_other();
-        do_one(
-            "process_create",
-            &process_small,
-            &process_s_small,
-            results,
-            args.iterations,
-        );
+        do_one("process_create", &process_small, results, args.iterations);
     }
     {
         let s = structures::long_strings::generate(100);
-        do_one("long_strings", &s, &s, results, args.iterations);
+        do_one("long_strings", &s, results, args.iterations);
     }
     {
         let s = structures::point::generate();
-        do_one("point", &s, &s, results, args.iterations);
+        do_one("point", &s, results, args.iterations);
     }
     {
         let s = structures::one_bool::generate();
-        do_one("one_bool", &s, &s, results, args.iterations);
+        do_one("one_bool", &s, results, args.iterations);
     }
     {
         let s = structures::multiple_fields::generate();
-        do_one("multiple_fields", &s, &s, results, args.iterations);
+        do_one("multiple_fields", &s, results, args.iterations);
     }
     {
         let s = structures::multiple_integers::generate();
-        do_one("multiple_integers", &s, &s, results, args.iterations);
+        do_one("multiple_integers", &s, results, args.iterations);
     }
     {
         let s = structures::vectors::generate();
-        do_one("vectors", &s, &s, results, args.iterations);
+        do_one("vectors", &s, results, args.iterations);
     }
     {
         let s = structures::large_vectors::generate();
-        do_one("large_vectors", &s, &s, results, args.iterations);
+        do_one("large_vectors", &s, results, args.iterations);
     }
     print_results(results);
 }

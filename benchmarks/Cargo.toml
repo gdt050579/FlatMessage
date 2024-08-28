@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-flat_message = { version = "1.0.0", path = "../flat_message" }
+flat_message = { version = "1.0.0", path = "../flat_message", features = ["serde"]}
 flexbuffers = "2"
 serde = "1"
 serde_derive = "1"
