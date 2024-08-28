@@ -1,8 +1,8 @@
 #[derive(Copy, Clone)]
 pub(crate) enum WriteSizeMethod {
-    ByteAlignamentSize,
-    WordAlignamentSize,
-    _DWord,
+    U8withExtension,
+    U16withExtension,
+    U32,
 }
 
 #[inline(always)]
@@ -13,11 +13,11 @@ pub(crate) unsafe fn write_size(
     method: WriteSizeMethod,
 ) -> usize {
     match method {
-        WriteSizeMethod::_DWord => unsafe {
+        WriteSizeMethod::U32 => unsafe {
             (p.add(pos) as *mut u32).write_unaligned(value);
             4
         },
-        WriteSizeMethod::WordAlignamentSize => unsafe {
+        WriteSizeMethod::U16withExtension => unsafe {
             if value < 0xFFFF {
                 (p.add(pos) as *mut u16).write_unaligned(value as u16);
                 2
@@ -28,7 +28,7 @@ pub(crate) unsafe fn write_size(
                 6
             }
         },
-        WriteSizeMethod::ByteAlignamentSize => unsafe {
+        WriteSizeMethod::U8withExtension => unsafe {
             if value < 0xFE {
                 p.add(pos).write_unaligned(value as u8);
                 1
@@ -54,8 +54,8 @@ pub(crate) unsafe fn read_size_unchecked(
     method: WriteSizeMethod,
 ) -> (usize, usize) {
     match method {
-        WriteSizeMethod::_DWord => ((p.add(pos) as *mut u32).read_unaligned() as usize, 4),
-        WriteSizeMethod::WordAlignamentSize => {
+        WriteSizeMethod::U32 => ((p.add(pos) as *mut u32).read_unaligned() as usize, 4),
+        WriteSizeMethod::U16withExtension => {
             let p = p.add(pos);
             let first = (p as *const u16).read_unaligned();
             if first < 0xFFFF {
@@ -64,7 +64,7 @@ pub(crate) unsafe fn read_size_unchecked(
                 ((p.add(2) as *mut u32).read_unaligned() as usize, 6)
             }
         }
-        WriteSizeMethod::ByteAlignamentSize => {
+        WriteSizeMethod::U8withExtension => {
             let p = p.add(pos);
             let first = p.read_unaligned();
             match first {
@@ -84,7 +84,7 @@ pub(crate) fn read_size(
     method: WriteSizeMethod,
 ) -> Option<(usize, usize)> {
     match method {
-        WriteSizeMethod::_DWord => {
+        WriteSizeMethod::U32 => {
             if pos + 4 > len {
                 None
             } else {
@@ -94,7 +94,7 @@ pub(crate) fn read_size(
                 ))
             }
         }
-        WriteSizeMethod::WordAlignamentSize => {
+        WriteSizeMethod::U16withExtension => {
             if pos + 2 > len {
                 None
             } else {
@@ -112,7 +112,7 @@ pub(crate) fn read_size(
                 }
             }
         }
-        WriteSizeMethod::ByteAlignamentSize => unsafe {
+        WriteSizeMethod::U8withExtension => unsafe {
             let p = p.add(pos);
             let first = p.read_unaligned();
             match first {
@@ -139,8 +139,8 @@ pub(crate) fn read_size(
 #[inline(always)]
 pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
     match method {
-        WriteSizeMethod::_DWord => 4,
-        WriteSizeMethod::ByteAlignamentSize => {
+        WriteSizeMethod::U32 => 4,
+        WriteSizeMethod::U8withExtension => {
             if value < 0xFE {
                 1
             } else if value < 0x10000 {
@@ -149,7 +149,7 @@ pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
                 5
             }
         }
-        WriteSizeMethod::WordAlignamentSize => {
+        WriteSizeMethod::U16withExtension => {
             if value < 0xFFFF {
                 2
             } else {

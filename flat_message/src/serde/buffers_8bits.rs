@@ -12,7 +12,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
                 let p = buf.as_ptr();
                 let (len, buf_len) =
-                    buffer::read_size_unchecked(p, pos, buffer::WriteSizeMethod::ByteAlignamentSize);
+                    buffer::read_size_unchecked(p, pos, buffer::WriteSizeMethod::U8withExtension);
                 std::slice::from_raw_parts(p.add(pos + buf_len) as *const $ptr_type, len)
             }
             #[inline(always)]
@@ -21,7 +21,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
                     buf.as_ptr(),
                     pos,
                     buf.len(),
-                    buffer::WriteSizeMethod::ByteAlignamentSize,
+                    buffer::WriteSizeMethod::U8withExtension,
                 )?;
                 let end = pos + buf_len + len;
                 if end > buf.len() {
@@ -40,7 +40,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
                 let len = self.len() as u32;
                 unsafe {
                     let buf_len =
-                        buffer::write_size(p, pos, len, buffer::WriteSizeMethod::ByteAlignamentSize);
+                        buffer::write_size(p, pos, len, buffer::WriteSizeMethod::U8withExtension);
                     std::ptr::copy_nonoverlapping(
                         self.as_ptr() as *mut u8,
                         p.add(pos + buf_len),
@@ -51,7 +51,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
             }
             #[inline(always)]
             fn size(&self) -> usize {
-                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::ByteAlignamentSize)
+                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::U8withExtension)
                     + self.len()
             }
             #[inline(always)]
@@ -84,7 +84,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             fn size(&self) -> usize {
-                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::ByteAlignamentSize)
+                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::U8withExtension)
                     + self.len()
             }
             #[inline(always)]

@@ -904,3 +904,89 @@ fn check_serde_buffer_u16() {
     assert_eq!(s.b1, ds.b1);
     assert_eq!(s.b2, ds.b2);
 }
+
+#[test]
+fn check_serde_buffer_i16() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b1: &'a [i16],
+        b2: Vec<i16>,
+        name: String,
+        surname: &'a str,
+        checked: bool,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123456,
+        b1: &[200,201,202,203,255,255,255],
+        b2: [1,2,3,4,6,7,8,9,10].to_vec(),
+        name: "John".to_string(),
+        surname: "Doe",
+        checked: true,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.b1, ds.b1);
+    assert_eq!(s.b2, ds.b2);
+    assert_eq!(s.name, ds.name);
+    assert_eq!(s.surname, ds.surname);
+    assert_eq!(s.checked, ds.checked);
+}
+
+#[test]
+fn check_serde_buffer_32bit_integer() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b1: &'a [i32],
+        b2: Vec<i32>,
+        b3: &'a [u32],
+        b4: Vec<u32>,
+        name: String,
+        surname: &'a str,
+        checked: bool,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123456,
+        b1: &[200,201,202,203,255,255,255],
+        b2: [-1,2,-3,4,-6,7,-8,9,-10].to_vec(),
+        b3: &[10,20,30,40],
+        b4: [1,2,3,4,6,7,8,9,10].to_vec(),
+        name: "John".to_string(),
+        surname: "Doe",
+        checked: true,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.b1, ds.b1);
+    assert_eq!(s.b2, ds.b2);
+    assert_eq!(s.b3, ds.b3);
+    assert_eq!(s.b4, ds.b4);
+    assert_eq!(s.name, ds.name);
+    assert_eq!(s.surname, ds.surname);
+    assert_eq!(s.checked, ds.checked);
+}
+
+#[test]
+fn check_aliganemnt_order_u32_u16_string() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        buf_u32_aligned: &'a [u32],
+        list_u16_aligned: Vec<u16>,
+        string_u8_aligned: String,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        buf_u32_aligned: &[1,2,3,4],
+        list_u16_aligned: [1,2,3].to_vec(),
+        string_u8_aligned: "Hello".to_string(),
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    // order in the buffer should be: buf_u32_aligned, list_u16_aligned, string_u8_aligned
+    let expected = vec![71u8, 84, 72, 1, 3, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 3, 0, 1, 0, 2, 0, 3, 0, 5, 72, 101, 108, 108, 111, 0, 0, 14, 159, 54, 27, 17, 216, 51, 208, 16, 226, 119, 250, 36, 8, 28];
+    assert_eq!(v.as_slice(), expected.as_slice());
+}

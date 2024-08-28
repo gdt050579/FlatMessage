@@ -3,7 +3,7 @@ use crate::buffer;
 use common::data_format::DataFormat;
 
 macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
-    ($t:ty, $data_format:ident, $ptr_type:ty) => {
+    ($t:ty, $data_format:ident, $ptr_type:ty, $align_method:ident, $offset_alignament_mask:expr) => {
         unsafe impl<'a> SerDe<'a> for $t {
             fn data_format() -> DataFormat {
                 DataFormat::$data_format
@@ -11,11 +11,8 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
             #[inline(always)]
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
                 let p = buf.as_ptr();
-                let (count, size_len) = buffer::read_size_unchecked(
-                    p,
-                    pos,
-                    buffer::WriteSizeMethod::WordAlignamentSize,
-                );
+                let (count, size_len) =
+                    buffer::read_size_unchecked(p, pos, buffer::WriteSizeMethod::$align_method);
                 std::slice::from_raw_parts(p.add(pos + size_len) as *const $ptr_type, count)
             }
             #[inline(always)]
@@ -24,7 +21,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
                     buf.as_ptr(),
                     pos,
                     buf.len(),
-                    buffer::WriteSizeMethod::WordAlignamentSize,
+                    buffer::WriteSizeMethod::$align_method,
                 )?;
                 let end = pos + size_len + count * std::mem::size_of::<$ptr_type>();
                 if end > buf.len() {
@@ -42,12 +39,8 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
             unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
                 let len = self.len() as u32;
                 unsafe {
-                    let size_len = buffer::write_size(
-                        p,
-                        pos,
-                        len,
-                        buffer::WriteSizeMethod::WordAlignamentSize,
-                    );
+                    let size_len =
+                        buffer::write_size(p, pos, len, buffer::WriteSizeMethod::$align_method);
                     std::ptr::copy_nonoverlapping(
                         self.as_ptr() as *mut u8,
                         p.add(pos + size_len),
@@ -58,21 +51,19 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
             }
             #[inline(always)]
             fn size(&self) -> usize {
-                buffer::size_len(
-                    self.len() as u32,
-                    buffer::WriteSizeMethod::WordAlignamentSize,
-                ) + self.len() * std::mem::size_of::<$ptr_type>()
+                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::$align_method)
+                    + self.len() * std::mem::size_of::<$ptr_type>()
             }
             #[inline(always)]
             fn align_offset(&self, offset: usize) -> usize {
-                (offset + 1usize) & !(1usize)
+                (offset + 1usize) & !($offset_alignament_mask as usize)
             }
         }
     };
 }
 
 macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
-    ($t:ty, $data_format:ident) => {
+    ($t:ty, $data_format:ident, $align_method:ident, $offset_alignament_mask:expr) => {
         unsafe impl SerDe<'_> for Vec<$t> {
             fn data_format() -> DataFormat {
                 DataFormat::$data_format
@@ -93,20 +84,22 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             fn size(&self) -> usize {
-                buffer::size_len(
-                    self.len() as u32,
-                    buffer::WriteSizeMethod::WordAlignamentSize,
-                ) + self.len() * std::mem::size_of::<$t>()
+                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::$align_method)
+                    + self.len() * std::mem::size_of::<$t>()
             }
             #[inline(always)]
             fn align_offset(&self, offset: usize) -> usize {
-                (offset + 1usize) & !(1usize)
+                (offset + 1usize) & !($offset_alignament_mask as usize)
             }
         }
     };
 }
 
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u16], VecU16, u16);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i16], VecI16, i16);
-IMPLEMENT_SERDE_FOR_VECTOR!(u16, VecU16);
-IMPLEMENT_SERDE_FOR_VECTOR!(i16, VecI16);
+IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u16], VecU16, u16, U16withExtension, 1);
+IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i16], VecI16, i16, U16withExtension, 1);
+IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u32], VecU32, u32, U32, 3);
+IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i32], VecI32, i32, U32, 3);
+IMPLEMENT_SERDE_FOR_VECTOR!(u16, VecU16, U16withExtension, 1);
+IMPLEMENT_SERDE_FOR_VECTOR!(i16, VecI16, U16withExtension, 1);
+IMPLEMENT_SERDE_FOR_VECTOR!(u32, VecU32, U32, 3);
+IMPLEMENT_SERDE_FOR_VECTOR!(i32, VecI32, U32, 3);
