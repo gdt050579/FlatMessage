@@ -115,6 +115,7 @@ struct Result {
     time_se_ms: String,
     time_de_ms: String,
     time_se_de_ms: String,
+    needs_schema: bool,
 }
 
 fn se_bench<T, FS: Fn(&T, &mut TestData) + Clone>(
@@ -165,6 +166,7 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     x: &T,
     serialize: FS,
     deserialize: FD,
+    needs_schema: bool,
     results: &mut Vec<Result>,
     iterations: u32,
 ) {
@@ -185,6 +187,7 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
         time_se_ms: format!("{:.2}", time_se.as_secs_f64() * 1000.0),
         time_de_ms: format!("{:.2}", time_de.as_secs_f64() * 1000.0),
         time_se_de_ms: format!("{:.2}", time_se_de.as_secs_f64() * 1000.0),
+        needs_schema,
     });
 }
 
@@ -239,6 +242,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         t,
         se_test_flat_message,
         de_test_flat_message,
+        false,
         results,
         iterations,
     );
@@ -248,6 +252,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         &wrapper,
         se_test_flat_message,
         de_test_flat_message,
+        false,
         results,
         iterations,
     );
@@ -257,6 +262,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_rmp_schema,
         de_test_rmp,
+        true,
         results,
         iterations,
     );
@@ -266,6 +272,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_rmp_schemaless,
         de_test_rmp,
+        false,
         results,
         iterations,
     );
@@ -275,6 +282,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_bincode,
         de_test_bincode,
+        true,
         results,
         iterations,
     );
@@ -284,6 +292,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_flexbuffers,
         de_test_flexbuffers,
+        false,
         results,
         iterations,
     );
@@ -293,6 +302,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_cbor,
         de_test_cbor,
+        false,
         results,
         iterations,
     );
@@ -302,6 +312,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_bson,
         de_test_bson,
+        false,
         results,
         iterations,
     );
@@ -311,6 +322,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_json,
         de_test_json,
+        false,
         results,
         iterations,
     );
@@ -320,6 +332,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
         s,
         se_test_postcard,
         de_test_postcard,
+        true,
         results,
         iterations,
     );
@@ -340,36 +353,43 @@ fn print_results(results: &mut Vec<Result>) {
         .set_align(Align::Left);
     ascii_table
         .column(1)
+        .set_header("schema")
+        .set_align(Align::Center);
+    ascii_table
+        .column(2)
         .set_header("name")
         .set_align(Align::Left);
     ascii_table
-        .column(2)
+        .column(3)
         .set_header("size (b)")
         .set_align(Align::Right);
     ascii_table
-        .column(3)
+        .column(4)
         .set_header("se time (ms)")
         .set_align(Align::Right);
     ascii_table
-        .column(4)
+        .column(5)
         .set_header("de time (ms)")
         .set_align(Align::Right);
     ascii_table
-        .column(5)
+        .column(6)
         .set_header("se + de time (ms)")
         .set_align(Align::Right);
 
-    let mut r: Vec<[&dyn Display; 6]> = Vec::new();
+    let mut r: Vec<[&dyn Display; 7]> = Vec::new();
     let mut last = None;
+
     for i in results {
         let current = Some(i.top_test_name);
         if !last.is_none() && last != current {
-            r.push([&"---", &"---", &"---", &"---", &"---", &"---"]);
+            r.push([&"---", &"---", &"---", &"---", &"---", &"---", &"---"]);
         }
         last = current;
 
+        let ch = if i.needs_schema { &'*' } else { &' ' };
         r.push([
             &i.top_test_name,
+            ch,
             &i.name,
             &i.size,
             &i.time_se_ms,
