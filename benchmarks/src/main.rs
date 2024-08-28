@@ -412,5 +412,9 @@ fn main() {
         let s = structures::multiple_integers::generate();
         do_one("multiple_integers", &s, &s, results);
     }
+    {
+        let s = structures::vectors::generate();
+        do_one("vectors", &s, &s, results);
+    }
     print_results(results);
 }

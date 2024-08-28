@@ -4,3 +4,4 @@ pub(crate) mod multiple_integers;
 pub(crate) mod one_bool;
 pub(crate) mod point;
 pub(crate) mod process_create;
+pub(crate) mod vectors;
