@@ -17,6 +17,7 @@ bincode = "1"
 ascii_table = "4"
 postcard = { version = "1", features = ["use-std"] }
 clap = { version = "4", features = ["derive"] }
+rkyv = { version = "0.7", features = ["validation"] }
 
 [dev-dependencies]
 common = {path = "../common"}

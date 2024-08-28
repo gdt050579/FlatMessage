@@ -1,6 +1,9 @@
 use ascii_table::{Align, AsciiTable};
 use clap::Parser;
 use flat_message::{FlatMessage, FlatMessageOwned, Storage, VecLike};
+use rkyv::ser::serializers::{AlignedSerializer, BufferScratch, CompositeSerializer};
+use rkyv::ser::Serializer;
+use rkyv::{AlignedVec, Infallible};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::fmt::Display;
@@ -16,6 +19,8 @@ mod tests;
 struct TestData {
     vec: Vec<u8>,
     storage: Storage,
+    rykv_buffer: AlignedVec,
+    rykv_scratch: AlignedVec,
     iterations: u32,
 }
 
@@ -107,6 +112,27 @@ fn de_test_postcard<S: DeserializeOwned>(data: &TestData) -> S {
 
 // ----------------------------------------------------------------------------
 
+type RykvS<'x> = CompositeSerializer<AlignedSerializer<&'x mut AlignedVec>, BufferScratch<&'x mut AlignedVec>>;
+
+fn se_test_rykv<'x, __S, T>(x: &T, data: &'x mut TestData)
+where
+    __S: rkyv::Fallible + ?Sized,
+    T: serde::Serialize + rkyv::Serialize<RykvS<'x>> + rkyv::Fallible,
+{
+    let mut serializer: RykvS = CompositeSerializer::new(
+        AlignedSerializer::new(&mut data.rykv_buffer),
+        BufferScratch::new(&mut data.rykv_scratch),
+        Infallible,
+    );
+    serializer.serialize_value(x).unwrap();
+}
+
+fn de_test_rykv<S: DeserializeOwned>(data: &TestData) -> S {
+    postcard::from_bytes(&data.vec).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
 struct Result {
     name: &'static str,
     top_test_name: &'static str,
@@ -126,6 +152,8 @@ fn se_bench<T, FS: Fn(&T, &mut TestData) + Clone>(
     for _ in 0..data.iterations {
         data.vec.clear();
         data.storage.clear();
+        data.rykv_buffer.clear();
+        data.rykv_scratch.clear();
         black_box(serialize(x, data));
         black_box(data.vec.len());
         black_box(data.storage.len());
@@ -171,6 +199,8 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     let mut data = TestData {
         vec: Vec::default(),
         storage: Storage::default(),
+        rykv_buffer: AlignedVec::new(),
+        rykv_scratch: AlignedVec::new(),
         iterations,
     };
     let time_se = se_bench(x, serialize.clone(), &mut data);
