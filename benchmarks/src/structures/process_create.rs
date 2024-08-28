@@ -2,7 +2,8 @@ use flat_message::flat_message;
 use serde::{Deserialize, Serialize};
 
 #[flat_message]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Serialize, rkyv::Deserialize)]
+#[archive(check_bytes)]
 pub struct ProcessCreated {
     name: String,
     pid: u32,

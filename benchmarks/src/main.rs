@@ -115,9 +115,9 @@ fn de_test_postcard<S: DeserializeOwned>(data: &TestData) -> S {
 type RykvS<'x> =
     CompositeSerializer<AlignedSerializer<&'x mut AlignedVec>, BufferScratch<&'x mut AlignedVec>>;
 
-fn se_test_rykv<'x, T>(x: &T, data: &'x mut TestData)
+fn se_test_rykv<'x, T>(x: &T, data: &mut TestData)
 where
-    T: serde::Serialize + rkyv::Serialize<RykvS<'x>> + rkyv::Fallible,
+    T: for<'a> rkyv::Serialize<RykvS<'a>>,
 {
     let mut serializer: RykvS = CompositeSerializer::new(
         AlignedSerializer::new(&mut data.rykv_buffer),
@@ -224,12 +224,18 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     });
 }
 
-fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
-    top_test_name: &'static str,
-    x: &T,
-    results: &mut Vec<Result>,
-    iterations: u32,
-) {
+fn add_benches<T>(top_test_name: &'static str, x: &T, results: &mut Vec<Result>, iterations: u32)
+where
+    T: FlatMessageOwned
+        + Clone
+        + Serialize
+        + DeserializeOwned
+        + rkyv::Archive
+        + for<'a> rkyv::Serialize<RykvS<'a>>
+       ,
+    T::Archived: for<'a> rkyv::CheckBytes<rkyv::validation::validators::DefaultValidator<'a>>
+        + rkyv::Deserialize<T, Infallible>,
+{
     // Little hack to redirect the deserialize_from to deserialize_from_unchecked
     // Just for testing, don't actually do this.
     struct Wrapper<T>(T);
@@ -358,15 +364,15 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
         results,
         iterations,
     );
-    // bench(
-    //     top_test_name,
-    //     "rykv",
-    //     x,
-    //     se_test_rykv,
-    //     de_test_rykv,
-    //     results,
-    //     iterations,
-    // );
+    bench(
+        top_test_name,
+        "rykv",
+        x,
+        se_test_rykv,
+        de_test_rykv,
+        results,
+        iterations,
+    );
 }
 
 fn print_results(results: &mut Vec<Result>) {
@@ -425,12 +431,18 @@ fn print_results(results: &mut Vec<Result>) {
     ascii_table.print(r);
 }
 
-fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
-    top_test_name: &'static str,
-    x: &T,
-    results: &mut Vec<Result>,
-    iterations: u32,
-) {
+fn do_one<T>(top_test_name: &'static str, x: &T, results: &mut Vec<Result>, iterations: u32)
+where
+    T: FlatMessageOwned
+        + Clone
+        + Serialize
+        + DeserializeOwned
+        + rkyv::Archive
+        + for<'a> rkyv::Serialize<RykvS<'a>>
+       ,
+    T::Archived: for<'a> rkyv::CheckBytes<rkyv::validation::validators::DefaultValidator<'a>>
+        + rkyv::Deserialize<T, Infallible>,
+{
     add_benches(top_test_name, x, results, iterations);
 }
 

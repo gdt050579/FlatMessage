@@ -3,6 +3,7 @@ use std::sync::atomic::AtomicU64;
 
 #[derive(Default, Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "rkyv", derive(rkyv::Archive, rkyv::Serialize, rkyv::Deserialize))]
 pub struct MetaData {
     timestamp: Option<NonZeroU64>,
     unique_id: Option<NonZeroU64>,
