@@ -88,8 +88,10 @@ impl TryFrom<&str> for DataFormat {
             "Vec<u16>" => Ok(DataFormat::VecU16),
             "&[i32]" => Ok(DataFormat::VecI32),
             "&[u32]" => Ok(DataFormat::VecU32),
+            "&[f32]" => Ok(DataFormat::VecF32),
             "Vec<i32>" => Ok(DataFormat::VecI32),
             "Vec<u32>" => Ok(DataFormat::VecU32),
+            "Vec<f32>" => Ok(DataFormat::VecF32),
             _ => Err(format!("Unsupported type : '{}'", value)),
         }
     }

@@ -990,3 +990,33 @@ fn check_aliganemnt_order_u32_u16_string() {
     let expected = vec![71u8, 84, 72, 1, 3, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0, 3, 0, 1, 0, 2, 0, 3, 0, 5, 72, 101, 108, 108, 111, 0, 0, 14, 159, 54, 27, 17, 216, 51, 208, 16, 226, 119, 250, 36, 8, 28];
     assert_eq!(v.as_slice(), expected.as_slice());
 }
+
+#[test]
+fn check_serde_buffer_float_32() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b1: &'a [f32],
+        b2: Vec<f32>,
+        name: String,
+        surname: &'a str,
+        checked: bool,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123456,
+        b1: &[1.2f32, 2.3, 3.4, 4.5, 6.7, 7.8, 8.9],
+        b2: [-12345.1234f32, 123.123, 1000.0, 0.0].to_vec(),
+        name: "John".to_string(),
+        surname: "Doe",
+        checked: true,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.b1, ds.b1);
+    assert_eq!(s.b2, ds.b2);
+    assert_eq!(s.name, ds.name);
+    assert_eq!(s.surname, ds.surname);
+    assert_eq!(s.checked, ds.checked);
+}
