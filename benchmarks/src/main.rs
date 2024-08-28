@@ -125,8 +125,10 @@ fn se_bench<T, FS: Fn(&T, &mut Vec<u8>, &mut Storage) + Clone>(
     let start = Instant::now();
     for _ in 0..ITERATIONS {
         vec.clear();
+        aligned_vec.clear();
         black_box(serialize(x, vec, aligned_vec));
         black_box(vec.len());
+        black_box(aligned_vec.len());
     }
     start.elapsed()
 }
@@ -157,8 +159,10 @@ fn se_de_bench<
     let start = Instant::now();
     for _ in 0..ITERATIONS {
         vec.clear();
+        aligned_vec.clear();
         black_box(serialize(x, vec, aligned_vec));
         black_box(vec.len());
+        black_box(aligned_vec.len());
         black_box(deserialize(black_box(vec), black_box(aligned_vec)));
     }
     start.elapsed()
