@@ -420,5 +420,9 @@ fn main() {
         let s = structures::vectors::generate();
         do_one("vectors", &s, &s, results);
     }
+    {
+        let s = structures::large_vectors::generate();
+        do_one("large_vectors", &s, &s, results);
+    }
     print_results(results);
 }
