@@ -224,10 +224,9 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     });
 }
 
-fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
+fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: &'static str,
-    t: &T,
-    s: &S,
+    x: &T,
     results: &mut Vec<Result>,
     iterations: u32,
 ) {
@@ -267,12 +266,12 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
             Ok(Wrapper(T::deserialize_from_unchecked(input)?))
         }
     }
-    let wrapper = Wrapper(t.clone());
+    let wrapper = Wrapper(x.clone());
 
     bench(
         top_test_name,
         "flat_message",
-        t,
+        x,
         se_test_flat_message,
         de_test_flat_message,
         results,
@@ -290,7 +289,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "rmp_schema",
-        s,
+        x,
         se_test_rmp_schema,
         de_test_rmp,
         results,
@@ -299,7 +298,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "rmp_schemaless",
-        s,
+        x,
         se_test_rmp_schemaless,
         de_test_rmp,
         results,
@@ -308,7 +307,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "bincode",
-        s,
+        x,
         se_test_bincode,
         de_test_bincode,
         results,
@@ -317,7 +316,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "flexbuffers",
-        s,
+        x,
         se_test_flexbuffers,
         de_test_flexbuffers,
         results,
@@ -326,7 +325,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "cbor",
-        s,
+        x,
         se_test_cbor,
         de_test_cbor,
         results,
@@ -335,7 +334,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "bson",
-        s,
+        x,
         se_test_bson,
         de_test_bson,
         results,
@@ -344,7 +343,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "json",
-        s,
+        x,
         se_test_json,
         de_test_json,
         results,
@@ -353,7 +352,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "postcard",
-        s,
+        x,
         se_test_postcard,
         de_test_postcard,
         results,
@@ -362,7 +361,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     // bench(
     //     top_test_name,
     //     "rykv",
-    //     s,
+    //     x,
     //     se_test_rykv,
     //     de_test_rykv,
     //     results,
@@ -432,7 +431,7 @@ fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     results: &mut Vec<Result>,
     iterations: u32,
 ) {
-    add_benches(top_test_name, x, x, results, iterations);
+    add_benches(top_test_name, x, results, iterations);
 }
 
 #[derive(clap::Parser)]
