@@ -189,7 +189,7 @@ fn bench<
     results.push(Result {
         name: test_name,
         top_test_name,
-        size: vec.len(),
+        size: vec.len().max(aligned_vec.len()),
         time_se_de,
         time_se_ms: format!("{:.2}", time_se.as_secs_f64() * 1000.0),
         time_de_ms: format!("{:.2}", time_de.as_secs_f64() * 1000.0),
