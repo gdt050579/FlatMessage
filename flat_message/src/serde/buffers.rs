@@ -56,7 +56,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
             }
             #[inline(always)]
             fn align_offset(&self, offset: usize) -> usize {
-                (offset + 1usize) & !($offset_alignament_mask as usize)
+                (offset + ($offset_alignament_mask as usize)) & !($offset_alignament_mask as usize)
             }
         }
     };
@@ -89,7 +89,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             fn align_offset(&self, offset: usize) -> usize {
-                (offset + 1usize) & !($offset_alignament_mask as usize)
+                (offset + ($offset_alignament_mask as usize)) & !($offset_alignament_mask as usize)
             }
         }
     };
@@ -103,6 +103,8 @@ IMPLEMENT_SERDE_FOR_BUFFER!(&'a [f32], VecF32, f32, U32, 3);
 IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u64], VecU64, u64, U32on64bits, 7);
 IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i64], VecI64, i64, U32on64bits, 7);
 IMPLEMENT_SERDE_FOR_BUFFER!(&'a [f64], VecF64, f64, U32on64bits, 7);
+IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u128], VecU128, u128, U32on128bits, 15);
+IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i128], VecI128, i128, U32on128bits, 15);
 
 IMPLEMENT_SERDE_FOR_VECTOR!(u16, VecU16, U16withExtension, 1);
 IMPLEMENT_SERDE_FOR_VECTOR!(i16, VecI16, U16withExtension, 1);
@@ -112,3 +114,5 @@ IMPLEMENT_SERDE_FOR_VECTOR!(f32, VecF32, U32, 3);
 IMPLEMENT_SERDE_FOR_VECTOR!(u64, VecU64, U32on64bits, 7);
 IMPLEMENT_SERDE_FOR_VECTOR!(i64, VecI64, U32on64bits, 7);
 IMPLEMENT_SERDE_FOR_VECTOR!(f64, VecF64, U32on64bits, 7);
+IMPLEMENT_SERDE_FOR_VECTOR!(u128, VecU128, U32on128bits, 15);
+IMPLEMENT_SERDE_FOR_VECTOR!(i128, VecI128, U32on128bits, 15);

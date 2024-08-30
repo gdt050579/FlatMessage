@@ -1028,7 +1028,6 @@ fn check_serde_buffer_float_32() {
     assert_eq!(s.checked, ds.checked);
 }
 
-
 #[test]
 fn check_serde_64_bits_buffers() {
     #[flat_message(metadata: false, store_name: false)]
@@ -1062,6 +1061,81 @@ fn check_serde_64_bits_buffers() {
     assert_eq!(s.value, ds.value);
     assert_eq!(s.b1, ds.b1);
     assert_eq!(s.b2, ds.b2);
+    assert_eq!(s.b3, ds.b3);
+    assert_eq!(s.b4, ds.b4);
+    assert_eq!(s.b5, ds.b5);
+    assert_eq!(s.b6, ds.b6);
+    assert_eq!(s.name, ds.name);
+    assert_eq!(s.surname, ds.surname);
+    assert_eq!(s.checked, ds.checked);
+}
+
+#[test]
+fn check_serde_128_bits_alignament() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct {
+        b6: Vec<u128>,
+        b4: Vec<u64>,
+        b5: Vec<u32>,
+        name: String,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        b6: [1, 2, 3].to_vec(),
+        b4: [10, 20].to_vec(),
+        b5: [40, 41, 42, 43].to_vec(),
+        name: "Hello".to_string(),
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let expected = &[
+        71, 84, 72, 1, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 10,
+        0, 0, 0, 0, 0, 0, 0, 20, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 40, 0, 0, 0, 41, 0, 0, 0, 42, 0,
+        0, 0, 43, 0, 0, 0, 5, 72, 101, 108, 108, 111, 0, 0, 17, 30, 44, 136, 18, 32, 44, 137, 19,
+        35, 44, 139, 14, 189, 57, 141, 104, 80, 16, 124,
+    ];
+    assert_eq!(v.as_slice(), expected);
+}
+
+#[test]
+fn check_serde_128_bits_buffers() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b3: &'a [i128],
+        b4: Vec<i128>,
+        b5: &'a [u128],
+        b6: Vec<u128>,
+        name: String,
+        surname: &'a str,
+        checked: bool,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123456,
+        b3: &[
+            -1,
+            2,
+            -3,
+            0x123456_7890,
+            -6,
+            7,
+            -8,
+            i128::MIN,
+            -10,
+            i128::MAX,
+        ],
+        b4: [1, -2, 300, 0x123456_7890, -678910876, i128::MIN, i128::MAX].to_vec(),
+        b5: &[0, 100, 100_000, 100_000_000, 100_000_000_000, u128::MAX],
+        b6: [u128::MAX, 0, 0xFFFF_FFFF_FFFF, 0xEEEE_EEEE_EEEE_EEEE].to_vec(),
+        name: "John".to_string(),
+        surname: "Doe",
+        checked: true,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
     assert_eq!(s.b3, ds.b3);
     assert_eq!(s.b4, ds.b4);
     assert_eq!(s.b5, ds.b5);
