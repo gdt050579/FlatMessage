@@ -1,5 +1,16 @@
 use flat_message::*;
 
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, FlatMessageEnum)]
+#[repr(u8)]
+enum Color {
+    Red = 1,
+    Green = 2,
+    Blue = 3,
+    Yellow = 100,
+}
+
+
 #[flat_message(store_name = false, metadata: true)]
 pub struct MyStruct<'a> {
     pub a: i32,

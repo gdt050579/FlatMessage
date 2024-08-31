@@ -5,6 +5,8 @@ mod struct_info;
 mod utils;
 mod validate_checksum;
 mod version_validator_parser;
+mod enum_info;
+mod enum_memory_representation;
 
 use config::Config;
 use core::panic;
@@ -35,6 +37,16 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     } else {
         panic!("Only structs are supported !")
     }
+}
+
+#[proc_macro_derive(FlatMessageEnum)]
+pub fn flat_message_enum(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as syn::DeriveInput);
+    let ei = match enum_info::EnumInfo::try_from(input) {
+        Ok(ei) => ei,
+        Err(e) => panic!("Error => {}", e),
+    };
+    ei.generate_code().into()
 }
 
 #[proc_macro]

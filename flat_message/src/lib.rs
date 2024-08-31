@@ -47,6 +47,7 @@ pub use self::structure_information::StructureInformation;
 pub use flat_message_proc_macro::*;
 
 pub use common::hashes::crc32;
+pub use common::data_format::DataFormat;
 
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}

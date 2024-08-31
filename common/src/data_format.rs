@@ -29,6 +29,14 @@ pub enum DataFormat {
     VecF64,
     VecBool,
     VecString,
+    EnumI8,
+    EnumI16,
+    EnumI32,
+    EnumI64,
+    EnumU8,
+    EnumU16,
+    EnumU32,
+    EnumU64,
 }
 impl DataFormat {
     pub fn serialization_alignment(&self) -> usize {
@@ -49,6 +57,14 @@ impl DataFormat {
             | DataFormat::String
             | DataFormat::VecBool
             | DataFormat::VecString
+            | DataFormat::EnumI8
+            | DataFormat::EnumI16
+            | DataFormat::EnumI32
+            | DataFormat::EnumI64
+            | DataFormat::EnumU8
+            | DataFormat::EnumU16
+            | DataFormat::EnumU32
+            | DataFormat::EnumU64
             | DataFormat::VecU8
             | DataFormat::VecI8 => 1,
             DataFormat::VecU16 | DataFormat::VecI16 => 2,
