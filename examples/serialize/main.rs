@@ -8,6 +8,8 @@ enum Color {
     Green = 2,
     Blue = 3,
     Yellow = 100,
+    Cyan = 101,
+    Magenta = 102,
 }
 
 
