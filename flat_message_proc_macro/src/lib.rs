@@ -31,7 +31,12 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     if let syn::Data::Struct(s) = &input.data {
         let si = match StructInfo::new(&input, s, config) {
             Ok(si) => si,
-            Err(e) => panic!("Error => {}", e),
+            Err(e) => {
+                return quote::quote! {
+                    compile_error!(#e);
+                }
+                .into();
+            }
         };
         si.generate_code()
     } else {
