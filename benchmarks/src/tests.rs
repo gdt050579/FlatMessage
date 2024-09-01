@@ -1144,3 +1144,190 @@ fn check_serde_128_bits_buffers() {
     assert_eq!(s.surname, ds.surname);
     assert_eq!(s.checked, ds.checked);
 }
+
+#[test]
+fn check_enum() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(u8)]
+    enum Color {
+        Red = 1,
+        Green = 10,
+        Blue = 100,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct {
+        value: u8,
+        #[flat_message_enum(u8)]
+        color: Color,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: Color::Green,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+    assert_eq!(
+        v.as_slice(),
+        &[
+            71, 84, 72, 1, 2, 0, 0, 0, 237, 103, 151, 167, 10, 123, 0, 0, 33, 98, 126, 61, 1, 211,
+            94, 66, 8, 13
+        ]
+    );
+}
+
+#[test]
+fn check_enum_add_variant() {
+    mod v1 {
+        use flat_message::*;
+        #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+        #[repr(u8)]
+        pub enum Color {
+            Red = 1,
+            Green = 10,
+            Blue = 100,
+        }
+
+        #[flat_message(metadata: false, store_name: false)]
+        pub struct TestStruct {
+            pub value: u8,
+            #[flat_message_enum(u8)]
+            pub color: Color,
+        }
+    }
+    mod v2 {
+        use flat_message::*;
+        #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+        #[repr(u8)]
+        pub enum Color {
+            Red = 1,
+            Green = 10,
+            Blue = 100,
+            Yellor = 200,
+        }
+
+        #[flat_message(metadata: false, store_name: false)]
+        pub struct TestStruct {
+            pub value: u8,
+            #[flat_message_enum(u8)]
+            pub color: Color,
+        }
+    }
+
+    let mut v = Storage::default();
+    let s = v1::TestStruct {
+        value: 123,
+        color: v1::Color::Green,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = v2::TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color as u8, ds.color as u8);
+}
+
+
+#[test]
+fn check_enum_add_variant_sealed() {
+    mod v1 {
+        use flat_message::*;
+        #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+        #[repr(u8)]
+        #[sealed]
+        pub enum Color {
+            Red = 1,
+            Green = 10,
+            Blue = 100,
+        }
+
+        #[flat_message(metadata: false, store_name: false)]
+        pub struct TestStruct {
+            pub value: u8,
+            #[flat_message_enum(u8)]
+            pub color: Color,
+        }
+    }
+    mod v2 {
+        use flat_message::*;
+        #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+        #[repr(u8)]
+        pub enum Color {
+            Red = 1,
+            Green = 10,
+            Blue = 100,
+            Yellor = 200,
+        }
+
+        #[flat_message(metadata: false, store_name: false)]
+        pub struct TestStruct {
+            pub value: u8,
+            #[flat_message_enum(u8)]
+            pub color: Color,
+        }
+    }
+
+    let mut v = Storage::default();
+    let s = v1::TestStruct {
+        value: 123,
+        color: v1::Color::Green,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = v2::TestStruct::deserialize_from(&v);
+    match ds {
+        Err(flat_message::Error::FailToDeserialize(_)) => {}
+        _ => panic!("Invalid error - expected InvalidEnumVariant"),
+    }
+}
+
+#[test]
+fn check_enum_add_variant_sealed_unchecked() {
+    mod v1 {
+        use flat_message::*;
+        #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+        #[repr(u8)]
+        #[sealed]
+        pub enum Color {
+            Red = 1,
+            Green = 10,
+            Blue = 100,
+        }
+
+        #[flat_message(metadata: false, store_name: false)]
+        pub struct TestStruct {
+            pub value: u8,
+            #[flat_message_enum(u8)]
+            pub color: Color,
+        }
+    }
+    mod v2 {
+        use flat_message::*;
+        #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+        #[repr(u8)]
+        pub enum Color {
+            Red = 1,
+            Green = 10,
+            Blue = 100,
+            Yellor = 200,
+        }
+
+        #[flat_message(metadata: false, store_name: false)]
+        pub struct TestStruct {
+            pub value: u8,
+            #[flat_message_enum(u8)]
+            pub color: Color,
+        }
+    }
+
+    let mut v = Storage::default();
+    let s = v1::TestStruct {
+        value: 123,
+        color: v1::Color::Green,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    // seald argument is not checked
+    let ds = unsafe { v2::TestStruct::deserialize_from_unchecked(&v).unwrap() };
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color as u8, ds.color as u8);
+}
