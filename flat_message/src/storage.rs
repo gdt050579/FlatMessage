@@ -17,6 +17,10 @@ impl Storage {
     pub fn len(&self) -> usize {
         self.size
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl Debug for Storage {

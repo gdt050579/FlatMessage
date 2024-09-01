@@ -347,7 +347,7 @@ fn check_serde_into_different_struct() {
     let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestSmallerStruct::deserialize_from(&output);
-    assert_eq!(b.is_err(), true);
+    assert!(b.is_err());
 }
 
 #[test]
@@ -387,7 +387,7 @@ fn check_serde_into_different_type() {
     let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestStruct2::deserialize_from(&output);
-    assert_eq!(b.is_err(), true);
+    assert!(b.is_err());
 }
 
 #[test]
@@ -529,7 +529,7 @@ fn check_serde_name_validation() {
 
     // from TestStruct2 to TestStruct1 (validation name required -> should not be possible)
     let b = TestStruct1::deserialize_from(&output_2);
-    assert_eq!(b.is_err(), true);
+    assert!(b.is_err());
 
     // from TestStruct2 to TestStruct2
     let b = TestStruct2::deserialize_from(&output_2).unwrap();
@@ -1013,7 +1013,7 @@ fn check_serde_buffer_float_32() {
     let s = TestStruct {
         value: 123456,
         b1: &[1.2f32, 2.3, 3.4, 4.5, 6.7, 7.8, 8.9],
-        b2: [-12345.1234f32, 123.123, 1000.0, 0.0].to_vec(),
+        b2: [-12345.123f32, 123.123, 1000.0, 0.0].to_vec(),
         name: "John".to_string(),
         surname: "Doe",
         checked: true,
@@ -1048,8 +1048,8 @@ fn check_serde_64_bits_buffers() {
         value: 123456,
         b1: &[1.2f64, 2.3, 3.4, 4.5, 6.7, 7.8, 8.9],
         b2: [-12345.1234f64, 123.123, 1000.0, 0.0].to_vec(),
-        b3: &[-1, 2, -3, 0x123456_7890, -6, 7, -8, i64::MIN, -10, i64::MAX],
-        b4: [1, -2, 300, 0x123456_7890, -678910876, i64::MIN, i64::MAX].to_vec(),
+        b3: &[-1, 2, -3, 0x0012_3456_7890, -6, 7, -8, i64::MIN, -10, i64::MAX],
+        b4: [1, -2, 300, 0x0012_3456_7890, -678910876, i64::MIN, i64::MAX].to_vec(),
         b5: &[0, 100, 100_000, 100_000_000, 100_000_000_000, u64::MAX],
         b6: [u64::MAX, 0, 0xFFFF_FFFF_FFFF, 0xEEEE_EEEE_EEEE_EEEE].to_vec(),
         name: "John".to_string(),
@@ -1118,7 +1118,7 @@ fn check_serde_128_bits_buffers() {
             -1,
             2,
             -3,
-            0x123456_7890,
+            0x0012_3456_7890,
             -6,
             7,
             -8,
@@ -1126,7 +1126,7 @@ fn check_serde_128_bits_buffers() {
             -10,
             i128::MAX,
         ],
-        b4: [1, -2, 300, 0x123456_7890, -678910876, i128::MIN, i128::MAX].to_vec(),
+        b4: [1, -2, 300, 0x0012_3456_7890, -678910876, i128::MIN, i128::MAX].to_vec(),
         b5: &[0, 100, 100_000, 100_000_000, 100_000_000_000, u128::MAX],
         b6: [u128::MAX, 0, 0xFFFF_FFFF_FFFF, 0xEEEE_EEEE_EEEE_EEEE].to_vec(),
         name: "John".to_string(),

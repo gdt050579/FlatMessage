@@ -42,21 +42,19 @@ pub(crate) fn parse(attr: TokenStream) -> HashMap<String, String> {
             TokenTree::Punct(punct) => {
                 if !expecting_separator {
                     panic!("Expecting an attribute but got '{}'", punct.as_char())
+                } else if punct.as_char() != ',' {
+                    panic!(
+                        "Expecting an attribute separator ',' but got '{}'",
+                        punct.as_char(),
+                    )
                 } else {
-                    if punct.as_char() != ',' {
-                        panic!(
-                            "Expecting an attribute separator ',' but got '{}'",
-                            punct.as_char(),
-                        )
-                    } else {
-                        expecting_separator = false;
-                    }
+                    expecting_separator = false;
                 }
             }
             _ => {
                 panic!(
                     "Expecting an attribute name, or no attribute at all, but found '{}' !",
-                    token.to_string()
+                    token
                 )
             }
         }

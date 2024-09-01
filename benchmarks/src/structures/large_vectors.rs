@@ -19,12 +19,12 @@ where
     T: Copy + Clone + Add<Output = T> + PartialOrd,
 {
     let mut vec = Vec::with_capacity(size);
-    let mut val = start.clone();
+    let mut val = start;
     for _ in 0..size {
-        vec.push(val.clone());
+        vec.push(val);
         val = val + step;
         if val >= end {
-            val = start.clone();
+            val = start;
         }
     }
     vec

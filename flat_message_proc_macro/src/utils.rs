@@ -82,7 +82,7 @@ pub(crate) fn value_to_i128(value: &str) -> Result<(i128, EnumMemoryRepresentati
                 }
             }
         }
-        return Ok((value, repr_type));
+        Ok((value, repr_type))
     } else {
         Err(format!("Invalid numerical value: '{original_value}'"))
     }

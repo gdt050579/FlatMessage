@@ -28,11 +28,11 @@ impl Config {
         let attrs = attribute_parser::parse(args);
         for (attr_name, attr_value) in attrs.iter() {
             match attr_name.as_str() {
-                "store_name" => store_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
-                "metadata" => add_metadata = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
-                "checksum" => add_checksum = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
-                "version" => version = utils::to_version(&attr_value).expect(format!("Invalid version value ('{}') for attribute '{}'. Allowed values are between 1 and 255 !",attr_value, attr_name).as_str()),
-                "validate_name" => validate_name = utils::to_bool(&attr_value).expect(format!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name).as_str()),
+                "store_name" => store_name = utils::to_bool(attr_value).unwrap_or_else(|| panic!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name)),
+                "metadata" => add_metadata = utils::to_bool(attr_value).unwrap_or_else(|| panic!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name)),
+                "checksum" => add_checksum = utils::to_bool(attr_value).unwrap_or_else(|| panic!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name)),
+                "version" => version = utils::to_version(attr_value).unwrap_or_else(|| panic!("Invalid version value ('{}') for attribute '{}'. Allowed values are between 1 and 255 !",attr_value, attr_name)),
+                "validate_name" => validate_name = utils::to_bool(attr_value).unwrap_or_else(|| panic!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value, attr_name)),
                 "validate_checksum" => validate_checksum = validate_checksum::ValidateChecksum::from_str(attr_value.as_str()),
                 "compatible_versions" => {
                     match VersionValidatorParser::try_from(attr_value.replace("\"", "").as_str()) {
@@ -46,7 +46,7 @@ impl Config {
             }
         }
 
-        if (store_name == false) && (validate_name == true) {
+        if !store_name && validate_name {
             panic!("You can not use the attribute 'validate_name' with value 'true' unless the attribute 'store_name' is also set to 'true'.  If this was allowed, you will not be able to deserialize a structure of this type !");
         }
 

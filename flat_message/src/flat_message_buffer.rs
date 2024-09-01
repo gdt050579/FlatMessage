@@ -53,7 +53,7 @@ impl FlatMessageBuffer<'_> {
             return None;
         }
         let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::data_format() as u32));
-        let start = self.field_table_offset as usize;
+        let start = self.field_table_offset;
         let p = self.buf.as_ptr();
         match self.header.fields_count {
             1 => {
@@ -62,7 +62,7 @@ impl FlatMessageBuffer<'_> {
                     None
                 } else {
                     let ofs = self.index_to_offset(0);
-                    return T::from_buffer(self.buf, ofs);
+                    T::from_buffer(self.buf, ofs)
                 }
             }
             2 => {
@@ -77,7 +77,7 @@ impl FlatMessageBuffer<'_> {
                     }
                 } else {
                     let ofs = self.index_to_offset(0);
-                    return T::from_buffer(self.buf, ofs);
+                    T::from_buffer(self.buf, ofs)
                 }
             }
             _ => {
@@ -116,7 +116,7 @@ impl FlatMessageBuffer<'_> {
             return None;
         }
         let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::data_format() as u32));
-        let start = self.field_table_offset as usize;
+        let start = self.field_table_offset;
         let p = self.buf.as_ptr();
         match self.header.fields_count {
             1 => {
@@ -125,7 +125,7 @@ impl FlatMessageBuffer<'_> {
                     None
                 } else {
                     let ofs = self.index_to_offset(0);
-                    return Some(T::from_buffer_unchecked(self.buf, ofs));
+                    Some(T::from_buffer_unchecked(self.buf, ofs))
                 }
             }
             2 => {
@@ -140,7 +140,7 @@ impl FlatMessageBuffer<'_> {
                     }
                 } else {
                     let ofs = self.index_to_offset(0);
-                    return Some(T::from_buffer_unchecked(self.buf, ofs));
+                    Some(T::from_buffer_unchecked(self.buf, ofs))
                 }
             }
             _ => {
@@ -221,7 +221,7 @@ impl<'a> TryFrom<&'a Storage> for FlatMessageBuffer<'a> {
         if header.flags & constants::FLAG_HAS_UNIQUEID != 0 {
             metadata_size += 8;
         }
-        if (metadata_size + 8) as usize > len {
+        if metadata_size + 8 > len {
             return Err(Error::InvalidSizeToStoreMetaData((
                 len as u32,
                 (metadata_size + 8) as u32,

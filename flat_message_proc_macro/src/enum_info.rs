@@ -83,20 +83,21 @@ impl TryFrom<syn::DeriveInput> for EnumInfo {
     type Error = String;
 
     fn try_from(input: DeriveInput) -> Result<Self, Self::Error> {
-        let enum_repr = 'main_loop: loop {
-            for attr in input.attrs.iter() {
-                if attr.path().is_ident("repr") {
-                    let s = attr
-                        .to_token_stream()
-                        .to_string()
-                        .replace(" ", "")
-                        .replace("#[repr(", "")
-                        .replace(")]", "");
-                    break 'main_loop EnumMemoryRepresentation::try_from(s.as_str());
-                }
+        let mut enum_repr = None;
+        for attr in input.attrs.iter() {
+            if attr.path().is_ident("repr") {
+                let s = attr
+                    .to_token_stream()
+                    .to_string()
+                    .replace(" ", "")
+                    .replace("#[repr(", "")
+                    .replace(")]", "");
+                enum_repr = Some(EnumMemoryRepresentation::try_from(s.as_str())?);
             }
-            break Err("You need to provide a repr attribute for the enum to be serializable/deserializable with FlatMessage. You can use one of the following: #[repr(u8)], #[repr(u16)], #[repr(u32)], #[repr(u64)], #[repr(i8)], #[repr(i16)], #[repr(i32)] and #[repr(i64)], ".to_string());
-        }?;
+        }
+        let Some(enum_repr) = enum_repr else {
+            return Err("You need to provide a repr attribute for the enum to be serializable/deserializable with FlatMessage. You can use one of the following: #[repr(u8)], #[repr(u16)], #[repr(u32)], #[repr(u64)], #[repr(i8)], #[repr(i16)], #[repr(i32)] and #[repr(i64)], ".to_string());
+        };
 
         let mut variants = Vec::new();
         let data_enum = match &input.data {
@@ -110,7 +111,7 @@ impl TryFrom<syn::DeriveInput> for EnumInfo {
                 _ => {
                     return Err(format!(
                         "Varians with types are not supported (see variant: {})",
-                        variant.ident.to_string()
+                        variant.ident
                     ))
                 }
             }
@@ -121,14 +122,14 @@ impl TryFrom<syn::DeriveInput> for EnumInfo {
                 if (repr_type != enum_repr) && (repr_type != EnumMemoryRepresentation::NotDefined) {
                     return Err(format!(
                         "The enum representation type is different from the variant representation type (see variant: {})",
-                        variant.ident.to_string()
+                        variant.ident
                     ));
                 }
                 variants.push((variant.ident.to_string(), value_i128));
             } else {
                 return Err(format!(
                     "You need to provide a value for the following variant: {}",
-                    variant.ident.to_string()
+                    variant.ident
                 ));
             }
         }

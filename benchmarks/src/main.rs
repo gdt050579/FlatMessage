@@ -127,7 +127,7 @@ fn se_bench<T, FS: Fn(&T, &mut TestData) + Clone>(
     for _ in 0..data.iterations {
         data.vec.clear();
         data.storage.clear();
-        black_box(serialize(x, data));
+        serialize(x, data);
         black_box(data.vec.len());
         black_box(data.storage.len());
     }
@@ -152,7 +152,7 @@ fn se_de_bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Cl
     for _ in 0..data.iterations {
         data.vec.clear();
         data.storage.clear();
-        black_box(serialize(x, data));
+        serialize(x, data);
         black_box(data.vec.len());
         black_box(data.storage.len());
         black_box(deserialize(black_box(data)));
@@ -160,28 +160,32 @@ fn se_de_bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Cl
     start.elapsed()
 }
 
-fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
+struct BenchInput<'x> {
     top_test_name: &'static str,
+    results: &'x mut Vec<Result>,
+    iterations: u32,
+}
+
+fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
+    input: BenchInput,
     test_name: &'static str,
     x: &T,
     serialize: FS,
     deserialize: FD,
     needs_schema: bool,
-    results: &mut Vec<Result>,
-    iterations: u32,
 ) {
     let mut data = TestData {
         vec: Vec::default(),
         storage: Storage::default(),
-        iterations,
+        iterations: input.iterations,
     };
     let time_se = se_bench(x, serialize.clone(), &mut data);
     let time_de = de_bench(deserialize.clone(), &data);
     let time_se_de = se_de_bench(x, serialize, deserialize, &mut data);
 
-    results.push(Result {
+    input.results.push(Result {
         name: test_name,
-        top_test_name,
+        top_test_name: input.top_test_name,
         size: data.vec.len().max(data.storage.len()),
         time_se_de,
         time_se_ms: format!("{:.2}", time_se.as_secs_f64() * 1000.0),
@@ -191,7 +195,7 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     });
 }
 
-fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
+fn add_benches<T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
     top_test_name: &'static str,
     t: &T,
     s: &S,
@@ -236,112 +240,67 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     }
     let wrapper = Wrapper(t.clone());
 
+    macro_rules! b {
+        () => {
+            BenchInput {
+                top_test_name,
+                results,
+                iterations,
+            }
+        };
+    }
+
     bench(
-        top_test_name,
+        b!(),
         "flat_message",
         t,
         se_test_flat_message,
         de_test_flat_message,
         false,
-        results,
-        iterations,
     );
     bench(
-        top_test_name,
+        b!(),
         "flat_message_unchecked",
         &wrapper,
         se_test_flat_message,
         de_test_flat_message,
         false,
-        results,
-        iterations,
     );
+    bench(b!(), "rmp_schema", s, se_test_rmp_schema, de_test_rmp, true);
     bench(
-        top_test_name,
-        "rmp_schema",
-        s,
-        se_test_rmp_schema,
-        de_test_rmp,
-        true,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
+        b!(),
         "rmp_schemaless",
         s,
         se_test_rmp_schemaless,
         de_test_rmp,
         false,
-        results,
-        iterations,
     );
+    bench(b!(), "bincode", s, se_test_bincode, de_test_bincode, true);
     bench(
-        top_test_name,
-        "bincode",
-        s,
-        se_test_bincode,
-        de_test_bincode,
-        true,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
+        b!(),
         "flexbuffers",
         s,
         se_test_flexbuffers,
         de_test_flexbuffers,
         false,
-        results,
-        iterations,
     );
+    bench(b!(), "cbor", s, se_test_cbor, de_test_cbor, false);
+    bench(b!(), "bson", s, se_test_bson, de_test_bson, false);
+    bench(b!(), "json", s, se_test_json, de_test_json, false);
     bench(
-        top_test_name,
-        "cbor",
-        s,
-        se_test_cbor,
-        de_test_cbor,
-        false,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
-        "bson",
-        s,
-        se_test_bson,
-        de_test_bson,
-        false,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
-        "json",
-        s,
-        se_test_json,
-        de_test_json,
-        false,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
+        b!(),
         "postcard",
         s,
         se_test_postcard,
         de_test_postcard,
         true,
-        results,
-        iterations,
     );
 }
 
 fn print_results(results: &mut Vec<Result>) {
     results.sort_by(|x, y| {
         x.top_test_name
-            .cmp(&y.top_test_name)
+            .cmp(y.top_test_name)
             .then(x.time_se_de.cmp(&y.time_se_de))
     });
 
@@ -381,7 +340,7 @@ fn print_results(results: &mut Vec<Result>) {
 
     for i in results {
         let current = Some(i.top_test_name);
-        if !last.is_none() && last != current {
+        if last.is_some() && last != current {
             r.push([&"---", &"---", &"---", &"---", &"---", &"---", &"---"]);
         }
         last = current;
@@ -401,7 +360,7 @@ fn print_results(results: &mut Vec<Result>) {
     ascii_table.print(r);
 }
 
-fn do_one<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
+fn do_one<T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
     top_test_name: &'static str,
     process: &T,
     process_s: &S,
