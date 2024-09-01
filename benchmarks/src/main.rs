@@ -460,5 +460,9 @@ fn main() {
         let s = structures::large_vectors::generate();
         do_one("large_vectors", &s, &s, results, args.iterations);
     }
+    {
+        let s = structures::enum_fields::generate();
+        do_one("enum_fields", &s, &s, results, args.iterations);
+    }
     print_results(results);
 }
