@@ -32,6 +32,22 @@ impl TryFrom<&Field> for FieldInfo {
         let ty = &field.ty;
         let mut type_name = quote! {#ty}.to_string();
         utils::type_name_formatter(&mut type_name);
+        for attr in field.attrs.iter() {
+            if attr.path().is_ident("flat_message_enum") {
+                let mut enum_ty_name = attr.to_token_stream().to_string();
+                enum_ty_name.retain(|c| c != ' ');
+                enum_ty_name = enum_ty_name
+                    .replace("#[flat_message_enum(", "enum_")
+                    .replace(")]", "");
+                if type_name.starts_with("Vec<") {
+                    type_name = format!("Vec<{}>", enum_ty_name);
+                } else if type_name.starts_with("&[") {
+                    type_name = format!("&[{}]", enum_ty_name);
+                } else {
+                    type_name = enum_ty_name;
+                }
+            }
+        }
         let data_format = DataFormat::try_from(type_name.as_str())?;
         let name = field.ident.as_ref().unwrap().to_string();
         let hash = (hashes::fnv_32(&name) & 0xFFFFFF00) | (data_format as u32);

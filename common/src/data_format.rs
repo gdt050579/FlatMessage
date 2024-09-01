@@ -118,6 +118,14 @@ impl TryFrom<&str> for DataFormat {
             "&[u128]" => Ok(DataFormat::VecU128),
             "Vec<i128>" => Ok(DataFormat::VecI128),
             "Vec<u128>" => Ok(DataFormat::VecU128),
+            "enum_i8" => Ok(DataFormat::EnumI8),
+            "enum_i16" => Ok(DataFormat::EnumI16),
+            "enum_i32" => Ok(DataFormat::EnumI32),
+            "enum_i64" => Ok(DataFormat::EnumI64),
+            "enum_u8" => Ok(DataFormat::EnumU8),
+            "enum_u16" => Ok(DataFormat::EnumU16),
+            "enum_u32" => Ok(DataFormat::EnumU32),
+            "enum_u64" => Ok(DataFormat::EnumU64),
             _ => Err(format!("Unsupported type : '{}'", value)),
         }
     }

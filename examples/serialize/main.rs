@@ -20,6 +20,8 @@ pub struct MyStruct<'a> {
     pub(crate) b: bool,
     c: String,
     d: &'a str,
+    #[flat_message_enum(u8)]
+    col: Color,
 }
 
 fn main() {
@@ -30,6 +32,7 @@ fn main() {
         c: "Hello, World!".to_string(),
         metadata: MetaData::default(),
         d: &s,
+        col: Color::Green,
     };
     let mut output = Vec::new();
     a.serialize_to(&mut output, Config::default()).unwrap();

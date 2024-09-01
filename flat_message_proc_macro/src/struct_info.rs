@@ -585,8 +585,11 @@ impl<'a> StructInfo<'a> {
             quote! { <'_>}
         };
         let struct_fields = self.fields_name.named.iter().map(|field| {
+            let field_name = &field.ident;
+            let field_visibility = &field.vis;
+            let field_ty = &field.ty;
             Some(quote! {
-                #field,
+                #field_visibility #field_name: #field_ty,
             })
         });
         let metadata_field = if self.config.metadata {
