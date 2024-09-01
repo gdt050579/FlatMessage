@@ -4,18 +4,36 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{Data, DeriveInput, Fields};
 
+
 pub struct EnumInfo {
     name: syn::Ident,
     variants: Vec<(String, i128)>,
     repr: EnumMemoryRepresentation,
+    sealed_enum: bool,
 }
 
 impl EnumInfo {
+
+    fn compute_hash(&self) -> u32 {
+        if self.sealed_enum {
+            let mut name = self.name.to_string();
+            let mut v = self.variants.clone();
+            v.sort_by(|a, b| a.0.cmp(&b.0));
+            for (variant_name,value) in v {
+                name.push_str(variant_name.as_str());
+                name.push_str(value.to_string().as_str());
+            }
+            common::hashes::crc32(name.as_bytes())
+        } else {
+            let name = self.name.to_string();
+            common::hashes::crc32(name.as_bytes())
+        }
+    }
     pub fn generate_code(&self) -> TokenStream {
         let name = &self.name;
         let data_format = self.repr.data_format();
         let repr_type = self.repr.repr_type();
-        let name_hash = 1234u32;
+        let name_hash = self.compute_hash();
         let variants: Vec<_> = self
             .variants
             .iter()
@@ -98,6 +116,13 @@ impl TryFrom<syn::DeriveInput> for EnumInfo {
             break Err("You need to provide a repr attribute for the enum to be serializable/deserializable with FlatMessage. You can use one of the following: #[repr(u8)], #[repr(u16)], #[repr(u32)], #[repr(u64)], #[repr(i8)], #[repr(i16)], #[repr(i32)] and #[repr(i64)], ".to_string());
         }?;
 
+        let mut sealed_enum = false;
+        for attr in input.attrs.iter() {
+            if attr.path().is_ident("sealed") {
+                sealed_enum = true;
+            }
+        }
+
         let mut variants = Vec::new();
         let data_enum = match &input.data {
             Data::Enum(data_enum) => data_enum,
@@ -135,6 +160,7 @@ impl TryFrom<syn::DeriveInput> for EnumInfo {
         Ok(Self {
             name: input.ident,
             variants,
+            sealed_enum,
             repr: enum_repr,
         })
     }

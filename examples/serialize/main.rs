@@ -2,6 +2,7 @@ use flat_message::*;
 
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FlatMessageEnum)]
+#[sealed]
 #[repr(u8)]
 enum Color {
     Red = 1,

@@ -44,7 +44,7 @@ pub fn flat_message(args: TokenStream, input: TokenStream) -> TokenStream {
     }
 }
 
-#[proc_macro_derive(FlatMessageEnum)]
+#[proc_macro_derive(FlatMessageEnum, attributes(sealed))]
 pub fn flat_message_enum(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as syn::DeriveInput);
     let ei = match enum_info::EnumInfo::try_from(input) {
