@@ -195,10 +195,9 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     });
 }
 
-fn add_benches<T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
+fn add_benches<T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: &'static str,
-    t: &T,
-    s: &S,
+    x: &T,
     results: &mut Vec<Result>,
     iterations: u32,
 ) {
@@ -238,7 +237,7 @@ fn add_benches<T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
             Ok(Wrapper(T::deserialize_from_unchecked(input)?))
         }
     }
-    let wrapper = Wrapper(t.clone());
+    let wrapper = Wrapper(x.clone());
 
     macro_rules! b {
         () => {
@@ -253,7 +252,7 @@ fn add_benches<T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
     bench(
         b!(),
         "flat_message",
-        t,
+        x,
         se_test_flat_message,
         de_test_flat_message,
         false,
@@ -266,31 +265,31 @@ fn add_benches<T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
         de_test_flat_message,
         false,
     );
-    bench(b!(), "rmp_schema", s, se_test_rmp_schema, de_test_rmp, true);
+    bench(b!(), "rmp_schema", x, se_test_rmp_schema, de_test_rmp, true);
     bench(
         b!(),
         "rmp_schemaless",
-        s,
+        x,
         se_test_rmp_schemaless,
         de_test_rmp,
         false,
     );
-    bench(b!(), "bincode", s, se_test_bincode, de_test_bincode, true);
+    bench(b!(), "bincode", x, se_test_bincode, de_test_bincode, true);
     bench(
         b!(),
         "flexbuffers",
-        s,
+        x,
         se_test_flexbuffers,
         de_test_flexbuffers,
         false,
     );
-    bench(b!(), "cbor", s, se_test_cbor, de_test_cbor, false);
-    bench(b!(), "bson", s, se_test_bson, de_test_bson, false);
-    bench(b!(), "json", s, se_test_json, de_test_json, false);
+    bench(b!(), "cbor", x, se_test_cbor, de_test_cbor, false);
+    bench(b!(), "bson", x, se_test_bson, de_test_bson, false);
+    bench(b!(), "json", x, se_test_json, de_test_json, false);
     bench(
         b!(),
         "postcard",
-        s,
+        x,
         se_test_postcard,
         de_test_postcard,
         true,
@@ -360,14 +359,13 @@ fn print_results(results: &mut Vec<Result>) {
     ascii_table.print(r);
 }
 
-fn do_one<T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
+fn do_one<T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: &'static str,
-    process: &T,
-    process_s: &S,
+    x: &T,
     results: &mut Vec<Result>,
     iterations: u32,
 ) {
-    add_benches(top_test_name, process, process_s, results, iterations);
+    add_benches(top_test_name, x, results, iterations);
 }
 
 #[derive(clap::Parser)]
@@ -382,42 +380,35 @@ fn main() {
     let results = &mut Vec::new();
     {
         let process_small = structures::process_create::generate_flat();
-        let process_s_small = structures::process_create::generate_other();
-        do_one(
-            "process_create",
-            &process_small,
-            &process_s_small,
-            results,
-            args.iterations,
-        );
+        do_one("process_create", &process_small, results, args.iterations);
     }
     {
         let s = structures::long_strings::generate(100);
-        do_one("long_strings", &s, &s, results, args.iterations);
+        do_one("long_strings", &s, results, args.iterations);
     }
     {
         let s = structures::point::generate();
-        do_one("point", &s, &s, results, args.iterations);
+        do_one("point", &s, results, args.iterations);
     }
     {
         let s = structures::one_bool::generate();
-        do_one("one_bool", &s, &s, results, args.iterations);
+        do_one("one_bool", &s, results, args.iterations);
     }
     {
         let s = structures::multiple_fields::generate();
-        do_one("multiple_fields", &s, &s, results, args.iterations);
+        do_one("multiple_fields", &s, results, args.iterations);
     }
     {
         let s = structures::multiple_integers::generate();
-        do_one("multiple_integers", &s, &s, results, args.iterations);
+        do_one("multiple_integers", &s, results, args.iterations);
     }
     {
         let s = structures::vectors::generate();
-        do_one("vectors", &s, &s, results, args.iterations);
+        do_one("vectors", &s, results, args.iterations);
     }
     {
         let s = structures::large_vectors::generate();
-        do_one("large_vectors", &s, &s, results, args.iterations);
+        do_one("large_vectors", &s, results, args.iterations);
     }
     print_results(results);
 }

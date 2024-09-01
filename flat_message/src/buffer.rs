@@ -4,7 +4,7 @@ pub(crate) enum WriteSizeMethod {
     U16withExtension,
     U32,
     U32on64bits,
-    U32on128bits
+    U32on128bits,
 }
 
 #[inline(always)]

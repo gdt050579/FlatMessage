@@ -1,6 +1,5 @@
 use flat_message::*;
 
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FlatMessageEnum)]
 #[repr(u8)]
 enum Color {
@@ -11,7 +10,6 @@ enum Color {
     Cyan = 101,
     Magenta = 102,
 }
-
 
 #[flat_message(store_name = false, metadata: true)]
 pub struct MyStruct<'a> {
