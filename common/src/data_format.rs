@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum DataFormat {
@@ -72,6 +74,61 @@ impl DataFormat {
             DataFormat::VecU64 | DataFormat::VecI64 | DataFormat::VecF64 => 8,
             DataFormat::VecU128 | DataFormat::VecI128 => 16,
         }
+    }
+    pub fn is_enum(&self) -> bool {
+        match self {
+            DataFormat::EnumI8
+            | DataFormat::EnumI16
+            | DataFormat::EnumI32
+            | DataFormat::EnumI64
+            | DataFormat::EnumU8
+            | DataFormat::EnumU16
+            | DataFormat::EnumU32
+            | DataFormat::EnumU64 => true,
+            _ => false,
+        }
+    }
+}
+impl Display for DataFormat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DataFormat::U8 => write!(f, "U8"),
+            DataFormat::U16 => write!(f, "U16"),
+            DataFormat::U32 => write!(f, "U32"),
+            DataFormat::U64 => write!(f, "U64"),
+            DataFormat::U128 => write!(f, "U128"),
+            DataFormat::I8 => write!(f, "I8"),
+            DataFormat::I16 => write!(f, "I16"),
+            DataFormat::I32 => write!(f, "I32"),
+            DataFormat::I64 => write!(f, "I64"),
+            DataFormat::I128 => write!(f, "I128"),
+            DataFormat::F32 => write!(f, "F32"),
+            DataFormat::F64 => write!(f, "F64"),
+            DataFormat::Bool => write!(f, "Bool"),
+            DataFormat::String => write!(f, "String"),
+            DataFormat::VecU8 => write!(f, "VecU8"),
+            DataFormat::VecU16 => write!(f, "VecU16"),
+            DataFormat::VecU32 => write!(f, "VecU32"),
+            DataFormat::VecU64 => write!(f, "VecU64"),
+            DataFormat::VecU128 => write!(f, "VecU128"),
+            DataFormat::VecI8 => write!(f, "VecI8"),
+            DataFormat::VecI16 => write!(f, "VecI16"),
+            DataFormat::VecI32 => write!(f, "VecI32"),
+            DataFormat::VecI64 => write!(f, "VecI64"),
+            DataFormat::VecI128 => write!(f, "VecI128"),
+            DataFormat::VecF32 => write!(f, "VecF32"),
+            DataFormat::VecF64 => write!(f, "VecF64"),
+            DataFormat::VecBool => write!(f, "VecBool"),
+            DataFormat::VecString => write!(f, "VecString"),
+            DataFormat::EnumI8 => write!(f, "EnumI8"),
+            DataFormat::EnumI16 => write!(f, "EnumI16"),
+            DataFormat::EnumI32 => write!(f, "EnumI32"),
+            DataFormat::EnumI64 => write!(f, "EnumI64"),
+            DataFormat::EnumU8 => write!(f, "EnumU8"),
+            DataFormat::EnumU16 => write!(f, "EnumU16"),
+            DataFormat::EnumU32 => write!(f, "EnumU32"),
+            DataFormat::EnumU64 => write!(f, "EnumU64"), 
+        }           
     }
 }
 

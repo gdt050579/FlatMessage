@@ -5,9 +5,7 @@ use std::ptr;
 macro_rules! IMPLEMENT_SERDE_FOR_BASIC_TYPE {
     ($t:ty, $data_format:ident) => {
         unsafe impl<'a> SerDe<'a> for $t {
-            fn data_format() -> DataFormat {
-                DataFormat::$data_format
-            }
+            const DATA_FORMAT: DataFormat = DataFormat::$data_format;
             #[inline(always)]
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
                 unsafe {

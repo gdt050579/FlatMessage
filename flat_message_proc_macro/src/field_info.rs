@@ -11,6 +11,7 @@ pub(crate) struct FieldInfo {
     pub(crate) hash_table_order: u32,
     pub(crate) serialization_alignment: usize,
     pub(crate) ty: Type,
+    pub(crate) data_format: DataFormat,
 }
 impl FieldInfo {
     pub(crate) fn inner_var(&self) -> syn::Ident {
@@ -57,6 +58,7 @@ impl TryFrom<&Field> for FieldInfo {
             hash_table_order: 0,
             serialization_alignment: data_format.serialization_alignment(),
             ty: ty.clone(),
+            data_format,
         })
     }
 }

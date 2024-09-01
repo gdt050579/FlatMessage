@@ -434,6 +434,34 @@ impl<'a> StructInfo<'a> {
             });
         }
     }
+    fn generate_const_assertion_functions(&self) -> Vec<proc_macro2::TokenStream> {
+        let mut v = Vec::with_capacity(8);
+        let name = self.name.to_string();
+        for field in self.fields.iter() {
+            if !field.data_format.is_enum() {
+                continue;
+            }
+            let ty = &field.ty;
+            let type_name = quote! {#ty}.to_string();
+            let s = format!("const _const_assertion_{}_{}: () = if {}::DATA_FORMAT as u8 != flat_message::DataFormat::{} as u8 {{ panic!(\"Incorect representation for field {}::{} in the #[flat_message_enum(...)] attribute ! Please check the #[repr(...)] attribute in the definition of enum '{}' and make sure it is the same in the attribute #[flat_message_enum(...)] for the field {}::{} !\"); }};", 
+                            name, 
+                            field.name, 
+                            type_name, 
+                            field.data_format, 
+                            name,
+                            field.name,
+                            name,
+                            name,
+                            field.name
+                        );
+            let tokens: proc_macro2::TokenStream = s
+                .parse()
+                .expect("Failed to convert string into TokenStream");
+
+            v.push(quote! { #tokens });
+        }
+        v
+    }
     fn generate_serialize_to_methods(&self) -> proc_macro2::TokenStream {
         let fields_count = self.fields.len() as u16;
         // serialize fields
@@ -601,12 +629,18 @@ impl<'a> StructInfo<'a> {
         let serialize_to_methods = self.generate_serialize_to_methods();
         let deserialize_from_methods = self.generate_deserialize_from_methods();
         let derives = &self.derives;
+        let const_assertion_functions = self.generate_const_assertion_functions();
+
         let new_code = quote! {
+
             #(#derives)*
             #visibility struct #name #generics {
                 #(#struct_fields)*
                 #metadata_field
             }
+
+            #(#const_assertion_functions)*
+
             impl #generics flat_message::FlatMessage #implicit_lifetime for #name #generics {
                 #metadata_methods
                 #serialize_to_methods

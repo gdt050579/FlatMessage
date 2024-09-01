@@ -3,9 +3,7 @@ use common::data_format::DataFormat;
 use std::ptr;
 
 unsafe impl SerDe<'_> for bool {
-    fn data_format() -> DataFormat {
-        DataFormat::Bool
-    }
+    const DATA_FORMAT: DataFormat = DataFormat::Bool;
     #[inline(always)]
     unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
         unsafe {

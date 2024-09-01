@@ -7,7 +7,7 @@ mod buffers_8bits;
 mod string;
 
 pub unsafe trait SerDe<'a> {
-    fn data_format() -> DataFormat;
+    const DATA_FORMAT: DataFormat;
     unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Self
     where
         Self: Sized;

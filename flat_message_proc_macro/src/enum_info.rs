@@ -47,10 +47,7 @@ impl EnumInfo {
             .collect();
         quote! {
             unsafe impl<'a> SerDe<'a> for #name {
-                #[inline(always)]
-                fn data_format() -> flat_message::DataFormat {
-                    #data_format
-                }
+                const DATA_FORMAT: flat_message::DataFormat = #data_format;
                 #[inline(always)]
                 unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
                     unsafe {

@@ -52,7 +52,7 @@ impl FlatMessageBuffer<'_> {
         if self.header.fields_count == 0 {
             return None;
         }
-        let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::data_format() as u32));
+        let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::DATA_FORMAT as u32));
         let start = self.field_table_offset as usize;
         let p = self.buf.as_ptr();
         match self.header.fields_count {
@@ -115,7 +115,7 @@ impl FlatMessageBuffer<'_> {
         if self.header.fields_count == 0 {
             return None;
         }
-        let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::data_format() as u32));
+        let field_name = Name::new((field_name.value & 0xFFFFFF00) | (T::DATA_FORMAT as u32));
         let start = self.field_table_offset as usize;
         let p = self.buf.as_ptr();
         match self.header.fields_count {

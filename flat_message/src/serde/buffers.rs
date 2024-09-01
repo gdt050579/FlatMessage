@@ -5,9 +5,7 @@ use common::data_format::DataFormat;
 macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
     ($t:ty, $data_format:ident, $ptr_type:ty, $align_method:ident, $offset_alignament_mask:expr) => {
         unsafe impl<'a> SerDe<'a> for $t {
-            fn data_format() -> DataFormat {
-                DataFormat::$data_format
-            }
+            const DATA_FORMAT: DataFormat = DataFormat::$data_format;
             #[inline(always)]
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
                 let p = buf.as_ptr();
@@ -65,9 +63,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
 macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
     ($t:ty, $data_format:ident, $align_method:ident, $offset_alignament_mask:expr) => {
         unsafe impl SerDe<'_> for Vec<$t> {
-            fn data_format() -> DataFormat {
-                DataFormat::$data_format
-            }
+            const DATA_FORMAT: DataFormat = DataFormat::$data_format;
             #[inline(always)]
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
                 let res: &[$t] = SerDe::from_buffer_unchecked(buf, pos);

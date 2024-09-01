@@ -4,9 +4,7 @@ use common::data_format::DataFormat;
 
 /// Implementation for &str
 unsafe impl<'a> SerDe<'a> for &'a str {
-    fn data_format() -> DataFormat {
-        DataFormat::String
-    }
+    const DATA_FORMAT: DataFormat = DataFormat::String;
     #[inline(always)]
     unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Self {
         let p = buf.as_ptr();
@@ -56,9 +54,7 @@ unsafe impl<'a> SerDe<'a> for &'a str {
 
 /// Implementation for String
 unsafe impl SerDe<'_> for String {
-    fn data_format() -> DataFormat {
-        DataFormat::String
-    }
+    const DATA_FORMAT: DataFormat = DataFormat::String;
     #[inline(always)]
     unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
         let v: &str = SerDe::from_buffer_unchecked(buf, pos);
