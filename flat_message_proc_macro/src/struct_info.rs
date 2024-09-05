@@ -468,12 +468,11 @@ impl<'a> StructInfo<'a> {
             if !field.data_type.data_format.is_enum() {
                 continue;
             }
-            let ty = &field.data_type.ty;
-            let type_name = quote! {#ty}.to_string();
-            let s = format!("const _const_assertion_{}_{}: () = if {}::DATA_FORMAT as u8 != flat_message::DataFormat::{} as u8 {{ panic!(\"Incorect representation for field {}::{} in the #[flat_message_enum(...)] attribute ! Please check the #[repr(...)] attribute in the definition of enum '{}' and make sure it is the same in the attribute #[flat_message_enum(...)] for the field {}::{} !\"); }};", 
+            let s = format!("const _const_assertion_{}_{}: () = if <{} as {}>::DATA_FORMAT as u8 != flat_message::DataFormat::{} as u8 {{ panic!(\"Incorect representation for field {}::{} in the #[flat_message_enum(...)] attribute ! Please check the #[repr(...)] attribute in the definition of enum '{}' and make sure it is the same in the attribute #[flat_message_enum(...)] for the field {}::{} !\"); }};", 
                             name, 
                             field.name, 
-                            type_name, 
+                            field.data_type.name,
+                            field.data_type.field_type.serde_trait(), 
                             field.data_type.data_format, 
                             name,
                             field.name,

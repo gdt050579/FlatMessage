@@ -91,29 +91,29 @@ impl EnumInfo {
                 }
             }
             // for slices
-            // unsafe impl<'a> SerDeSlice<'a> for #name {
-            //     const DATA_FORMAT: flat_message::DataFormat = #data_format;
-            //     #[inline(always)]
-            //     unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
-            //         todo!()
-            //     }
-            //     #[inline(always)]
-            //     fn from_buffer(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
-            //         todo!()
-            //     }
-            //     #[inline(always)]
-            //     unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
-            //         todo!()
-            //     }
-            //     #[inline(always)]
-            //     fn size(&self) -> usize {
-            //         todo!()
-            //     }
-            //     #[inline(always)]
-            //     fn align_offset(&self, offset: usize) -> usize {
-            //         todo!()
-            //     }
-            // }            
+            unsafe impl<'a> SerDeSlice<'a> for #name {
+                const DATA_FORMAT: flat_message::DataFormat = #data_format;
+                #[inline(always)]
+                unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> &'a [Self] {
+                    todo!()
+                }
+                #[inline(always)]
+                fn from_buffer(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
+                    todo!()
+                }
+                #[inline(always)]
+                unsafe fn write(_: &[Self], p: *mut u8, pos: usize) -> usize {
+                    todo!()
+                }
+                #[inline(always)]
+                fn size(_: &[Self]) -> usize {
+                    todo!()
+                }
+                #[inline(always)]
+                fn align_offset(_: &[Self], offset: usize) -> usize {
+                    todo!()
+                }
+            }            
         }
     }
 }
