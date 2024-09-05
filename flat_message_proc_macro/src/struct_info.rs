@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::field_info::FieldInfo;
+use crate::data_type::FieldType;
 use common::constants;
 use common::hashes;
 use quote::quote;
@@ -100,10 +101,25 @@ impl<'a> StructInfo<'a> {
     }
     fn generate_compute_size_code(&self) -> Vec<proc_macro2::TokenStream> {
         let compute_size_code = self.fields.iter().map(|field| {
-            let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
-            quote! {
-                size = ::flat_message::SerDe::align_offset(&self.#field_name, size);
-                size += ::flat_message::SerDe::size(&self.#field_name);
+            let field_name = field.name_ident();
+            match field.data_type.field_type {
+                FieldType::Object =>  {          
+                    quote! {
+                        size += ::flat_message::SerDe::size(&self.#field_name);
+                    }
+                },
+                FieldType::Slice =>   {          
+                    quote! {
+                        size = ::flat_message::SerDeSlice::align_offset(&self.#field_name, size);
+                        size += ::flat_message::SerDeSlice::size(&self.#field_name);
+                    }
+                },
+                FieldType::Vector =>   {          
+                    quote! {
+                        size = ::flat_message::SerDeVec::align_offset(&self.#field_name, size);
+                        size += ::flat_message::SerDeVec::size(&self.#field_name);
+                    }
+                },
             }
         });
         let mut v: Vec<_> = compute_size_code.collect();
@@ -152,36 +168,43 @@ impl<'a> StructInfo<'a> {
     fn generate_fields_serialize_code(
         &self,
         ref_size: u8,
-    ) -> Vec<Option<proc_macro2::TokenStream>> {
+    ) -> Vec<proc_macro2::TokenStream> {
         let v: Vec<_> = self.fields.iter().map(|field| {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
             let hash_table_order = field.hash_table_order as usize;
+            let serde_trait = field.serialization_trait();
+            let alignament_code = match field.data_type.field_type {
+                FieldType::Object => quote! {},
+                FieldType::Slice | FieldType::Vector => quote! {
+                    buf_pos = ::flat_message::#serde_trait::align_offset(&self.#field_name, buf_pos);
+                },
+            };
+            let refcode = 
             match ref_size {
                 1 => {
-                    Some(quote! {
-                        buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
+                    quote! {
                         let offset = buf_pos as u8;
                         ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order) as *mut u8, offset);
-                        buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
-                    })
+                    }
                 }
                 2 => {
-                    Some(quote! {
-                        buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
+                    quote! {
                         let offset = buf_pos as u16;
                         ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*2) as *mut u16, offset);
-                        buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
-                    })
+                    }
                 }
                 4 => {
-                    Some(quote! {
-                        buf_pos = ::flat_message::SerDe::align_offset(&self.#field_name, buf_pos);
+                    quote! {
                         let offset = buf_pos as u32;
                         ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*4) as *mut u32, offset);
-                        buf_pos = ::flat_message::SerDe::write(&self.#field_name, buffer, buf_pos);
-                    })
+                    }
                 }
-                _ => None
+                _ => quote! {}
+            };
+            quote! {
+                #alignament_code
+                #refcode
+                buf_pos = ::flat_message::#serde_trait::write(&self.#field_name, buffer, buf_pos);
             }
         }).collect();
         v
@@ -325,6 +348,7 @@ impl<'a> StructInfo<'a> {
     }
     fn generate_field_deserialize_code(
         &self,
+        serde_trait: &syn::Ident, 
         inner_var: &syn::Ident,
         ty: &syn::Type,
         field_name_hash: u32,
@@ -336,10 +360,10 @@ impl<'a> StructInfo<'a> {
             }
         };
         let unsafe_init = quote! {
-            let #inner_var: #ty = unsafe { flat_message::SerDe::from_buffer_unchecked(data_buffer, offset) };
+            let #inner_var: #ty = unsafe { flat_message::#serde_trait::from_buffer_unchecked(data_buffer, offset) };
         };
         let safe_init = quote! {
-            let Some(#inner_var): Option<#ty> = flat_message::SerDe::from_buffer(data_buffer, offset) else {
+            let Some(#inner_var): Option<#ty> = flat_message::#serde_trait::from_buffer(data_buffer, offset) else {
                 return Err(flat_message::Error::FailToDeserialize(#field_name_hash));
             };
         };
@@ -377,6 +401,7 @@ impl<'a> StructInfo<'a> {
         struct HashAndInnerVar {
             hash: u32,
             inner_var: syn::Ident,
+            serde_trait: syn::Ident,
             ty: syn::Type,
         }
         let mut v = Vec::with_capacity(4);
@@ -386,7 +411,8 @@ impl<'a> StructInfo<'a> {
             .map(|field| HashAndInnerVar {
                 hash: field.hash,
                 inner_var: field.inner_var(),
-                ty: field.ty.clone(),
+                serde_trait: field.serialization_trait(),
+                ty: field.data_type.ty.clone(),
             })
             .collect();
         hashes.sort_by_key(|hash| hash.hash);
@@ -404,6 +430,7 @@ impl<'a> StructInfo<'a> {
         });
         for obj in hashes {
             v.push(self.generate_field_deserialize_code(
+                &obj.serde_trait,
                 &obj.inner_var,
                 &obj.ty,
                 obj.hash,
@@ -438,16 +465,16 @@ impl<'a> StructInfo<'a> {
         let mut v = Vec::with_capacity(8);
         let name = self.name.to_string();
         for field in self.fields.iter() {
-            if !field.data_format.is_enum() {
+            if !field.data_type.data_format.is_enum() {
                 continue;
             }
-            let ty = &field.ty;
+            let ty = &field.data_type.ty;
             let type_name = quote! {#ty}.to_string();
             let s = format!("const _const_assertion_{}_{}: () = if {}::DATA_FORMAT as u8 != flat_message::DataFormat::{} as u8 {{ panic!(\"Incorect representation for field {}::{} in the #[flat_message_enum(...)] attribute ! Please check the #[repr(...)] attribute in the definition of enum '{}' and make sure it is the same in the attribute #[flat_message_enum(...)] for the field {}::{} !\"); }};", 
                             name, 
                             field.name, 
                             type_name, 
-                            field.data_format, 
+                            field.data_type.data_format, 
                             name,
                             field.name,
                             name,
@@ -681,7 +708,7 @@ impl<'a> StructInfo<'a> {
 
             // now sort the key backwards based on their serialization alignment
             data_members
-                .sort_unstable_by_key(|field_info| usize::MAX - field_info.serialization_alignment);
+                .sort_unstable_by_key(|field_info| usize::MAX - field_info.data_type.serialization_alignment());
             Ok(StructInfo {
                 fields_name: fields,
                 fields: data_members,

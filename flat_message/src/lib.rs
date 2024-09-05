@@ -43,7 +43,12 @@ pub use self::metadata::MetaData;
 pub use self::metadata::MetaDataBuilder;
 pub use self::name::Name;
 pub use self::serde::SerDe;
+pub use self::serde::SerDeSlice;
+pub use self::serde::SerDeVec;
 pub use self::structure_information::StructureInformation;
+pub use self::storage::Storage;
+pub use self::storage::VecLike;
+
 pub use flat_message_proc_macro::*;
 
 pub use common::hashes::crc32;
@@ -52,5 +57,3 @@ pub use common::data_format::DataFormat;
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
 
-pub use storage::Storage;
-pub use storage::VecLike;

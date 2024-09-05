@@ -1,18 +1,17 @@
 use flat_message::*;
 
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy, FlatMessageEnum)]
-#[sealed]
-#[repr(u8)]
-enum Color {
-    Red = 1,
-    Green = 2,
-    Blue = 3,
-    Yellow = 100,
-    Cyan = 101,
-    Magenta = 102,
-}
-
+// #[derive(Debug, PartialEq, Eq, Clone, Copy, FlatMessageEnum)]
+// #[sealed]
+// #[repr(u8)]
+// enum Color {
+//     Red = 1,
+//     Green = 2,
+//     Blue = 3,
+//     Yellow = 100,
+//     Cyan = 101,
+//     Magenta = 102,
+// }
 
 #[flat_message(store_name = false, metadata: true)]
 pub struct MyStruct<'a> {
@@ -20,8 +19,9 @@ pub struct MyStruct<'a> {
     pub(crate) b: bool,
     c: String,
     d: &'a str,
-    #[flat_message_enum(u8)]
-    col: Color,
+    e: Vec<u8>,
+    //#[flat_message_enum(u8)]
+    //col: &'a [Color],
 }
 
 fn main() {
@@ -32,7 +32,8 @@ fn main() {
         c: "Hello, World!".to_string(),
         metadata: MetaData::default(),
         d: &s,
-        col: Color::Green,
+        e: vec![1, 2, 3, 4, 5],
+        //col: Color::Green,
     };
     let mut output = Vec::new();
     a.serialize_to(&mut output, Config::default()).unwrap();

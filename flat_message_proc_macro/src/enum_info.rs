@@ -74,22 +74,46 @@ impl EnumInfo {
                     }
                 }
                 #[inline(always)]
-                unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
+                unsafe fn write(obj: &Self, p: *mut u8, pos: usize) -> usize {
                     unsafe {
                         std::ptr::write_unaligned(p.add(pos) as *mut u32, #name_hash);
-                        std::ptr::write_unaligned(p.add(pos+4) as *mut #repr_type, *self as #repr_type);
+                        std::ptr::write_unaligned(p.add(pos+4) as *mut #repr_type, *obj as #repr_type);
                         pos + std::mem::size_of::<#repr_type>()+4
                     }
                 }
                 #[inline(always)]
-                fn size(&self) -> usize {
+                fn size(_: &Self) -> usize {
                     std::mem::size_of::<#repr_type>()+4 /* name hashe */
                 }
                 #[inline(always)]
-                fn align_offset(&self, offset: usize) -> usize {
+                fn align_offset(_: &Self, offset: usize) -> usize {
                     offset
                 }
             }
+            // for slices
+            // unsafe impl<'a> SerDeSlice<'a> for #name {
+            //     const DATA_FORMAT: flat_message::DataFormat = #data_format;
+            //     #[inline(always)]
+            //     unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
+            //         todo!()
+            //     }
+            //     #[inline(always)]
+            //     fn from_buffer(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
+            //         todo!()
+            //     }
+            //     #[inline(always)]
+            //     unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
+            //         todo!()
+            //     }
+            //     #[inline(always)]
+            //     fn size(&self) -> usize {
+            //         todo!()
+            //     }
+            //     #[inline(always)]
+            //     fn align_offset(&self, offset: usize) -> usize {
+            //         todo!()
+            //     }
+            // }            
         }
     }
 }

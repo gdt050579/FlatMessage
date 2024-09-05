@@ -25,18 +25,18 @@ macro_rules! IMPLEMENT_SERDE_FOR_BASIC_TYPE {
                 }
             }
             #[inline(always)]
-            unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
+            unsafe fn write(obj: &Self, p: *mut u8, pos: usize) -> usize {
                 unsafe {
-                    ptr::write_unaligned(p.add(pos) as *mut $t, *self);
+                    ptr::write_unaligned(p.add(pos) as *mut $t, *obj);
                     pos + std::mem::size_of::<$t>()
                 }
             }
             #[inline(always)]
-            fn size(&self) -> usize {
+            fn size(_: &Self) -> usize {
                 std::mem::size_of::<$t>()
             }
             #[inline(always)]
-            fn align_offset(&self, offset: usize) -> usize {
+            fn align_offset(_ : &Self, offset: usize) -> usize {
                 offset
             }
         }

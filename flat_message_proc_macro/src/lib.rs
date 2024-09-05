@@ -7,12 +7,14 @@ mod struct_info;
 mod utils;
 mod validate_checksum;
 mod version_validator_parser;
+mod data_type;
 
 use config::Config;
 use core::panic;
 use proc_macro::*;
 use std::str::FromStr;
 use struct_info::StructInfo;
+use data_type::DataType;
 use syn::{parse_macro_input, DeriveInput};
 
 extern crate proc_macro;

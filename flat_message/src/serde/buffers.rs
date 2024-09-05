@@ -1,59 +1,60 @@
-use super::SerDe;
+use super::SerDeSlice;
+use super::SerDeVec;
 use crate::buffer;
 use common::data_format::DataFormat;
 
-macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
-    ($t:ty, $data_format:ident, $ptr_type:ty, $align_method:ident, $offset_alignament_mask:expr) => {
-        unsafe impl<'a> SerDe<'a> for $t {
+macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
+    ($t:ty, $data_format:ident, $align_method:ident, $offset_alignament_mask:expr) => {
+        unsafe impl<'a> SerDeSlice<'a> for $t {
             const DATA_FORMAT: DataFormat = DataFormat::$data_format;
             #[inline(always)]
-            unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
+            unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> &'a [Self] {
                 let p = buf.as_ptr();
                 let (count, size_len) =
                     buffer::read_size_unchecked(p, pos, buffer::WriteSizeMethod::$align_method);
-                std::slice::from_raw_parts(p.add(pos + size_len) as *const $ptr_type, count)
+                std::slice::from_raw_parts(p.add(pos + size_len) as *const $t, count)
             }
             #[inline(always)]
-            fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
+            fn from_buffer(buf: &'a [u8], pos: usize) -> Option<&'a [Self]> {
                 let (count, size_len) = buffer::read_size(
                     buf.as_ptr(),
                     pos,
                     buf.len(),
                     buffer::WriteSizeMethod::$align_method,
                 )?;
-                let end = pos + size_len + count * std::mem::size_of::<$ptr_type>();
+                let end = pos + size_len + count * std::mem::size_of::<$t>();
                 if end > buf.len() {
                     None
                 } else {
                     Some(unsafe {
                         std::slice::from_raw_parts(
-                            buf.as_ptr().add(pos + size_len) as *const $ptr_type,
+                            buf.as_ptr().add(pos + size_len) as *const $t,
                             count,
                         )
                     })
                 }
             }
             #[inline(always)]
-            unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
-                let len = self.len() as u32;
+            unsafe fn write(obj: &[Self], p: *mut u8, pos: usize) -> usize {
+                let len = obj.len() as u32;
                 unsafe {
                     let size_len =
                         buffer::write_size(p, pos, len, buffer::WriteSizeMethod::$align_method);
                     std::ptr::copy_nonoverlapping(
-                        self.as_ptr() as *mut u8,
+                        obj.as_ptr() as *mut u8,
                         p.add(pos + size_len),
-                        self.len() * std::mem::size_of::<$ptr_type>(),
+                        obj.len() * std::mem::size_of::<$t>(),
                     );
-                    pos + size_len + (len as usize) * std::mem::size_of::<$ptr_type>()
+                    pos + size_len + (len as usize) * std::mem::size_of::<$t>()
                 }
             }
             #[inline(always)]
-            fn size(&self) -> usize {
-                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::$align_method)
-                    + self.len() * std::mem::size_of::<$ptr_type>()
+            fn size(obj: &[Self]) -> usize {
+                buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::$align_method)
+                    + obj.len() * std::mem::size_of::<$t>()
             }
             #[inline(always)]
-            fn align_offset(&self, offset: usize) -> usize {
+            fn align_offset(_: &[Self], offset: usize) -> usize {
                 (offset + ($offset_alignament_mask as usize)) & !($offset_alignament_mask as usize)
             }
         }
@@ -62,53 +63,55 @@ macro_rules! IMPLEMENT_SERDE_FOR_BUFFER {
 
 macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
     ($t:ty, $data_format:ident, $align_method:ident, $offset_alignament_mask:expr) => {
-        unsafe impl SerDe<'_> for Vec<$t> {
+        unsafe impl SerDeVec<'_> for $t {
             const DATA_FORMAT: DataFormat = DataFormat::$data_format;
             #[inline(always)]
-            unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Self {
-                let res: &[$t] = SerDe::from_buffer_unchecked(buf, pos);
+            unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Vec<Self> {
+                let res: &[$t] = SerDeSlice::from_buffer_unchecked(buf, pos);
                 res.to_vec()
             }
             #[inline(always)]
-            fn from_buffer(buf: &[u8], pos: usize) -> Option<Self> {
-                let res: &[$t] = SerDe::from_buffer(buf, pos)?;
+            fn from_buffer(buf: &[u8], pos: usize) -> Option<Vec<Self>> {
+                let res: &[$t] = SerDeSlice::from_buffer(buf, pos)?;
                 Some(res.to_vec())
             }
             #[inline(always)]
-            unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
-                SerDe::write(&self.as_slice(), p, pos)
+            unsafe fn write(obj: &Vec<Self>, p: *mut u8, pos: usize) -> usize {
+                SerDeSlice::write(obj.as_slice(), p, pos)
             }
             #[inline(always)]
-            fn size(&self) -> usize {
-                buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::$align_method)
-                    + self.len() * std::mem::size_of::<$t>()
+            fn size(obj: &Vec<Self>) -> usize {
+                buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::$align_method)
+                    + obj.len() * std::mem::size_of::<$t>()
             }
             #[inline(always)]
-            fn align_offset(&self, offset: usize) -> usize {
+            fn align_offset(_: &Vec<Self>, offset: usize) -> usize {
                 (offset + ($offset_alignament_mask as usize)) & !($offset_alignament_mask as usize)
             }
         }
     };
 }
 
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u16], VecU16, u16, U16withExtension, 1);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i16], VecI16, i16, U16withExtension, 1);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u32], VecU32, u32, U32, 3);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i32], VecI32, i32, U32, 3);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [f32], VecF32, f32, U32, 3);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u64], VecU64, u64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i64], VecI64, i64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [f64], VecF64, f64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [u128], VecU128, u128, U32on128bits, 15);
-IMPLEMENT_SERDE_FOR_BUFFER!(&'a [i128], VecI128, i128, U32on128bits, 15);
 
-IMPLEMENT_SERDE_FOR_VECTOR!(u16, VecU16, U16withExtension, 1);
-IMPLEMENT_SERDE_FOR_VECTOR!(i16, VecI16, U16withExtension, 1);
-IMPLEMENT_SERDE_FOR_VECTOR!(u32, VecU32, U32, 3);
-IMPLEMENT_SERDE_FOR_VECTOR!(i32, VecI32, U32, 3);
-IMPLEMENT_SERDE_FOR_VECTOR!(f32, VecF32, U32, 3);
-IMPLEMENT_SERDE_FOR_VECTOR!(u64, VecU64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_VECTOR!(i64, VecI64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_VECTOR!(f64, VecF64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_VECTOR!(u128, VecU128, U32on128bits, 15);
-IMPLEMENT_SERDE_FOR_VECTOR!(i128, VecI128, U32on128bits, 15);
+IMPLEMENT_SERDE_FOR_SLICE!(u16, U16, U16withExtension, 1);
+IMPLEMENT_SERDE_FOR_SLICE!(i16, I16, U16withExtension, 1);
+IMPLEMENT_SERDE_FOR_SLICE!(u32, U32, U32, 3);
+IMPLEMENT_SERDE_FOR_SLICE!(i32, I32, U32, 3);
+IMPLEMENT_SERDE_FOR_SLICE!(f32, F32, U32, 3);
+IMPLEMENT_SERDE_FOR_SLICE!(u64, U64, U32on64bits, 7);
+IMPLEMENT_SERDE_FOR_SLICE!(i64, I64, U32on64bits, 7);
+IMPLEMENT_SERDE_FOR_SLICE!(f64, F64, U32on64bits, 7);
+IMPLEMENT_SERDE_FOR_SLICE!(u128, U128, U32on128bits, 15);
+IMPLEMENT_SERDE_FOR_SLICE!(i128, I128, U32on128bits, 15);
+
+IMPLEMENT_SERDE_FOR_VECTOR!(u16, U16, U16withExtension, 1);
+IMPLEMENT_SERDE_FOR_VECTOR!(i16, I16, U16withExtension, 1);
+IMPLEMENT_SERDE_FOR_VECTOR!(u32, U32, U32, 3);
+IMPLEMENT_SERDE_FOR_VECTOR!(i32, I32, U32, 3);
+IMPLEMENT_SERDE_FOR_VECTOR!(f32, F32, U32, 3);
+IMPLEMENT_SERDE_FOR_VECTOR!(u64, U64, U32on64bits, 7);
+IMPLEMENT_SERDE_FOR_VECTOR!(i64, I64, U32on64bits, 7);
+IMPLEMENT_SERDE_FOR_VECTOR!(f64, F64, U32on64bits, 7);
+IMPLEMENT_SERDE_FOR_VECTOR!(u128, U128, U32on128bits, 15);
+IMPLEMENT_SERDE_FOR_VECTOR!(i128, I128, U32on128bits, 15);
+

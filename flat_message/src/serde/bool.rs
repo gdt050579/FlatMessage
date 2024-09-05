@@ -25,18 +25,18 @@ unsafe impl SerDe<'_> for bool {
         }
     }
     #[inline(always)]
-    unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
+    unsafe fn write(value: &Self, p: *mut u8, pos: usize) -> usize {
         unsafe {
-            ptr::write_unaligned(p.add(pos), *self as u8);
+            ptr::write_unaligned(p.add(pos), *value as u8);
             pos + 1
         }
     }
     #[inline(always)]
-    fn size(&self) -> usize {
+    fn size(_: &Self) -> usize {
         1
     }
     #[inline(always)]
-    fn align_offset(&self, offset: usize) -> usize {
+    fn align_offset(_: &Self, offset: usize) -> usize {
         offset
     }
 }

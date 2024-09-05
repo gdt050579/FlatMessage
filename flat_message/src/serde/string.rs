@@ -34,20 +34,20 @@ unsafe impl<'a> SerDe<'a> for &'a str {
         }
     }
     #[inline(always)]
-    unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
-        let len = self.len() as u32;
+    unsafe fn write(obj: &&str, p: *mut u8, pos: usize) -> usize {
+        let len = obj.len() as u32;
         unsafe {
             let slen = buffer::write_size(p, pos, len, buffer::WriteSizeMethod::U8withExtension);
-            std::ptr::copy_nonoverlapping(self.as_ptr(), p.add(pos + slen), self.len());
+            std::ptr::copy_nonoverlapping(obj.as_ptr(), p.add(pos + slen), obj.len());
             pos + slen + len as usize
         }
     }
     #[inline(always)]
-    fn size(&self) -> usize {
-        buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::U8withExtension) + self.len()
+    fn size(obj: &&str) -> usize {
+        buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::U8withExtension) + obj.len()
     }
     #[inline(always)]
-    fn align_offset(&self, offset: usize) -> usize {
+    fn align_offset(_: &&str, offset: usize) -> usize {
         offset
     }
 }
@@ -66,15 +66,15 @@ unsafe impl SerDe<'_> for String {
         Some(v.to_string())
     }
     #[inline(always)]
-    unsafe fn write(&self, p: *mut u8, pos: usize) -> usize {
-        SerDe::write(&self.as_str(), p, pos)
+    unsafe fn write(obj: &String, p: *mut u8, pos: usize) -> usize {
+        SerDe::write(&obj.as_str(), p, pos)
     }
     #[inline(always)]
-    fn size(&self) -> usize {
-        buffer::size_len(self.len() as u32, buffer::WriteSizeMethod::U8withExtension) + self.len()
+    fn size(obj: &String) -> usize {
+        buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::U8withExtension) + obj.len()
     }
     #[inline(always)]
-    fn align_offset(&self, offset: usize) -> usize {
+    fn align_offset(_: &String, offset: usize) -> usize {
         offset
     }
 }
