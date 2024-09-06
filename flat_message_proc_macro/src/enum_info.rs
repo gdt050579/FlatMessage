@@ -61,12 +61,43 @@ impl EnumInfo {
             }
         }
     }
-    fn generate_slice_and_vec_code_for_8_bits(&self) -> TokenStream {
+
+    fn generate_slice_serde_implementation(&self) -> TokenStream {
         let name = &self.name;
         let data_format = self.repr.data_format();
         let variant_validation = self.generate_variant_validation_match(false);
         let name_hash = self.compute_hash();
         let repr_type = self.repr.repr_type();
+        let (size_format, multiplier, alignament, slice) = match self.repr {
+            EnumMemoryRepresentation::U8 | EnumMemoryRepresentation::I8 => (
+                quote! { U8withExtension },
+                quote! {},
+                quote! { offset },
+                quote! {&buf[pos + size_len..end];},
+            ),
+            EnumMemoryRepresentation::U16 | EnumMemoryRepresentation::I16 => (
+                quote! { U16withExtension },
+                quote! { * 2 },
+                quote! { (offset + 1usize) & !(1usize) },
+                quote! { unsafe { std::slice::from_raw_parts(buf.as_ptr().add(pos+size_len) as *const #repr_type, count) }; },
+            ),
+            EnumMemoryRepresentation::U32 | EnumMemoryRepresentation::I32 => (
+                quote! { U32 },
+                quote! { *4 },
+                quote! { (offset + 3usize) & !(3usize) },
+                quote! { unsafe { std::slice::from_raw_parts(buf.as_ptr().add(pos+size_len) as *const #repr_type, count) }; },
+            ),
+            EnumMemoryRepresentation::U64 | EnumMemoryRepresentation::I64 => {
+                // since we have the hash (4 bytes) we don't need to use U32onu64 as we are already aligned to 8 bytes
+                (
+                    quote! { U32 },
+                    quote! { *8 },
+                    quote! { (offset + 7usize) & !(7usize) },
+                    quote! { unsafe { std::slice::from_raw_parts(buf.as_ptr().add(pos+size_len) as *const #repr_type, count) }; },
+                )
+            }
+            EnumMemoryRepresentation::NotDefined => panic!("Not defined enum representation type"),
+        };
 
         quote! {
             unsafe impl<'a> SerDeSlice<'a> for #name {
@@ -75,9 +106,9 @@ impl EnumInfo {
                 unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> &'a [Self] {
                     let p = buf.as_ptr();
                     let pos = pos + 4; // skip the name hash
-                    let (len, buf_len) =
-                        flat_message::size::read_unchecked(p, pos, flat_message::size::Format::U8withExtension);
-                    std::slice::from_raw_parts(p.add(pos + buf_len) as *const #name, len)
+                    let (count, size_len) =
+                        flat_message::size::read_unchecked(p, pos, flat_message::size::Format::#size_format);
+                    std::slice::from_raw_parts(p.add(pos + size_len) as *const #name, count)
                 }
                 #[inline(always)]
                 fn from_buffer(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
@@ -91,17 +122,17 @@ impl EnumInfo {
                         }
                     }
                     let pos = pos + 4;
-                    let (len, buf_len) =  flat_message::size::read(
+                    let (count, size_len) =  flat_message::size::read(
                         buf.as_ptr(),
                         pos,
                         buf.len(),
-                        flat_message::size::Format::U8withExtension,
+                        flat_message::size::Format::#size_format,
                     )?;
-                    let end = pos + buf_len + len;
+                    let end = pos + size_len + count #multiplier;
                     if end > buf.len() {
                         None
                     } else {
-                        let slice = &buf[pos + buf_len..end];
+                        let slice = #slice
                         // check each value
                         for value in slice.iter() {
                             let value = *value as #repr_type;
@@ -109,8 +140,8 @@ impl EnumInfo {
                         }
                         Some(unsafe {
                             std::slice::from_raw_parts(
-                                buf.as_ptr().add(pos + buf_len) as *const #name,
-                                len,
+                                buf.as_ptr().add(pos + size_len) as *const #name,
+                                count,
                             )
                         })
                     }
@@ -120,46 +151,35 @@ impl EnumInfo {
                     let len = obj.len() as u32;
                     unsafe {
                         std::ptr::write_unaligned(p.add(pos) as *mut u32, #name_hash);
-                        let buf_len =
-                        flat_message::size::write(p, pos+4, len, flat_message::size::Format::U8withExtension);
+                        let size_len =
+                        flat_message::size::write(p, pos+4, len, flat_message::size::Format::#size_format);
                         std::ptr::copy_nonoverlapping(
                             obj.as_ptr() as *mut u8,
-                            p.add(pos + buf_len + 4),
-                            obj.len(),
+                            p.add(pos + size_len + 4),
+                            obj.len() #multiplier,
                         );
-                        pos + buf_len + len as usize + 4usize
+                        pos + size_len + (len as usize) #multiplier  + 4usize
                     }
                 }
                 #[inline(always)]
                 fn size(obj: &[Self]) -> usize {
-                    flat_message::size::len(obj.len() as u32, flat_message::size::Format::U8withExtension)
-                    + obj.len() + 4usize /* name hash */
+                    flat_message::size::len(obj.len() as u32, flat_message::size::Format::#size_format)
+                    + obj.len() #multiplier + 4usize /* name hash */
                 }
                 #[inline(always)]
                 fn align_offset(_: &[Self], offset: usize) -> usize {
-                    offset
+                    #alignament
                 }
             }
         }
     }
-    pub fn generate_code(&self) -> TokenStream {
+
+    fn generate_serde_implementation(&self) -> TokenStream {
         let name = &self.name;
         let data_format = self.repr.data_format();
         let repr_type = self.repr.repr_type();
         let name_hash = self.compute_hash();
         let variant_validation = self.generate_variant_validation_match(true);
-        let slice_and_vec_code = match self.repr {
-            EnumMemoryRepresentation::U8 | EnumMemoryRepresentation::I8 => {
-                self.generate_slice_and_vec_code_for_8_bits()
-            }
-            EnumMemoryRepresentation::U16 => todo!(),
-            EnumMemoryRepresentation::U32 => todo!(),
-            EnumMemoryRepresentation::U64 => todo!(),
-            EnumMemoryRepresentation::I16 => todo!(),
-            EnumMemoryRepresentation::I32 => todo!(),
-            EnumMemoryRepresentation::I64 => todo!(),
-            _ => panic!("Unimplemented enum represenation type: {:?}", self.repr),
-        };
 
         quote! {
             unsafe impl<'a> SerDe<'a> for #name {
@@ -203,8 +223,16 @@ impl EnumInfo {
                     offset
                 }
             }
-            // for slices and vectors
-            #slice_and_vec_code
+        }
+    }
+    pub fn generate_code(&self) -> TokenStream {
+        let serde_code = self.generate_serde_implementation();
+        let slice_code = self.generate_slice_serde_implementation();
+        quote! {
+            #serde_code
+            // for slices
+            #slice_code
+
         }
     }
 }

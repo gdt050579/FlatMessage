@@ -25,6 +25,8 @@ pub struct MyStruct<'a> {
     cols: &'a [Color],
     #[flat_message_enum(i8)]
     col: Color,
+   // #[blabla(=1, b=2, c=3)]
+    x: u32,
 }
 
 fn main() {
@@ -38,6 +40,7 @@ fn main() {
         // e: vec![1, 2, 3, 4, 5],
         cols: &[Color::Green, Color::Blue, Color::Magenta],
         col: Color::Red,
+        x: 0,
     };
     let mut output = Vec::new();
     a.serialize_to(&mut output, Config::default()).unwrap();

@@ -1330,3 +1330,247 @@ fn check_enum_add_variant_sealed_unchecked() {
     assert_eq!(s.value, ds.value);
     assert_eq!(s.color as u8, ds.color as u8);
 }
+
+#[test]
+fn check_enum_slice_u8bits() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(u8)]
+    enum Color {
+        Red = 1,
+        Green = 10,
+        Blue = 100,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u8,
+        #[flat_message_enum(u8)]
+        color: &'a [Color],
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: &[
+            Color::Green,
+            Color::Blue,
+            Color::Red,
+            Color::Green,
+            Color::Blue,
+        ],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+    assert_eq!(
+        v.as_slice(),
+        &[
+            // Header
+            71, 84, 72, 1, 2, 0, 0, 0, 
+            // TestStruct::color 
+            // Hash for Color
+            237, 103, 151, 167, 
+            // number of elements in TestStruct::color
+            5, 
+            // u8 value for TestStruct::color
+            10, 100, 1, 10, 100, 
+            // value of TestStruct::value
+            123,
+            // alignament padding (to 4 bytes)
+            0, 
+            // Hash for color
+            147, 98, 126, 61,
+            // Hash for value 
+            1, 211, 94, 66, 
+            // Offsets 
+            8, 18
+        ]
+    );
+}
+
+
+#[test]
+fn check_enum_slice_i8bits() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(i8)]
+    enum Color {
+        Red = 1,
+        Green = -10,
+        Blue = -100,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u8,
+        #[flat_message_enum(i8)]
+        color: &'a [Color],
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: &[
+            Color::Green,
+            Color::Blue,
+            Color::Red,
+            Color::Green,
+            Color::Blue,
+        ],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+}
+
+
+#[test]
+fn check_enum_slice_u16bits() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(u16)]
+    enum Color {
+        Red = 1234,
+        Green = 12345,
+        Blue = 2,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u8,
+        #[flat_message_enum(u16)]
+        color: &'a [Color],
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: &[
+            Color::Green,
+            Color::Blue,
+            Color::Red,
+            Color::Green,
+            Color::Blue,
+        ],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+    assert_eq!(v.as_slice(),&[
+        // Header
+        71, 84, 72, 1, 2, 0, 0, 0, 
+        // Hash for Color
+        237, 103, 151, 167, 
+        // number of items in TestStruct::color (u16)
+        5, 0,
+        // 5 items of TestStruct::color (u16) each
+        57, 48,   2, 0,   210, 4,   57, 48,   2, 0,   
+        // TestStruct::value
+        123, 
+        // alignament padding (to 4 bytes)
+        0, 0, 0, 
+        // Hash for color
+        148, 98, 126, 61,
+        // Hash for value 	
+        1, 211, 94, 66, 
+        // Offsets
+        8, 24
+    ]);
+}
+
+#[test]
+fn check_enum_slice_i16bits() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(i16)]
+    enum Color {
+        Red = 1234,
+        Green = -12345,
+        Blue = 2,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u8,
+        #[flat_message_enum(i16)]
+        color: &'a [Color],
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: &[
+            Color::Green,
+            Color::Blue,
+            Color::Red,
+            Color::Green,
+            Color::Blue,
+        ],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+}
+
+#[test]
+fn check_enum_slice_u32bits() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(u32)]
+    enum Color {
+        Red = 0xFF00FF00,
+        Green = 0x00FF00FF,
+        Blue = 0xFEFEFEFE,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u8,
+        #[flat_message_enum(u32)]
+        color: &'a [Color],
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: &[
+            Color::Green,
+            Color::Blue,
+            Color::Red,
+            Color::Green,
+            Color::Blue,
+        ],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+}
+
+#[test]
+fn check_enum_slice_i32bits() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(i32)]
+    enum Color {
+        Red = -12345678,
+        Green = 1,
+        Blue = 12345678,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u8,
+        #[flat_message_enum(i32)]
+        color: &'a [Color],
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: &[
+            Color::Green,
+            Color::Blue,
+            Color::Red,
+            Color::Green,
+            Color::Blue,
+        ],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+}

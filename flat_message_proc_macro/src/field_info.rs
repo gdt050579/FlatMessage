@@ -1,6 +1,8 @@
 use common::hashes;
+use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{Field, Ident};
+use super::attribute_parser;
 
 use crate::{data_type::DataType, utils};
 
@@ -41,6 +43,21 @@ impl TryFrom<&Field> for FieldInfo {
         let ty = &field.ty;
         let mut data_type = DataType::new(ty.clone(), quote! {#ty}.to_string());
         for attr in field.attrs.iter() {
+            if attr.path().is_ident("flat_message") {
+                let all_tokens = attr.meta.clone().into_token_stream();
+                let mut tokens = TokenStream::default();
+                let mut iter = all_tokens.into_iter();
+                while let Some(token) = iter.next() {
+                    if let proc_macro2::TokenTree::Group(group) = token {
+                        if group.delimiter() == proc_macro2::Delimiter::Parenthesis {
+                            tokens = group.stream().into();
+                            break;
+                        }
+                    }
+                }
+                let attr = attribute_parser::parse(tokens);
+                panic!("Found: \n{:?}\n",attr);
+            }
             data_type.update(attr)?;
         }
         // compute the data format
