@@ -14,13 +14,13 @@ enum Color {
 }
 
 
-#[flat_message(store_name = false, metadata: true)]
+#[flat_message(store_name = false, metadata: false)]
 pub struct MyStruct<'a> {
-    pub a: i32,
-    pub(crate) b: bool,
-    c: String,
-    d: &'a str,
-    e: Vec<u8>,
+    //pub a: i32,
+    //pub(crate) b: bool,
+    //c: String,
+    //d: &'a str,
+    //e: Vec<u8>,
     #[flat_message_enum(u8)]
     cols: &'a [Color],
     #[flat_message_enum(u8)]
@@ -30,12 +30,12 @@ pub struct MyStruct<'a> {
 fn main() {
     let s = "Hello, World reference!".to_string();
     let a = MyStruct {
-        a: 42,
-        b: true,
-        c: "Hello, World!".to_string(),
-        metadata: MetaData::default(),
-        d: &s,
-        e: vec![1, 2, 3, 4, 5],
+        // a: 42,
+        // b: true,
+        // c: "Hello, World!".to_string(),
+        // metadata: MetaData::default(),
+        // d: &s,
+        // e: vec![1, 2, 3, 4, 5],
         cols: &[Color::Green, Color::Blue, Color::Magenta],
         col: Color::Red,
     };

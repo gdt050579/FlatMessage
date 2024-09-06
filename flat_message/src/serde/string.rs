@@ -9,7 +9,7 @@ unsafe impl<'a> SerDe<'a> for &'a str {
     unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Self {
         let p = buf.as_ptr();
         let (len, slen) =
-            buffer::read_size_unchecked(p, pos, buffer::WriteSizeMethod::U8withExtension);
+            buffer::read_size_unchecked(p, pos, buffer::SizeFormat::U8withExtension);
         let s = std::slice::from_raw_parts(p.add(pos + slen), len);
         unsafe { std::str::from_utf8_unchecked(s) }
     }
@@ -19,7 +19,7 @@ unsafe impl<'a> SerDe<'a> for &'a str {
             buf.as_ptr(),
             pos,
             buf.len(),
-            buffer::WriteSizeMethod::U8withExtension,
+            buffer::SizeFormat::U8withExtension,
         )?;
         let end = pos + slen + len;
         if end > buf.len() {
@@ -37,14 +37,14 @@ unsafe impl<'a> SerDe<'a> for &'a str {
     unsafe fn write(obj: &&str, p: *mut u8, pos: usize) -> usize {
         let len = obj.len() as u32;
         unsafe {
-            let slen = buffer::write_size(p, pos, len, buffer::WriteSizeMethod::U8withExtension);
+            let slen = buffer::write_size(p, pos, len, buffer::SizeFormat::U8withExtension);
             std::ptr::copy_nonoverlapping(obj.as_ptr(), p.add(pos + slen), obj.len());
             pos + slen + len as usize
         }
     }
     #[inline(always)]
     fn size(obj: &&str) -> usize {
-        buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::U8withExtension) + obj.len()
+        buffer::size_len(obj.len() as u32, buffer::SizeFormat::U8withExtension) + obj.len()
     }
     #[inline(always)]
     fn align_offset(_: &&str, offset: usize) -> usize {
@@ -71,7 +71,7 @@ unsafe impl SerDe<'_> for String {
     }
     #[inline(always)]
     fn size(obj: &String) -> usize {
-        buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::U8withExtension) + obj.len()
+        buffer::size_len(obj.len() as u32, buffer::SizeFormat::U8withExtension) + obj.len()
     }
     #[inline(always)]
     fn align_offset(_: &String, offset: usize) -> usize {

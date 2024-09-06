@@ -1,33 +1,28 @@
 #[derive(Copy, Clone)]
-pub(crate) enum WriteSizeMethod {
+pub enum SizeFormat {
     U8withExtension,
     U16withExtension,
     U32,
     U32on64bits,
-    U32on128bits
+    U32on128bits,
 }
 
 #[inline(always)]
-pub(crate) unsafe fn write_size(
-    p: *mut u8,
-    pos: usize,
-    value: u32,
-    method: WriteSizeMethod,
-) -> usize {
+pub unsafe fn write_size(p: *mut u8, pos: usize, value: u32, method: SizeFormat) -> usize {
     match method {
-        WriteSizeMethod::U32 => unsafe {
+        SizeFormat::U32 => unsafe {
             (p.add(pos) as *mut u32).write_unaligned(value);
             4
         },
-        WriteSizeMethod::U32on64bits => unsafe {
+        SizeFormat::U32on64bits => unsafe {
             (p.add(pos) as *mut u32).write_unaligned(value);
             8
         },
-        WriteSizeMethod::U32on128bits => unsafe {
+        SizeFormat::U32on128bits => unsafe {
             (p.add(pos) as *mut u32).write_unaligned(value);
             16
         },
-        WriteSizeMethod::U16withExtension => unsafe {
+        SizeFormat::U16withExtension => unsafe {
             if value < 0xFFFF {
                 (p.add(pos) as *mut u16).write_unaligned(value as u16);
                 2
@@ -38,7 +33,7 @@ pub(crate) unsafe fn write_size(
                 6
             }
         },
-        WriteSizeMethod::U8withExtension => unsafe {
+        SizeFormat::U8withExtension => unsafe {
             if value < 0xFE {
                 p.add(pos).write_unaligned(value as u8);
                 1
@@ -58,16 +53,12 @@ pub(crate) unsafe fn write_size(
 }
 
 #[inline(always)]
-pub(crate) unsafe fn read_size_unchecked(
-    p: *const u8,
-    pos: usize,
-    method: WriteSizeMethod,
-) -> (usize, usize) {
+pub unsafe fn read_size_unchecked(p: *const u8, pos: usize, method: SizeFormat) -> (usize, usize) {
     match method {
-        WriteSizeMethod::U32 => ((p.add(pos) as *mut u32).read_unaligned() as usize, 4),
-        WriteSizeMethod::U32on64bits => ((p.add(pos) as *mut u32).read_unaligned() as usize, 8),
-        WriteSizeMethod::U32on128bits => ((p.add(pos) as *mut u32).read_unaligned() as usize, 16),
-        WriteSizeMethod::U16withExtension => {
+        SizeFormat::U32 => ((p.add(pos) as *mut u32).read_unaligned() as usize, 4),
+        SizeFormat::U32on64bits => ((p.add(pos) as *mut u32).read_unaligned() as usize, 8),
+        SizeFormat::U32on128bits => ((p.add(pos) as *mut u32).read_unaligned() as usize, 16),
+        SizeFormat::U16withExtension => {
             let p = p.add(pos);
             let first = (p as *const u16).read_unaligned();
             if first < 0xFFFF {
@@ -76,7 +67,7 @@ pub(crate) unsafe fn read_size_unchecked(
                 ((p.add(2) as *mut u32).read_unaligned() as usize, 6)
             }
         }
-        WriteSizeMethod::U8withExtension => {
+        SizeFormat::U8withExtension => {
             let p = p.add(pos);
             let first = p.read_unaligned();
             match first {
@@ -89,14 +80,14 @@ pub(crate) unsafe fn read_size_unchecked(
 }
 
 #[inline(always)]
-pub(crate) fn read_size(
+pub fn read_size(
     p: *const u8,
     pos: usize,
     len: usize,
-    method: WriteSizeMethod,
+    method: SizeFormat,
 ) -> Option<(usize, usize)> {
     match method {
-        WriteSizeMethod::U32 => {
+        SizeFormat::U32 => {
             if pos + 4 > len {
                 None
             } else {
@@ -106,7 +97,7 @@ pub(crate) fn read_size(
                 ))
             }
         }
-        WriteSizeMethod::U32on64bits => {
+        SizeFormat::U32on64bits => {
             if pos + 8 > len {
                 None
             } else {
@@ -116,7 +107,7 @@ pub(crate) fn read_size(
                 ))
             }
         }
-        WriteSizeMethod::U32on128bits => {
+        SizeFormat::U32on128bits => {
             if pos + 8 > len {
                 None
             } else {
@@ -126,7 +117,7 @@ pub(crate) fn read_size(
                 ))
             }
         }
-        WriteSizeMethod::U16withExtension => {
+        SizeFormat::U16withExtension => {
             if pos + 2 > len {
                 None
             } else {
@@ -144,7 +135,7 @@ pub(crate) fn read_size(
                 }
             }
         }
-        WriteSizeMethod::U8withExtension => unsafe {
+        SizeFormat::U8withExtension => unsafe {
             let p = p.add(pos);
             let first = p.read_unaligned();
             match first {
@@ -169,12 +160,12 @@ pub(crate) fn read_size(
 }
 
 #[inline(always)]
-pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
+pub fn size_len(value: u32, method: SizeFormat) -> usize {
     match method {
-        WriteSizeMethod::U32 => 4,
-        WriteSizeMethod::U32on64bits => 8,
-        WriteSizeMethod::U32on128bits => 16,
-        WriteSizeMethod::U8withExtension => {
+        SizeFormat::U32 => 4,
+        SizeFormat::U32on64bits => 8,
+        SizeFormat::U32on128bits => 16,
+        SizeFormat::U8withExtension => {
             if value < 0xFE {
                 1
             } else if value < 0x10000 {
@@ -183,7 +174,7 @@ pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
                 5
             }
         }
-        WriteSizeMethod::U16withExtension => {
+        SizeFormat::U16withExtension => {
             if value < 0xFFFF {
                 2
             } else {
@@ -201,7 +192,7 @@ pub(crate) fn size_len(value: u32, method: WriteSizeMethod) -> usize {
 // }
 
 #[inline(always)]
-pub(crate) unsafe fn read<T: Sized + Copy>(p: *const u8, pos: usize) -> T {
+pub unsafe fn read<T: Sized + Copy>(p: *const u8, pos: usize) -> T {
     let ptr = p.add(pos) as *const T;
     std::ptr::read_unaligned(ptr)
 }

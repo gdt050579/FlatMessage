@@ -11,7 +11,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> &'a [Self] {
                 let p = buf.as_ptr();
                 let (len, buf_len) =
-                    buffer::read_size_unchecked(p, pos, buffer::WriteSizeMethod::U8withExtension);
+                    buffer::read_size_unchecked(p, pos, buffer::SizeFormat::U8withExtension);
                 std::slice::from_raw_parts(p.add(pos + buf_len) as *const $t, len)
             }
             #[inline(always)]
@@ -20,7 +20,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
                     buf.as_ptr(),
                     pos,
                     buf.len(),
-                    buffer::WriteSizeMethod::U8withExtension,
+                    buffer::SizeFormat::U8withExtension,
                 )?;
                 let end = pos + buf_len + len;
                 if end > buf.len() {
@@ -39,7 +39,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
                 let len = obj.len() as u32;
                 unsafe {
                     let buf_len =
-                        buffer::write_size(p, pos, len, buffer::WriteSizeMethod::U8withExtension);
+                        buffer::write_size(p, pos, len, buffer::SizeFormat::U8withExtension);
                     std::ptr::copy_nonoverlapping(
                         obj.as_ptr() as *mut u8,
                         p.add(pos + buf_len),
@@ -50,7 +50,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             }
             #[inline(always)]
             fn size(obj: &[Self]) -> usize {
-                buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::U8withExtension)
+                buffer::size_len(obj.len() as u32, buffer::SizeFormat::U8withExtension)
                     + obj.len()
             }
             #[inline(always)]
@@ -81,7 +81,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             fn size(obj: &Vec<Self>) -> usize {
-                buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::U8withExtension)
+                buffer::size_len(obj.len() as u32, buffer::SizeFormat::U8withExtension)
                     + obj.len()
             }
             #[inline(always)]

@@ -22,7 +22,7 @@
 /// | +?     | Name Hash   | u32  | Hash of the structure name (only if NameHash flag is set)|
 /// | Last   | CRC32 value | u32  | Last 4 bytes, only if CRC32 flags is set                 |
 /// |--------|-------------|------|----------------------------------------------------------|
-mod buffer;
+pub mod buffer;
 mod config;
 mod error;
 mod flat_message;
@@ -56,4 +56,3 @@ pub use common::data_format::DataFormat;
 
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}
-

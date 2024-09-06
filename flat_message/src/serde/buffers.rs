@@ -11,7 +11,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> &'a [Self] {
                 let p = buf.as_ptr();
                 let (count, size_len) =
-                    buffer::read_size_unchecked(p, pos, buffer::WriteSizeMethod::$align_method);
+                    buffer::read_size_unchecked(p, pos, buffer::SizeFormat::$align_method);
                 std::slice::from_raw_parts(p.add(pos + size_len) as *const $t, count)
             }
             #[inline(always)]
@@ -20,7 +20,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
                     buf.as_ptr(),
                     pos,
                     buf.len(),
-                    buffer::WriteSizeMethod::$align_method,
+                    buffer::SizeFormat::$align_method,
                 )?;
                 let end = pos + size_len + count * std::mem::size_of::<$t>();
                 if end > buf.len() {
@@ -39,7 +39,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
                 let len = obj.len() as u32;
                 unsafe {
                     let size_len =
-                        buffer::write_size(p, pos, len, buffer::WriteSizeMethod::$align_method);
+                        buffer::write_size(p, pos, len, buffer::SizeFormat::$align_method);
                     std::ptr::copy_nonoverlapping(
                         obj.as_ptr() as *mut u8,
                         p.add(pos + size_len),
@@ -50,7 +50,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             }
             #[inline(always)]
             fn size(obj: &[Self]) -> usize {
-                buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::$align_method)
+                buffer::size_len(obj.len() as u32, buffer::SizeFormat::$align_method)
                     + obj.len() * std::mem::size_of::<$t>()
             }
             #[inline(always)]
@@ -81,7 +81,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             fn size(obj: &Vec<Self>) -> usize {
-                buffer::size_len(obj.len() as u32, buffer::WriteSizeMethod::$align_method)
+                buffer::size_len(obj.len() as u32, buffer::SizeFormat::$align_method)
                     + obj.len() * std::mem::size_of::<$t>()
             }
             #[inline(always)]

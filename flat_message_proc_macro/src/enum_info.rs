@@ -4,7 +4,6 @@ use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{Data, DeriveInput, Fields};
 
-
 pub struct EnumInfo {
     name: syn::Ident,
     variants: Vec<(String, i128)>,
@@ -13,13 +12,12 @@ pub struct EnumInfo {
 }
 
 impl EnumInfo {
-
     fn compute_hash(&self) -> u32 {
         if self.sealed_enum {
             let mut name = self.name.to_string();
             let mut v = self.variants.clone();
             v.sort_by(|a, b| a.0.cmp(&b.0));
-            for (variant_name,value) in v {
+            for (variant_name, value) in v {
                 name.push_str(variant_name.as_str());
                 name.push_str(value.to_string().as_str());
             }
@@ -29,22 +27,138 @@ impl EnumInfo {
             common::hashes::crc32(name.as_bytes())
         }
     }
-    pub fn generate_code(&self) -> TokenStream {
-        let name = &self.name;
-        let data_format = self.repr.data_format();
-        let repr_type = self.repr.repr_type();
-        let name_hash = self.compute_hash();
+    fn generate_variant_validation_match(&self, generate_value: bool) -> TokenStream {
+        let mut first = true;
         let variants: Vec<_> = self
             .variants
             .iter()
             .map(|(name, value)| {
                 let name = syn::Ident::new(name, proc_macro2::Span::call_site());
                 let value = proc_macro2::Literal::i128_unsuffixed(*value);
-                quote! {
-                    #value => Some(Self::#name),
+                if generate_value {
+                    quote! { #value => Some(Self::#name), }
+                } else if first {
+                    first = false;
+                    quote! { #value }
+                } else {
+                    quote! { | #value }
                 }
             })
             .collect();
+        if generate_value {
+            quote! {
+                match value {
+                    #(#variants)*
+                    _ => None,
+                }
+            }
+        } else {
+            quote! {
+                match value {
+                    #(#variants)* => {},
+                    _ => return None,
+                }
+            }
+        }
+    }
+    fn generate_slice_and_vec_code_for_8_bits(&self) -> TokenStream {
+        let name = &self.name;
+        let data_format = self.repr.data_format();
+        let variant_validation = self.generate_variant_validation_match(false);
+        let name_hash = self.compute_hash();
+
+        quote! {
+            unsafe impl<'a> SerDeSlice<'a> for #name {
+                const DATA_FORMAT: flat_message::DataFormat = #data_format;
+                #[inline(always)]
+                unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> &'a [Self] {
+                    let p = buf.as_ptr();
+                    let pos = pos + 4; // skip the name hash
+                    let (len, buf_len) =
+                        flat_message::buffer::read_size_unchecked(p, pos, flat_message::buffer::SizeFormat::U8withExtension);
+                    std::slice::from_raw_parts(p.add(pos + buf_len) as *const #name, len)
+                }
+                #[inline(always)]
+                fn from_buffer(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
+                    if pos + 4 > buf.len() {
+                        return None;
+                    } 
+                    unsafe {
+                        let hash = buf.as_ptr().add(pos) as *const u32;
+                        if *hash != #name_hash {
+                            return None;
+                        }
+                    }
+                    let pos = pos + 4;
+                    let (len, buf_len) =  flat_message::buffer::read_size(
+                        buf.as_ptr(),
+                        pos,
+                        buf.len(),
+                        flat_message::buffer::SizeFormat::U8withExtension,
+                    )?;
+                    let end = pos + buf_len + len;
+                    if end > buf.len() {
+                        None
+                    } else {
+                        let slice = &buf[pos + buf_len..end];
+                        // check each value
+                        for value in slice.iter() {
+                            let value = *value;
+                            #variant_validation
+                        }
+                        Some(unsafe {
+                            std::slice::from_raw_parts(
+                                buf.as_ptr().add(pos + buf_len) as *const #name,
+                                len,
+                            )
+                        })
+                    }
+                }
+                #[inline(always)]
+                unsafe fn write(obj: &[Self], p: *mut u8, pos: usize) -> usize {
+                    let len = obj.len() as u32;
+                    unsafe {
+                        std::ptr::write_unaligned(p.add(pos) as *mut u32, #name_hash);
+                        let buf_len =
+                        flat_message::buffer::write_size(p, pos+4, len, flat_message::buffer::SizeFormat::U8withExtension);
+                        std::ptr::copy_nonoverlapping(
+                            obj.as_ptr() as *mut u8,
+                            p.add(pos + buf_len + 4),
+                            obj.len(),
+                        );
+                        pos + buf_len + len as usize + 4usize
+                    }
+                }
+                #[inline(always)]
+                fn size(obj: &[Self]) -> usize {
+                    flat_message::buffer::size_len(obj.len() as u32, flat_message::buffer::SizeFormat::U8withExtension)
+                    + obj.len() + 4usize /* name hash */
+                }
+                #[inline(always)]
+                fn align_offset(_: &[Self], offset: usize) -> usize {
+                    offset
+                }
+            }
+        }
+    }
+    pub fn generate_code(&self) -> TokenStream {
+        let name = &self.name;
+        let data_format = self.repr.data_format();
+        let repr_type = self.repr.repr_type();
+        let name_hash = self.compute_hash();
+        let variant_validation = self.generate_variant_validation_match(true);
+        let slice_and_vec_code = match self.repr {
+            EnumMemoryRepresentation::U8 => self.generate_slice_and_vec_code_for_8_bits(),
+            EnumMemoryRepresentation::U16 => todo!(),
+            EnumMemoryRepresentation::U32 => todo!(),
+            EnumMemoryRepresentation::U64 => todo!(),
+            EnumMemoryRepresentation::I8 => todo!(),
+            EnumMemoryRepresentation::I16 => todo!(),
+            EnumMemoryRepresentation::I32 => todo!(),
+            EnumMemoryRepresentation::I64 => todo!(),
+            _ => panic!("Unimplemented enum represenation type: {:?}", self.repr),
+        };
+
         quote! {
             unsafe impl<'a> SerDe<'a> for #name {
                 const DATA_FORMAT: flat_message::DataFormat = #data_format;
@@ -66,10 +180,7 @@ impl EnumInfo {
                                 return None;
                             }
                             let value = *(buf.as_ptr().add(pos+4) as *const #repr_type);
-                            match value {
-                                #(#variants)*
-                                _ => None,
-                            }
+                            #variant_validation
                         }
                     }
                 }
@@ -90,30 +201,8 @@ impl EnumInfo {
                     offset
                 }
             }
-            // for slices
-            unsafe impl<'a> SerDeSlice<'a> for #name {
-                const DATA_FORMAT: flat_message::DataFormat = #data_format;
-                #[inline(always)]
-                unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> &'a [Self] {
-                    todo!()
-                }
-                #[inline(always)]
-                fn from_buffer(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
-                    todo!()
-                }
-                #[inline(always)]
-                unsafe fn write(_: &[Self], p: *mut u8, pos: usize) -> usize {
-                    todo!()
-                }
-                #[inline(always)]
-                fn size(_: &[Self]) -> usize {
-                    todo!()
-                }
-                #[inline(always)]
-                fn align_offset(_: &[Self], offset: usize) -> usize {
-                    todo!()
-                }
-            }            
+            // for slices and vectors
+            #slice_and_vec_code
         }
     }
 }
