@@ -484,7 +484,10 @@ impl<'a> StructInfo<'a> {
                 .parse()
                 .expect("Failed to convert string into TokenStream");
 
-            v.push(quote! { #tokens });
+            v.push(quote! { 
+                #[allow(non_upper_case_globals)]
+                #tokens 
+            });
         }
         v
     }
