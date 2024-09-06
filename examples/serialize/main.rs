@@ -3,9 +3,9 @@ use flat_message::*;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, FlatMessageEnum)]
 #[sealed]
-#[repr(u8)]
+#[repr(i8)]
 enum Color {
-    Red = 1,
+    Red = -1,
     Green = 2,
     Blue = 3,
     Yellow = 100,
@@ -21,9 +21,9 @@ pub struct MyStruct<'a> {
     //c: String,
     //d: &'a str,
     //e: Vec<u8>,
-    #[flat_message_enum(u8)]
+    #[flat_message_enum(i8)]
     cols: &'a [Color],
-    #[flat_message_enum(u8)]
+    #[flat_message_enum(i8)]
     col: Color,
 }
 

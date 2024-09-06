@@ -66,6 +66,7 @@ impl EnumInfo {
         let data_format = self.repr.data_format();
         let variant_validation = self.generate_variant_validation_match(false);
         let name_hash = self.compute_hash();
+        let repr_type = self.repr.repr_type();
 
         quote! {
             unsafe impl<'a> SerDeSlice<'a> for #name {
@@ -82,7 +83,7 @@ impl EnumInfo {
                 fn from_buffer(buf: &[u8], pos: usize) -> Option<&'a [Self]> {
                     if pos + 4 > buf.len() {
                         return None;
-                    } 
+                    }
                     unsafe {
                         let hash = buf.as_ptr().add(pos) as *const u32;
                         if *hash != #name_hash {
@@ -103,7 +104,7 @@ impl EnumInfo {
                         let slice = &buf[pos + buf_len..end];
                         // check each value
                         for value in slice.iter() {
-                            let value = *value;
+                            let value = *value as #repr_type;
                             #variant_validation
                         }
                         Some(unsafe {
@@ -148,11 +149,12 @@ impl EnumInfo {
         let name_hash = self.compute_hash();
         let variant_validation = self.generate_variant_validation_match(true);
         let slice_and_vec_code = match self.repr {
-            EnumMemoryRepresentation::U8 => self.generate_slice_and_vec_code_for_8_bits(),
+            EnumMemoryRepresentation::U8 | EnumMemoryRepresentation::I8 => {
+                self.generate_slice_and_vec_code_for_8_bits()
+            }
             EnumMemoryRepresentation::U16 => todo!(),
             EnumMemoryRepresentation::U32 => todo!(),
             EnumMemoryRepresentation::U64 => todo!(),
-            EnumMemoryRepresentation::I8 => todo!(),
             EnumMemoryRepresentation::I16 => todo!(),
             EnumMemoryRepresentation::I32 => todo!(),
             EnumMemoryRepresentation::I64 => todo!(),
