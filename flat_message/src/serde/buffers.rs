@@ -1,6 +1,6 @@
 use super::SerDeSlice;
 use super::SerDeVec;
-use crate::buffer;
+use crate::size;
 use common::data_format::DataFormat;
 
 macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
@@ -10,18 +10,13 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             #[inline(always)]
             unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> &'a [Self] {
                 let p = buf.as_ptr();
-                let (count, size_len) =
-                    buffer::read_size_unchecked(p, pos, buffer::SizeFormat::$align_method);
+                let (count, size_len) = size::read_unchecked(p, pos, size::Format::$align_method);
                 std::slice::from_raw_parts(p.add(pos + size_len) as *const $t, count)
             }
             #[inline(always)]
             fn from_buffer(buf: &'a [u8], pos: usize) -> Option<&'a [Self]> {
-                let (count, size_len) = buffer::read_size(
-                    buf.as_ptr(),
-                    pos,
-                    buf.len(),
-                    buffer::SizeFormat::$align_method,
-                )?;
+                let (count, size_len) =
+                    size::read(buf.as_ptr(), pos, buf.len(), size::Format::$align_method)?;
                 let end = pos + size_len + count * std::mem::size_of::<$t>();
                 if end > buf.len() {
                     None
@@ -38,8 +33,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             unsafe fn write(obj: &[Self], p: *mut u8, pos: usize) -> usize {
                 let len = obj.len() as u32;
                 unsafe {
-                    let size_len =
-                        buffer::write_size(p, pos, len, buffer::SizeFormat::$align_method);
+                    let size_len = size::write(p, pos, len, size::Format::$align_method);
                     std::ptr::copy_nonoverlapping(
                         obj.as_ptr() as *mut u8,
                         p.add(pos + size_len),
@@ -50,7 +44,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             }
             #[inline(always)]
             fn size(obj: &[Self]) -> usize {
-                buffer::size_len(obj.len() as u32, buffer::SizeFormat::$align_method)
+                size::len(obj.len() as u32, size::Format::$align_method)
                     + obj.len() * std::mem::size_of::<$t>()
             }
             #[inline(always)]
@@ -81,7 +75,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             }
             #[inline(always)]
             fn size(obj: &Vec<Self>) -> usize {
-                buffer::size_len(obj.len() as u32, buffer::SizeFormat::$align_method)
+                size::len(obj.len() as u32, size::Format::$align_method)
                     + obj.len() * std::mem::size_of::<$t>()
             }
             #[inline(always)]
@@ -91,7 +85,6 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
         }
     };
 }
-
 
 IMPLEMENT_SERDE_FOR_SLICE!(u16, U16, U16withExtension, 1);
 IMPLEMENT_SERDE_FOR_SLICE!(i16, I16, U16withExtension, 1);
@@ -114,4 +107,3 @@ IMPLEMENT_SERDE_FOR_VECTOR!(i64, I64, U32on64bits, 7);
 IMPLEMENT_SERDE_FOR_VECTOR!(f64, F64, U32on64bits, 7);
 IMPLEMENT_SERDE_FOR_VECTOR!(u128, U128, U32on128bits, 15);
 IMPLEMENT_SERDE_FOR_VECTOR!(i128, I128, U32on128bits, 15);
-

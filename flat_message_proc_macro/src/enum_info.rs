@@ -76,7 +76,7 @@ impl EnumInfo {
                     let p = buf.as_ptr();
                     let pos = pos + 4; // skip the name hash
                     let (len, buf_len) =
-                        flat_message::buffer::read_size_unchecked(p, pos, flat_message::buffer::SizeFormat::U8withExtension);
+                        flat_message::size::read_unchecked(p, pos, flat_message::size::Format::U8withExtension);
                     std::slice::from_raw_parts(p.add(pos + buf_len) as *const #name, len)
                 }
                 #[inline(always)]
@@ -91,11 +91,11 @@ impl EnumInfo {
                         }
                     }
                     let pos = pos + 4;
-                    let (len, buf_len) =  flat_message::buffer::read_size(
+                    let (len, buf_len) =  flat_message::size::read(
                         buf.as_ptr(),
                         pos,
                         buf.len(),
-                        flat_message::buffer::SizeFormat::U8withExtension,
+                        flat_message::size::Format::U8withExtension,
                     )?;
                     let end = pos + buf_len + len;
                     if end > buf.len() {
@@ -121,7 +121,7 @@ impl EnumInfo {
                     unsafe {
                         std::ptr::write_unaligned(p.add(pos) as *mut u32, #name_hash);
                         let buf_len =
-                        flat_message::buffer::write_size(p, pos+4, len, flat_message::buffer::SizeFormat::U8withExtension);
+                        flat_message::size::write(p, pos+4, len, flat_message::size::Format::U8withExtension);
                         std::ptr::copy_nonoverlapping(
                             obj.as_ptr() as *mut u8,
                             p.add(pos + buf_len + 4),
@@ -132,7 +132,7 @@ impl EnumInfo {
                 }
                 #[inline(always)]
                 fn size(obj: &[Self]) -> usize {
-                    flat_message::buffer::size_len(obj.len() as u32, flat_message::buffer::SizeFormat::U8withExtension)
+                    flat_message::size::len(obj.len() as u32, flat_message::size::Format::U8withExtension)
                     + obj.len() + 4usize /* name hash */
                 }
                 #[inline(always)]

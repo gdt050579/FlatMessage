@@ -1,5 +1,5 @@
 use super::SerDe;
-use crate::buffer;
+use crate::size;
 use common::data_format::DataFormat;
 
 /// Implementation for &str
@@ -9,17 +9,17 @@ unsafe impl<'a> SerDe<'a> for &'a str {
     unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Self {
         let p = buf.as_ptr();
         let (len, slen) =
-            buffer::read_size_unchecked(p, pos, buffer::SizeFormat::U8withExtension);
+            size::read_unchecked(p, pos, size::Format::U8withExtension);
         let s = std::slice::from_raw_parts(p.add(pos + slen), len);
         unsafe { std::str::from_utf8_unchecked(s) }
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
-        let (len, slen) = buffer::read_size(
+        let (len, slen) = size::read(
             buf.as_ptr(),
             pos,
             buf.len(),
-            buffer::SizeFormat::U8withExtension,
+            size::Format::U8withExtension,
         )?;
         let end = pos + slen + len;
         if end > buf.len() {
@@ -37,14 +37,14 @@ unsafe impl<'a> SerDe<'a> for &'a str {
     unsafe fn write(obj: &&str, p: *mut u8, pos: usize) -> usize {
         let len = obj.len() as u32;
         unsafe {
-            let slen = buffer::write_size(p, pos, len, buffer::SizeFormat::U8withExtension);
+            let slen = size::write(p, pos, len, size::Format::U8withExtension);
             std::ptr::copy_nonoverlapping(obj.as_ptr(), p.add(pos + slen), obj.len());
             pos + slen + len as usize
         }
     }
     #[inline(always)]
     fn size(obj: &&str) -> usize {
-        buffer::size_len(obj.len() as u32, buffer::SizeFormat::U8withExtension) + obj.len()
+        size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
     }
     #[inline(always)]
     fn align_offset(_: &&str, offset: usize) -> usize {
@@ -71,7 +71,7 @@ unsafe impl SerDe<'_> for String {
     }
     #[inline(always)]
     fn size(obj: &String) -> usize {
-        buffer::size_len(obj.len() as u32, buffer::SizeFormat::U8withExtension) + obj.len()
+        size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
     }
     #[inline(always)]
     fn align_offset(_: &String, offset: usize) -> usize {

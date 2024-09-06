@@ -22,7 +22,8 @@
 /// | +?     | Name Hash   | u32  | Hash of the structure name (only if NameHash flag is set)|
 /// | Last   | CRC32 value | u32  | Last 4 bytes, only if CRC32 flags is set                 |
 /// |--------|-------------|------|----------------------------------------------------------|
-pub mod buffer;
+pub mod size;
+mod buffer;
 mod config;
 mod error;
 mod flat_message;
