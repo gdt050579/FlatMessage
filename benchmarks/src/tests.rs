@@ -1574,3 +1574,69 @@ fn check_enum_slice_i32bits() {
     assert_eq!(s.value, ds.value);
     assert_eq!(s.color, ds.color);
 }
+
+#[test]
+fn check_enum_slice_u64bits() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(u64)]
+    enum Color {
+        Red = 0xFF00FF0012345678,
+        Green = 0x00FF00FF11223344,
+        Blue = 0xFEFEFEFE99887766,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u8,
+        #[flat_message_enum(u64)]
+        color: &'a [Color],
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: &[
+            Color::Green,
+            Color::Blue,
+            Color::Red,
+            Color::Green,
+            Color::Blue,
+        ],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+}
+
+#[test]
+fn check_enum_slice_i64bits() {
+    #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]
+    #[repr(i64)]
+    enum Color {
+        Red = 0xFF00FF00123876,
+        Green = -11111111111111111,
+        Blue = -87614876518,
+    }
+
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u8,
+        #[flat_message_enum(i64)]
+        color: &'a [Color],
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123,
+        color: &[
+            Color::Green,
+            Color::Blue,
+            Color::Red,
+            Color::Green,
+            Color::Blue,
+        ],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.color, ds.color);
+}
