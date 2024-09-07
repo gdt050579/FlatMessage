@@ -40,6 +40,7 @@ impl TryFrom<&Field> for FieldInfo {
                 field.to_token_stream()
             ));
         }
+        let name = field.ident.as_ref().unwrap().to_string();
         let ty = &field.ty;
         let mut data_type = DataType::new(ty.clone(), quote! {#ty}.to_string());
         for attr in field.attrs.iter() {
@@ -56,12 +57,16 @@ impl TryFrom<&Field> for FieldInfo {
                     }
                 }
                 let attr = attribute_parser::parse(tokens);
-                panic!("Found: \n{:?}\n",attr);
+                data_type.update(&attr, name.as_str())?;
+            } else {
+                return Err(format!(
+                    "Attribute '{}' is not supported for field '{}'",
+                    attr.to_token_stream(),
+                    name
+                ));
             }
-            data_type.update(attr)?;
         }
         // compute the data format
-        let name = field.ident.as_ref().unwrap().to_string();
         let hash = (hashes::fnv_32(&name) & 0xFFFFFF00) | data_type.type_hash();
         Ok(FieldInfo {
             name,

@@ -1158,7 +1158,7 @@ fn check_enum() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct {
         value: u8,
-        #[flat_message_enum(u8)]
+        #[flat_message(repr = u8, kind = enum)]
         color: Color,
     }
     let mut v = Storage::default();
@@ -1194,7 +1194,7 @@ fn check_enum_add_variant() {
         #[flat_message(metadata: false, store_name: false)]
         pub struct TestStruct {
             pub value: u8,
-            #[flat_message_enum(u8)]
+            #[flat_message(repr = u8, kind = enum)]
             pub color: Color,
         }
     }
@@ -1212,7 +1212,7 @@ fn check_enum_add_variant() {
         #[flat_message(metadata: false, store_name: false)]
         pub struct TestStruct {
             pub value: u8,
-            #[flat_message_enum(u8)]
+            #[flat_message(repr = u8, kind = enum)]
             pub color: Color,
         }
     }
@@ -1244,7 +1244,7 @@ fn check_enum_add_variant_sealed() {
         #[flat_message(metadata: false, store_name: false)]
         pub struct TestStruct {
             pub value: u8,
-            #[flat_message_enum(u8)]
+            #[flat_message(repr = u8, kind = enum)]
             pub color: Color,
         }
     }
@@ -1262,7 +1262,7 @@ fn check_enum_add_variant_sealed() {
         #[flat_message(metadata: false, store_name: false)]
         pub struct TestStruct {
             pub value: u8,
-            #[flat_message_enum(u8)]
+            #[flat_message(repr = u8, kind = enum)]
             pub color: Color,
         }
     }
@@ -1296,7 +1296,7 @@ fn check_enum_add_variant_sealed_unchecked() {
         #[flat_message(metadata: false, store_name: false)]
         pub struct TestStruct {
             pub value: u8,
-            #[flat_message_enum(u8)]
+            #[flat_message(repr = u8, kind = enum)]
             pub color: Color,
         }
     }
@@ -1314,7 +1314,7 @@ fn check_enum_add_variant_sealed_unchecked() {
         #[flat_message(metadata: false, store_name: false)]
         pub struct TestStruct {
             pub value: u8,
-            #[flat_message_enum(u8)]
+            #[flat_message(repr = u8, kind = enum)]
             pub color: Color,
         }
     }
@@ -1344,7 +1344,7 @@ fn check_enum_slice_u8bits() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct<'a> {
         value: u8,
-        #[flat_message_enum(u8)]
+        #[flat_message(repr = u8, kind = enum)]
         color: &'a [Color],
     }
     let mut v = Storage::default();
@@ -1402,7 +1402,7 @@ fn check_enum_slice_i8bits() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct<'a> {
         value: u8,
-        #[flat_message_enum(i8)]
+        #[flat_message(repr = i8, kind = enum)]
         color: &'a [Color],
     }
     let mut v = Storage::default();
@@ -1436,7 +1436,7 @@ fn check_enum_slice_u16bits() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct<'a> {
         value: u8,
-        #[flat_message_enum(u16)]
+        #[flat_message(repr = u16, kind = enum)]
         color: &'a [Color],
     }
     let mut v = Storage::default();
@@ -1489,7 +1489,7 @@ fn check_enum_slice_i16bits() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct<'a> {
         value: u8,
-        #[flat_message_enum(i16)]
+        #[flat_message(repr = i16, kind = enum)]
         color: &'a [Color],
     }
     let mut v = Storage::default();
@@ -1522,7 +1522,7 @@ fn check_enum_slice_u32bits() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct<'a> {
         value: u8,
-        #[flat_message_enum(u32)]
+        #[flat_message(repr = u32, kind = enum)]
         color: &'a [Color],
     }
     let mut v = Storage::default();
@@ -1555,7 +1555,7 @@ fn check_enum_slice_i32bits() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct<'a> {
         value: u8,
-        #[flat_message_enum(i32)]
+        #[flat_message(repr = i32, kind = enum)]
         color: &'a [Color],
     }
     let mut v = Storage::default();
@@ -1588,7 +1588,7 @@ fn check_enum_slice_u64bits() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct<'a> {
         value: u8,
-        #[flat_message_enum(u64)]
+        #[flat_message(repr = u64, kind = enum)]
         color: &'a [Color],
     }
     let mut v = Storage::default();
@@ -1621,7 +1621,7 @@ fn check_enum_slice_i64bits() {
     #[flat_message(metadata: false, store_name: false)]
     struct TestStruct<'a> {
         value: u8,
-        #[flat_message_enum(i64)]
+        #[flat_message(repr = i64, kind = enum)]
         color: &'a [Color],
     }
     let mut v = Storage::default();

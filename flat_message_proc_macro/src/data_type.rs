@@ -1,7 +1,7 @@
+use std::collections::HashMap;
+
 use super::utils;
 use common::data_format::DataFormat;
-use quote::ToTokens;
-use syn::{Attribute, Field};
 
 pub(crate) enum FieldType {
     Object,
@@ -61,21 +61,29 @@ impl DataType {
         }
     }
 
-    pub(crate) fn update(&mut self, attr: &Attribute) -> Result<(), String> {
-        let mut attr_ty_name = attr.to_token_stream().to_string();
-        attr_ty_name.retain(|c| c != ' ');
-
-        if attr_ty_name.starts_with("#[flat_message_enum(") {
-            attr_ty_name = attr_ty_name
-                .replace("#[flat_message_enum(", "enum_")
-                .replace(")]", "");
-        } else if attr_ty_name.starts_with("#[enum(") {
-            attr_ty_name = attr_ty_name.replace("#[enum(", "enum_").replace(")]", "");
-        } else {
-            return Err(format!("Unknwon attribute '{}'", attr_ty_name));
+    pub(crate) fn update(&mut self, attr: &HashMap<String,String>, field_nane: &str) -> Result<(), String> {
+        let has_repr = attr.contains_key("repr");
+        let has_kind = attr.contains_key("kind");
+        if (!has_repr) && (!has_kind) { return Ok(()); }
+        if has_repr && !has_kind {
+            return Err(format!("If we provided the 'repr' attribute you need to also provide the attribute 'kind' (for field: '{}')",field_nane));
         }
-        self.data_format = DataFormat::from(attr_ty_name.as_str());
-        Ok(())
+        if !has_repr && has_kind {
+            return Err(format!("If we provided the 'kind' attribute you need to also provide the attribute 'repr' (for field: '{}')",field_nane));
+        }
+        // kind and repr are present
+        let kind = attr.get("kind").unwrap();
+        let repr = attr.get("repr").unwrap();   
+        if kind == "enum" {
+            let new_name = format!("enum_{}", repr);
+            let new_data_format = DataFormat::from(new_name.as_str());
+            if new_data_format.is_enum() == false {
+                return Err(format!("Invalid representation for an enum: '{}' in field: '{}'. The possible representations for an enum are: u8, u16, u32, u64, i8, i16, i32 and i64.",repr, field_nane));
+            }
+            self.data_format = new_data_format;
+            return Ok(());
+        }
+        Err(format!("Invalid kind: '{}' in field: '{}'. The possible kinds are: 'enum'.",kind, field_nane))
     }
 
     pub(crate) fn serialization_alignment(&self) -> usize {

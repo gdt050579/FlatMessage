@@ -21,9 +21,9 @@ pub struct MyStruct<'a> {
     //c: String,
     //d: &'a str,
     //e: Vec<u8>,
-    #[flat_message_enum(i8)]
+    #[flat_message(repr = i8, kind = enum)]
     cols: &'a [Color],
-    #[flat_message_enum(i8)]
+    #[flat_message(repr = i8, kind = enum)]
     col: Color,
    // #[blabla(=1, b=2, c=3)]
     x: u32,

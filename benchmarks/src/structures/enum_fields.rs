@@ -37,11 +37,11 @@ enum Negative {
 #[flat_message(metadata: false, store_name: false)]
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EnumFields {
-    #[flat_message_enum(u8)]
+    #[flat_message(repr = u8, kind = enum)]
     col: Color,
-    #[flat_message_enum(u32)]
+    #[flat_message(repr = u32, kind = enum)]
     math: Math,
-    #[flat_message_enum(i64)]
+    #[flat_message(repr = i64, kind = enum)]
     neg: Negative,
 }
 

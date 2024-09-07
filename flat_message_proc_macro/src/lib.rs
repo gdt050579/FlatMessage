@@ -14,7 +14,6 @@ use core::panic;
 use proc_macro::*;
 use std::str::FromStr;
 use struct_info::StructInfo;
-use data_type::DataType;
 use syn::{parse_macro_input, DeriveInput};
 
 extern crate proc_macro;
