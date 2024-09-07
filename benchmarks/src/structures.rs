@@ -7,3 +7,5 @@ pub(crate) mod point;
 pub(crate) mod process_create;
 pub(crate) mod vectors;
 pub(crate) mod enum_fields;
+pub(crate) mod enum_lists;
+pub(crate) mod small_enum_lists;

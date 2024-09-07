@@ -464,5 +464,13 @@ fn main() {
         let s = structures::enum_fields::generate();
         do_one("enum_fields", &s, &s, results, args.iterations);
     }
+    {
+        let s = structures::enum_lists::generate();
+        do_one("enum_lists", &s, &s, results, args.iterations);
+    }
+    {
+        let s = structures::small_enum_lists::generate();
+        do_one("small_enum_lists", &s, &s, results, args.iterations);
+    }
     print_results(results);
 }
