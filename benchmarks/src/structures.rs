@@ -9,3 +9,4 @@ pub(crate) mod vectors;
 pub(crate) mod enum_fields;
 pub(crate) mod enum_lists;
 pub(crate) mod small_enum_lists;
+pub(crate) mod multiple_bools;

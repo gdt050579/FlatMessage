@@ -472,5 +472,9 @@ fn main() {
         let s = structures::small_enum_lists::generate();
         do_one("small_enum_lists", &s, &s, results, args.iterations);
     }
+    {
+        let s = structures::multiple_bools::generate();
+        do_one("multiple_bools", &s, &s, results, args.iterations);
+    }
     print_results(results);
 }
