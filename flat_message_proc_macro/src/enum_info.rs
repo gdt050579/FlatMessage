@@ -62,6 +62,39 @@ impl EnumInfo {
         }
     }
 
+    fn generate_vector_serde_implementation(&self)->TokenStream {
+        let data_format = self.repr.data_format();
+        let name = &self.name;
+        
+        quote! {
+            unsafe impl SerDeVec<'_> for #name {
+                const DATA_FORMAT: flat_message::DataFormat = #data_format;
+
+                #[inline(always)]
+                unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Vec<Self> {
+                    let res: &[#name] = SerDeSlice::from_buffer_unchecked(buf, pos);
+                    res.to_vec()
+                }
+                #[inline(always)]
+                fn from_buffer(buf: &[u8], pos: usize) -> Option<Vec<Self>> {
+                    let res: &[#name] = SerDeSlice::from_buffer(buf, pos)?;
+                    Some(res.to_vec())
+                }
+                #[inline(always)]
+                unsafe fn write(obj: &Vec<Self>, p: *mut u8, pos: usize) -> usize {
+                    SerDeSlice::write(obj.as_slice(), p, pos)
+                }
+                #[inline(always)]
+                fn size(obj: &Vec<Self>) -> usize {
+                    SerDeSlice::size(obj.as_slice())
+                }
+                #[inline(always)]
+                fn align_offset(obj: &Vec<Self>, offset: usize) -> usize {
+                    SerDeSlice::align_offset(&obj.as_slice(), offset)
+                }
+            }            
+        }
+    }
     fn generate_slice_serde_implementation(&self) -> TokenStream {
         let name = &self.name;
         let data_format = self.repr.data_format();
@@ -116,8 +149,8 @@ impl EnumInfo {
                         return None;
                     }
                     unsafe {
-                        let hash = buf.as_ptr().add(pos) as *const u32;
-                        if *hash != #name_hash {
+                        let hash = (buf.as_ptr().add(pos) as *const u32).read_unaligned();
+                        if hash != #name_hash {
                             return None;
                         }
                     }
@@ -228,11 +261,13 @@ impl EnumInfo {
     pub fn generate_code(&self) -> TokenStream {
         let serde_code = self.generate_serde_implementation();
         let slice_code = self.generate_slice_serde_implementation();
+        let vec_code = self.generate_vector_serde_implementation();
         quote! {
             #serde_code
             // for slices
             #slice_code
-
+            // for vectors
+            #vec_code
         }
     }
 }

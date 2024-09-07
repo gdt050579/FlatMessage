@@ -1,10 +1,10 @@
 use common::hashes;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{Field, Ident};
+use syn::Field;
 use super::attribute_parser;
 
-use crate::{data_type::DataType, utils};
+use crate::data_type::DataType;
 
 
 
