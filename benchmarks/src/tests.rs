@@ -1779,3 +1779,25 @@ fn check_enum_vec_and_slice_u32align() {
         ]
     );
 }
+
+
+#[test]
+fn check_serde_buffer_bool() {
+    #[flat_message(metadata: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        b1: &'a [bool],
+        b2: Vec<bool>,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123456,
+        b1: &[true, false, true, true, false, false, true],
+        b2: [true, false, false, true, false, true, true, true, false].to_vec(),
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.b1, ds.b1);
+    assert_eq!(s.b2, ds.b2);
+}
