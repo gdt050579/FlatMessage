@@ -3,6 +3,7 @@ use clap::Parser;
 use flat_message::{FlatMessage, FlatMessageOwned, Storage, VecLike};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use std::collections::HashSet;
 use std::fmt::Display;
 use std::{
     hint::black_box,
@@ -191,10 +192,9 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     });
 }
 
-fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
+fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: &'static str,
-    t: &T,
-    s: &S,
+    x: &T,
     results: &mut Vec<Result>,
     iterations: u32,
 ) {
@@ -234,12 +234,12 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
             Ok(Wrapper(T::deserialize_from_unchecked(input)?))
         }
     }
-    let wrapper = Wrapper(t.clone());
+    let wrapper = Wrapper(x.clone());
 
     bench(
         top_test_name,
         "flat_message",
-        t,
+        x,
         se_test_flat_message,
         de_test_flat_message,
         false,
@@ -259,7 +259,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "rmp_schema",
-        s,
+        x,
         se_test_rmp_schema,
         de_test_rmp,
         true,
@@ -269,7 +269,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "rmp_schemaless",
-        s,
+        x,
         se_test_rmp_schemaless,
         de_test_rmp,
         false,
@@ -279,7 +279,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "bincode",
-        s,
+        x,
         se_test_bincode,
         de_test_bincode,
         true,
@@ -289,7 +289,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "flexbuffers",
-        s,
+        x,
         se_test_flexbuffers,
         de_test_flexbuffers,
         false,
@@ -299,7 +299,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "cbor",
-        s,
+        x,
         se_test_cbor,
         de_test_cbor,
         false,
@@ -309,7 +309,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "bson",
-        s,
+        x,
         se_test_bson,
         de_test_bson,
         false,
@@ -319,7 +319,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "json",
-        s,
+        x,
         se_test_json,
         de_test_json,
         false,
@@ -329,7 +329,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>
     bench(
         top_test_name,
         "postcard",
-        s,
+        x,
         se_test_postcard,
         de_test_postcard,
         true,
@@ -401,84 +401,98 @@ fn print_results(results: &mut Vec<Result>) {
     ascii_table.print(r);
 }
 
-fn do_one<'a, T: FlatMessageOwned + Clone, S: Serialize + DeserializeOwned>(
+fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: &'static str,
-    process: &T,
-    process_s: &S,
+    x: &T,
     results: &mut Vec<Result>,
     iterations: u32,
 ) {
-    add_benches(top_test_name, process, process_s, results, iterations);
+    add_benches(top_test_name, x, results, iterations);
 }
 
 #[derive(clap::Parser)]
 struct Args {
     #[arg(long, short, default_value_t = 1_000_000)]
     iterations: u32,
+    #[arg(long, short, default_value = "all")]
+    tests: String,
 }
 
 fn main() {
     let args = Args::parse();
     println!("iterations: {}", args.iterations);
+
+    let all_tests = args.tests == "all";
+    let mut tests: HashSet<&str> = args.tests.split(',').collect();
+
+    macro_rules! run {
+        ($name:literal, $($args:expr),+) => {
+            if all_tests || tests.remove($name) {
+                do_one($name, $($args),+);
+            }
+        };
+    }
+
     let results = &mut Vec::new();
     {
         let process_small = structures::process_create::generate_flat();
-        let process_s_small = structures::process_create::generate_other();
-        do_one(
-            "process_create",
-            &process_small,
-            &process_s_small,
-            results,
-            args.iterations,
-        );
+        run!("process_create", &process_small, results, args.iterations);
     }
     {
         let s = structures::long_strings::generate(100);
-        do_one("long_strings", &s, &s, results, args.iterations);
+        run!("long_strings", &s, results, args.iterations);
     }
     {
         let s = structures::point::generate();
-        do_one("point", &s, &s, results, args.iterations);
+        run!("point", &s, results, args.iterations);
     }
     {
         let s = structures::one_bool::generate();
-        do_one("one_bool", &s, &s, results, args.iterations);
+        run!("one_bool", &s, results, args.iterations);
     }
     {
         let s = structures::multiple_fields::generate();
-        do_one("multiple_fields", &s, &s, results, args.iterations);
+        run!("multiple_fields", &s, results, args.iterations);
     }
     {
         let s = structures::multiple_integers::generate();
-        do_one("multiple_integers", &s, &s, results, args.iterations);
+        run!("multiple_integers", &s, results, args.iterations);
     }
     {
         let s = structures::vectors::generate();
-        do_one("vectors", &s, &s, results, args.iterations);
+        run!("vectors", &s, results, args.iterations);
     }
     {
         let s = structures::large_vectors::generate();
-        do_one("large_vectors", &s, &s, results, args.iterations);
+        run!("large_vectors", &s, results, args.iterations);
     }
     {
         let s = structures::enum_fields::generate();
-        do_one("enum_fields", &s, &s, results, args.iterations);
+        run!("enum_fields", &s, results, args.iterations);
     }
     {
         let s = structures::enum_lists::generate();
-        do_one("enum_lists", &s, &s, results, args.iterations);
+        run!("enum_lists", &s, results, args.iterations);
     }
     {
         let s = structures::small_enum_lists::generate();
-        do_one("small_enum_lists", &s, &s, results, args.iterations);
+        run!("small_enum_lists", &s, results, args.iterations);
     }
     {
         let s = structures::multiple_bools::generate();
-        do_one("multiple_bools", &s, &s, results, args.iterations);
+        run!("multiple_bools", &s, results, args.iterations);
     }
     {
         let s = structures::string_lists::generate();
-        do_one("string_lists", &s, &s, results, args.iterations);
+        run!("string_lists", &s, results, args.iterations);
     }
     print_results(results);
+
+    if !tests.is_empty() {
+        eprintln!(
+            "error: tests not found: {}",
+            tests.into_iter().collect::<Vec<_>>().join(",")
+        );
+        std::process::exit(1);
+    }
 }

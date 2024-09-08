@@ -4,12 +4,14 @@ version = "1.0.0"
 edition = "2021"
 
 [dependencies]
-flat_message_proc_macro = {path = "../flat_message_proc_macro"}
-common = {path = "../common"}
+flat_message_proc_macro = { path = "../flat_message_proc_macro" }
+common = { path = "../common" }
+serde = { version = "1", optional = true }
 
 [features]
 default = []
 check_crc32 = []
+serde = ["dep:serde"]
 
 [lints]
 workspace = true
