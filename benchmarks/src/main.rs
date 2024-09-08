@@ -66,6 +66,16 @@ fn de_test_json<S: DeserializeOwned>(data: &TestData) -> S {
 
 // ----------------------------------------------------------------------------
 
+fn se_test_simd_json<S: Serialize>(process: &S, data: &mut TestData) {
+    simd_json::serde::to_writer(&mut data.vec, process).unwrap();
+}
+
+fn de_test_simd_json<S: DeserializeOwned>(data: &TestData) -> S {
+    simd_json::serde::from_reader(data.vec.as_slice()).unwrap()
+}
+
+// ----------------------------------------------------------------------------
+
 fn se_test_rmp_schema<S: Serialize>(process: &S, data: &mut TestData) {
     rmp_serde::encode::write(&mut data.vec, process).unwrap();
 }
@@ -291,6 +301,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     b!("cbor", x, se_test_cbor, de_test_cbor, false);
     b!("bson", x, se_test_bson, de_test_bson, false);
     b!("json", x, se_test_json, de_test_json, false);
+    b!("simd_json", x, se_test_simd_json, de_test_simd_json, false);
     b!("postcard", x, se_test_postcard, de_test_postcard, true);
 }
 
