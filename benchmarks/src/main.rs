@@ -431,17 +431,27 @@ struct Args {
     iterations: u32,
     #[arg(long, short, default_value = "all")]
     tests: String,
+    #[arg(long, short, default_value_t = false)]
+    names: bool,
 }
 
 fn main() {
     let args = Args::parse();
-    println!("iterations: {}", args.iterations);
 
-    let all_tests = args.tests == "all";
-    let mut tests: HashSet<&str> = args.tests.split(',').collect();
+    let tests = if args.names {
+        ""
+    } else {
+        println!("iterations: {}", args.iterations);
+        &args.tests
+    };
+
+    let all_tests = tests == "all";
+    let mut tests: HashSet<&str> = tests.split(',').collect();
+    let mut test_names = Vec::new();
 
     macro_rules! run {
         ($name:literal, $($args:expr),+) => {
+            test_names.push($name);
             if all_tests || tests.remove($name) {
                 do_one($name, $($args),+);
             }
@@ -501,12 +511,17 @@ fn main() {
         let s = structures::string_lists::generate();
         run!("string_lists", &s, results, args.iterations);
     }
-    print_results(results);
 
+    if args.names {
+        println!("available tests: {}", test_names.join(", "));
+        return;
+    }
+    print_results(results);
     if !tests.is_empty() {
         eprintln!(
-            "error: tests not found: {}",
-            tests.into_iter().collect::<Vec<_>>().join(",")
+            "error: tests not found: {}\navailable tests: {}",
+            tests.into_iter().collect::<Vec<_>>().join(", "),
+            test_names.join(", ")
         );
         std::process::exit(1);
     }
