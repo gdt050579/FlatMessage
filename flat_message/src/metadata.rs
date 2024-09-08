@@ -2,6 +2,7 @@ use std::num::NonZeroU64;
 use std::sync::atomic::AtomicU64;
 
 #[derive(Default, Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct MetaData {
     timestamp: Option<NonZeroU64>,
     unique_id: Option<NonZeroU64>,
