@@ -268,59 +268,36 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
         };
     }
 
+    use AlgoKind::*;
     b!(
-        AlgoKind::FlatMessage,
+        FlatMessage,
         x,
         se_test_flat_message,
         de_test_flat_message,
         false
     );
     b!(
-        AlgoKind::FlatMessageUnchecked,
+        FlatMessageUnchecked,
         &wrapper,
         se_test_flat_message,
         de_test_flat_message,
         false
     );
+    b!(RmpSchema, x, se_test_rmp_schema, de_test_rmp, true);
+    b!(RmpSchemaless, x, se_test_rmp_schemaless, de_test_rmp, false);
+    b!(Bincode, x, se_test_bincode, de_test_bincode, true);
     b!(
-        AlgoKind::RmpSchema,
-        x,
-        se_test_rmp_schema,
-        de_test_rmp,
-        true
-    );
-    b!(
-        AlgoKind::RmpSchemaless,
-        x,
-        se_test_rmp_schemaless,
-        de_test_rmp,
-        false
-    );
-    b!(AlgoKind::Bincode, x, se_test_bincode, de_test_bincode, true);
-    b!(
-        AlgoKind::FlexBuffers,
+        FlexBuffers,
         x,
         se_test_flexbuffers,
         de_test_flexbuffers,
         false
     );
-    b!(AlgoKind::Cbor, x, se_test_cbor, de_test_cbor, false);
-    b!(AlgoKind::Bson, x, se_test_bson, de_test_bson, false);
-    b!(AlgoKind::Json, x, se_test_json, de_test_json, false);
-    b!(
-        AlgoKind::SimdJson,
-        x,
-        se_test_simd_json,
-        de_test_simd_json,
-        false
-    );
-    b!(
-        AlgoKind::Postcard,
-        x,
-        se_test_postcard,
-        de_test_postcard,
-        true
-    );
+    b!(Cbor, x, se_test_cbor, de_test_cbor, false);
+    b!(Bson, x, se_test_bson, de_test_bson, false);
+    b!(Json, x, se_test_json, de_test_json, false);
+    b!(SimdJson, x, se_test_simd_json, de_test_simd_json, false);
+    b!(Postcard, x, se_test_postcard, de_test_postcard, true);
 }
 
 fn print_results_ascii_table(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
@@ -526,157 +503,67 @@ fn main() {
 
     println!("iterations: {}", args.iterations);
 
+    let results = &mut Vec::new();
     macro_rules! run {
-        ($name:expr, $($args:expr),+) => {
+        ($name:expr, $x:expr) => {
             if all_tests || tests.remove(&$name) {
-                do_one($name, $($args),+);
+                do_one($name, $x, results, &mut algos, all_algos, args.iterations);
             }
         };
     }
 
-    let results = &mut Vec::new();
+    use TestKind::*;
     {
         let process_small = structures::process_create::generate_flat();
-        run!(
-            TestKind::ProcessCreate,
-            &process_small,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(ProcessCreate, &process_small);
     }
     {
         let s = structures::long_strings::generate(100);
-        run!(
-            TestKind::LongStrings,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(LongStrings, &s);
     }
     {
         let s = structures::point::generate();
-        run!(
-            TestKind::Point,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(Point, &s);
     }
     {
         let s = structures::one_bool::generate();
-        run!(
-            TestKind::OneBool,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(OneBool, &s);
     }
     {
         let s = structures::multiple_fields::generate();
-        run!(
-            TestKind::MultipleFields,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(MultipleFields, &s);
     }
     {
         let s = structures::multiple_integers::generate();
-        run!(
-            TestKind::MultipleIntegers,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(MultipleIntegers, &s);
     }
     {
         let s = structures::vectors::generate();
-        run!(
-            TestKind::Vectors,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(Vectors, &s);
     }
     {
         let s = structures::large_vectors::generate();
-        run!(
-            TestKind::LargeVectors,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(LargeVectors, &s);
     }
     {
         let s = structures::enum_fields::generate();
-        run!(
-            TestKind::EnumFields,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(EnumFields, &s);
     }
     {
         let s = structures::enum_lists::generate();
-        run!(
-            TestKind::EnumLists,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(EnumLists, &s);
     }
     {
         let s = structures::small_enum_lists::generate();
-        run!(
-            TestKind::SmallEnumLists,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(SmallEnumLists, &s);
     }
     {
         let s = structures::multiple_bools::generate();
-        run!(
-            TestKind::MultipleBools,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(MultipleBools, &s);
     }
     {
         let s = structures::string_lists::generate();
-        run!(
-            TestKind::StringLists,
-            &s,
-            results,
-            &mut algos,
-            all_algos,
-            args.iterations
-        );
+        run!(StringLists, &s);
     }
 
     print_results(results);
