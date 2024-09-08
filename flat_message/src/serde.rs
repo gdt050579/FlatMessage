@@ -5,6 +5,7 @@ mod bool;
 mod buffers;
 mod buffers_8bits;
 mod string;
+mod string_lists;
 
 pub unsafe trait SerDe<'a> {
     const DATA_FORMAT: DataFormat;

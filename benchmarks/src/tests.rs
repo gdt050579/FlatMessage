@@ -1801,3 +1801,41 @@ fn check_serde_buffer_bool() {
     assert_eq!(s.b1, ds.b1);
     assert_eq!(s.b2, ds.b2);
 }
+
+#[test]
+fn check_serde_vec_str() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        v1: Vec<&'a str>,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123456,
+        v1: vec!["Hello", "World", "John", "Doe"],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = TestStruct::deserialize_from(&v).unwrap();
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.v1, ds.v1);
+
+    assert_eq!(v.as_slice(), &[
+        /* Header                      */ 71, 84, 72, 1, 2, 0, 0, 0, 
+        /* TestStruct: value           */ 64, 226, 1, 0, 
+        /* v1                          */
+        /* v1 (items count)            */ 4, 
+        /* v1.item[0].len              */ 5, 
+        /* v1.item[0].data             */ 72, 101, 108, 108, 111, // Hello
+        /* v1.item[1].len              */ 5,
+        /* v1.item[1].data             */ 87, 111, 114, 108, 100, // World
+        /* v1.item[2].len              */ 4,
+        /* v1.item[2].data             */ 74, 111, 104, 110, // John
+        /* v1.item[3].len              */ 3,
+        /* v1.item[3].data             */ 68, 111, 101, // Doe
+        /* alignamnt                   */ 0, 0,
+        /* Hash for TestStruct::value  */ 3, 211, 94, 66, 
+        /* Hash for TestStruct::v1     */ 142, 70, 74, 148, 
+        /* Offset of TestStruct::value */ 8,
+        /* Offset of TestStruct::v1    */ 12
+    ]);
+}
