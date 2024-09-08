@@ -121,7 +121,7 @@ fn de_test_postcard<S: DeserializeOwned>(data: &TestData) -> S {
 // ----------------------------------------------------------------------------
 
 struct Result {
-    name: &'static str,
+    name: AlgoKind,
     top_test_name: TestKind,
     size: usize,
     time_se_de: Duration,
@@ -175,7 +175,7 @@ fn se_de_bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Cl
 
 fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     top_test_name: TestKind,
-    test_name: &'static str,
+    test_name: AlgoKind,
     x: &T,
     serialize: FS,
     deserialize: FD,
@@ -245,15 +245,15 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: TestKind,
     x: &T,
     results: &mut Vec<Result>,
-    algos: &mut HashSet<&str>,
+    algos: &mut HashSet<AlgoKind>,
     all_algos: bool,
     iterations: u32,
 ) {
     let wrapper = Wrapper(x.clone());
 
     macro_rules! b {
-        ($name:literal, $x:expr, $se:expr, $de:expr, $needs_schema:expr) => {
-            if all_algos || algos.remove($name) {
+        ($name:expr, $x:expr, $se:expr, $de:expr, $needs_schema:expr) => {
+            if all_algos || algos.remove(&$name) {
                 bench(
                     top_test_name,
                     $name,
@@ -269,40 +269,58 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     }
 
     b!(
-        "flat_message",
+        AlgoKind::FlatMessage,
         x,
         se_test_flat_message,
         de_test_flat_message,
         false
     );
     b!(
-        "flat_message_unchecked",
+        AlgoKind::FlatMessageUnchecked,
         &wrapper,
         se_test_flat_message,
         de_test_flat_message,
         false
     );
-    b!("rmp_schema", x, se_test_rmp_schema, de_test_rmp, true);
     b!(
-        "rmp_schemaless",
+        AlgoKind::RmpSchema,
+        x,
+        se_test_rmp_schema,
+        de_test_rmp,
+        true
+    );
+    b!(
+        AlgoKind::RmpSchemaless,
         x,
         se_test_rmp_schemaless,
         de_test_rmp,
         false
     );
-    b!("bincode", x, se_test_bincode, de_test_bincode, true);
+    b!(AlgoKind::Bincode, x, se_test_bincode, de_test_bincode, true);
     b!(
-        "flexbuffers",
+        AlgoKind::FlexBuffers,
         x,
         se_test_flexbuffers,
         de_test_flexbuffers,
         false
     );
-    b!("cbor", x, se_test_cbor, de_test_cbor, false);
-    b!("bson", x, se_test_bson, de_test_bson, false);
-    b!("json", x, se_test_json, de_test_json, false);
-    b!("simd_json", x, se_test_simd_json, de_test_simd_json, false);
-    b!("postcard", x, se_test_postcard, de_test_postcard, true);
+    b!(AlgoKind::Cbor, x, se_test_cbor, de_test_cbor, false);
+    b!(AlgoKind::Bson, x, se_test_bson, de_test_bson, false);
+    b!(AlgoKind::Json, x, se_test_json, de_test_json, false);
+    b!(
+        AlgoKind::SimdJson,
+        x,
+        se_test_simd_json,
+        de_test_simd_json,
+        false
+    );
+    b!(
+        AlgoKind::Postcard,
+        x,
+        se_test_postcard,
+        de_test_postcard,
+        true
+    );
 }
 
 fn print_results_ascii_table(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
@@ -369,7 +387,7 @@ fn print_results(results: &mut Vec<Result>) {
         r.push([
             i.top_test_name.display(),
             ch,
-            &i.name,
+            i.name.display(),
             &i.size,
             &i.time_se_ms,
             &i.time_de_ms,
@@ -385,39 +403,29 @@ fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: TestKind,
     x: &T,
     results: &mut Vec<Result>,
-    algos: &mut HashSet<&str>,
+    algos: &mut HashSet<AlgoKind>,
     all_algos: bool,
     iterations: u32,
 ) {
     add_benches(top_test_name, x, results, algos, all_algos, iterations);
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy, PartialOrd, Ord)]
-enum TestKind {
-    ProcessCreate,
-    LongStrings,
-    Point,
-    OneBool,
-    MultipleFields,
-    MultipleIntegers,
-    Vectors,
-    LargeVectors,
-    EnumFields,
-    EnumLists,
-    SmallEnumLists,
-    MultipleBools,
-    StringLists,
-}
 macro_rules! tests {
     ($enum_name:ident, $(($name:literal, $v:ident)),+) => {
+        #[derive(PartialEq, Eq, Hash, Clone, Copy, PartialOrd, Ord)]
+        enum $enum_name {
+            $(
+                $v,
+            )+
+        }
         impl $enum_name {
-            fn name(self) -> &'static str {
-                match self {
-                    $(
-                        Self::$v => $name,
-                    )+
-                }
-            }
+            // fn name(self) -> &'static str {
+            //     match self {
+            //         $(
+            //             Self::$v => $name,
+            //         )+
+            //     }
+            // }
             fn display(self) -> &'static dyn Display {
                 match self {
                     $(
@@ -445,21 +453,37 @@ macro_rules! tests {
         }
     };
 }
+
 tests! {
     TestKind,
     ("process_create", ProcessCreate),
-    ("long_strings" , LongStrings),
-    ("point" , Point),
-    ("multiple_fields" , MultipleFields),
-    ("multiple_integers" , MultipleIntegers),
-    ("multiple_bools" , MultipleBools),
-    ("vectors" , Vectors),
-    ("large_vectors" , LargeVectors),
-    ("enum_fields" , EnumFields),
-    ("enum_lists" , EnumLists),
-    ("small_enum_lists" , SmallEnumLists),
-    ("strings_lists" , StringLists),
-    ("one_bool" , OneBool)
+    ("long_strings", LongStrings),
+    ("point", Point),
+    ("multiple_fields", MultipleFields),
+    ("multiple_integers", MultipleIntegers),
+    ("multiple_bools", MultipleBools),
+    ("vectors", Vectors),
+    ("large_vectors", LargeVectors),
+    ("enum_fields", EnumFields),
+    ("enum_lists", EnumLists),
+    ("small_enum_lists", SmallEnumLists),
+    ("strings_lists", StringLists),
+    ("one_bool", OneBool)
+}
+
+tests! {
+    AlgoKind,
+    ("flat_message", FlatMessage),
+    ("flat_message_unchecked", FlatMessageUnchecked),
+    ("rmp_schema", RmpSchema),
+    ("rmp_schemaless", RmpSchemaless),
+    ("bincode", Bincode),
+    ("flexbuffers" , FlexBuffers),
+    ("cbor", Cbor),
+    ("bson", Bson),
+    ("json", Json),
+    ("simd_json", SimdJson),
+    ("postcard", Postcard)
 }
 
 fn split_tests<'x, T>(input: &'x str) -> (bool, HashSet<T>)
@@ -490,8 +514,10 @@ fn main() {
     let args = Args::parse();
 
     let test_names = TestKind::all().join(", ");
+    let algos_names = AlgoKind::all().join(", ");
     if args.names {
         println!("available tests: {}", test_names);
+        println!("available algos: {}", algos_names);
         return;
     }
 
@@ -654,16 +680,4 @@ fn main() {
     }
 
     print_results(results);
-    if !tests.is_empty() {
-        eprintln!(
-            "error: tests not found: {}\navailable tests: {}",
-            tests
-                .into_iter()
-                .map(|x| x.name())
-                .collect::<Vec<_>>()
-                .join(", "),
-            test_names
-        );
-        std::process::exit(1);
-    }
 }
