@@ -194,150 +194,104 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     });
 }
 
+// Little hack to redirect the deserialize_from to deserialize_from_unchecked
+// Just for testing, don't actually do this.
+struct Wrapper<T>(T);
+impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
+    fn metadata(&self) -> &flat_message::MetaData {
+        todo!()
+    }
+
+    fn update_metada(&mut self, _: flat_message::MetaData) {
+        todo!()
+    }
+
+    fn serialize_to<V: VecLike>(
+        &self,
+        output: &mut V,
+        config: flat_message::Config,
+    ) -> std::result::Result<(), flat_message::Error> {
+        self.0.serialize_to(output, config)
+    }
+
+    fn deserialize_from(input: &'a Storage) -> std::result::Result<Self, flat_message::Error>
+    where
+        Self: Sized,
+    {
+        unsafe { Self::deserialize_from_unchecked(input) }
+    }
+
+    unsafe fn deserialize_from_unchecked(
+        input: &'a Storage,
+    ) -> std::result::Result<Self, flat_message::Error>
+    where
+        Self: Sized,
+    {
+        Ok(Wrapper(T::deserialize_from_unchecked(input)?))
+    }
+}
+
 fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: &'static str,
     x: &T,
     results: &mut Vec<Result>,
+    algos: &mut HashSet<&str>,
+    all_algos: bool,
     iterations: u32,
 ) {
-    // Little hack to redirect the deserialize_from to deserialize_from_unchecked
-    // Just for testing, don't actually do this.
-    struct Wrapper<T>(T);
-    impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
-        fn metadata(&self) -> &flat_message::MetaData {
-            todo!()
-        }
-
-        fn update_metada(&mut self, _: flat_message::MetaData) {
-            todo!()
-        }
-
-        fn serialize_to<V: VecLike>(
-            &self,
-            output: &mut V,
-            config: flat_message::Config,
-        ) -> std::result::Result<(), flat_message::Error> {
-            self.0.serialize_to(output, config)
-        }
-
-        fn deserialize_from(input: &'a Storage) -> std::result::Result<Self, flat_message::Error>
-        where
-            Self: Sized,
-        {
-            unsafe { Self::deserialize_from_unchecked(input) }
-        }
-
-        unsafe fn deserialize_from_unchecked(
-            input: &'a Storage,
-        ) -> std::result::Result<Self, flat_message::Error>
-        where
-            Self: Sized,
-        {
-            Ok(Wrapper(T::deserialize_from_unchecked(input)?))
-        }
-    }
     let wrapper = Wrapper(x.clone());
 
-    bench(
-        top_test_name,
+    macro_rules! b {
+        ($name:literal, $x:expr, $se:expr, $de:expr, $needs_schema:expr) => {
+            if all_algos || algos.remove($name) {
+                bench(
+                    top_test_name,
+                    $name,
+                    $x,
+                    $se,
+                    $de,
+                    $needs_schema,
+                    results,
+                    iterations,
+                );
+            }
+        };
+    }
+
+    b!(
         "flat_message",
         x,
         se_test_flat_message,
         de_test_flat_message,
-        false,
-        results,
-        iterations,
+        false
     );
-    bench(
-        top_test_name,
+    b!(
         "flat_message_unchecked",
         &wrapper,
         se_test_flat_message,
         de_test_flat_message,
-        false,
-        results,
-        iterations,
+        false
     );
-    bench(
-        top_test_name,
-        "rmp_schema",
-        x,
-        se_test_rmp_schema,
-        de_test_rmp,
-        true,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
+    b!("rmp_schema", x, se_test_rmp_schema, de_test_rmp, true);
+    b!(
         "rmp_schemaless",
         x,
         se_test_rmp_schemaless,
         de_test_rmp,
-        false,
-        results,
-        iterations,
+        false
     );
-    bench(
-        top_test_name,
-        "bincode",
-        x,
-        se_test_bincode,
-        de_test_bincode,
-        true,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
+    b!("bincode", x, se_test_bincode, de_test_bincode, true);
+    b!(
         "flexbuffers",
         x,
         se_test_flexbuffers,
         de_test_flexbuffers,
-        false,
-        results,
-        iterations,
+        false
     );
-    bench(
-        top_test_name,
-        "cbor",
-        x,
-        se_test_cbor,
-        de_test_cbor,
-        false,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
-        "bson",
-        x,
-        se_test_bson,
-        de_test_bson,
-        false,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
-        "json",
-        x,
-        se_test_json,
-        de_test_json,
-        false,
-        results,
-        iterations,
-    );
-    bench(
-        top_test_name,
-        "postcard",
-        x,
-        se_test_postcard,
-        de_test_postcard,
-        true,
-        results,
-        iterations,
-    );
+    b!("cbor", x, se_test_cbor, de_test_cbor, false);
+    b!("bson", x, se_test_bson, de_test_bson, false);
+    b!("json", x, se_test_json, de_test_json, false);
+    b!("postcard", x, se_test_postcard, de_test_postcard, true);
 }
 
 fn print_results_ascii_table(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
@@ -420,9 +374,11 @@ fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: &'static str,
     x: &T,
     results: &mut Vec<Result>,
+    algos: &mut HashSet<&str>,
+    all_algos: bool,
     iterations: u32,
 ) {
-    add_benches(top_test_name, x, results, iterations);
+    add_benches(top_test_name, x, results, algos, all_algos, iterations);
 }
 
 #[derive(clap::Parser)]
@@ -431,6 +387,8 @@ struct Args {
     iterations: u32,
     #[arg(long, short, default_value = "all")]
     tests: String,
+    #[arg(long, short, default_value = "all")]
+    algos: String,
     #[arg(long, short, default_value_t = false)]
     names: bool,
 }
@@ -447,6 +405,10 @@ fn main() {
 
     let all_tests = tests == "all";
     let mut tests: HashSet<&str> = tests.split(',').collect();
+
+    let all_algos = args.algos == "all";
+    let algos: &mut HashSet<&str> = &mut args.algos.split(',').collect();
+
     let mut test_names = Vec::new();
 
     macro_rules! run {
@@ -461,55 +423,118 @@ fn main() {
     let results = &mut Vec::new();
     {
         let process_small = structures::process_create::generate_flat();
-        run!("process_create", &process_small, results, args.iterations);
+        run!(
+            "process_create",
+            &process_small,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
     {
         let s = structures::long_strings::generate(100);
-        run!("long_strings", &s, results, args.iterations);
+        run!(
+            "long_strings",
+            &s,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
     {
         let s = structures::point::generate();
-        run!("point", &s, results, args.iterations);
+        run!("point", &s, results, algos, all_algos, args.iterations);
     }
     {
         let s = structures::one_bool::generate();
-        run!("one_bool", &s, results, args.iterations);
+        run!("one_bool", &s, results, algos, all_algos, args.iterations);
     }
     {
         let s = structures::multiple_fields::generate();
-        run!("multiple_fields", &s, results, args.iterations);
+        run!(
+            "multiple_fields",
+            &s,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
     {
         let s = structures::multiple_integers::generate();
-        run!("multiple_integers", &s, results, args.iterations);
+        run!(
+            "multiple_integers",
+            &s,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
     {
         let s = structures::vectors::generate();
-        run!("vectors", &s, results, args.iterations);
+        run!("vectors", &s, results, algos, all_algos, args.iterations);
     }
     {
         let s = structures::large_vectors::generate();
-        run!("large_vectors", &s, results, args.iterations);
+        run!(
+            "large_vectors",
+            &s,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
     {
         let s = structures::enum_fields::generate();
-        run!("enum_fields", &s, results, args.iterations);
+        run!(
+            "enum_fields",
+            &s,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
     {
         let s = structures::enum_lists::generate();
-        run!("enum_lists", &s, results, args.iterations);
+        run!("enum_lists", &s, results, algos, all_algos, args.iterations);
     }
     {
         let s = structures::small_enum_lists::generate();
-        run!("small_enum_lists", &s, results, args.iterations);
+        run!(
+            "small_enum_lists",
+            &s,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
     {
         let s = structures::multiple_bools::generate();
-        run!("multiple_bools", &s, results, args.iterations);
+        run!(
+            "multiple_bools",
+            &s,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
     {
         let s = structures::string_lists::generate();
-        run!("string_lists", &s, results, args.iterations);
+        run!(
+            "string_lists",
+            &s,
+            results,
+            algos,
+            all_algos,
+            args.iterations
+        );
     }
 
     if args.names {
