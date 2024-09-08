@@ -30,7 +30,7 @@ pub struct MyStruct<'a> {
 }
 
 fn main() {
-    let s = "Hello, World reference!".to_string();
+    // let s = "Hello, World reference!".to_string();
     let a = MyStruct {
         // a: 42,
         // b: true,
