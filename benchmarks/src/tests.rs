@@ -1899,3 +1899,24 @@ fn check_serde_vec_string_and_str() {
     assert_eq!(s.v1, ds.v1);
     assert_eq!(s.v2, ds.v2);
 }
+
+#[test]
+fn check_serde_vec_string_and_str_unchecked() {
+    #[flat_message(metadata: false, store_name: false)]
+    struct TestStruct<'a> {
+        value: u32,
+        v1: Vec<String>,
+        v2: Vec<&'a str>,
+    }
+    let mut v = Storage::default();
+    let s = TestStruct {
+        value: 123456,
+        v1: vec!["Hello".to_string(), "World".to_string(), "John".to_string(), "Doe".to_string()],
+        v2: vec!["Hello", "World", "John", "Doe", "this", "is", "a", "test", "of", "strings", "and", "more"],
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = unsafe { TestStruct::deserialize_from_unchecked(&v).unwrap() };
+    assert_eq!(s.value, ds.value);
+    assert_eq!(s.v1, ds.v1);
+    assert_eq!(s.v2, ds.v2);
+}
