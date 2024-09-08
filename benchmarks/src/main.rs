@@ -476,5 +476,9 @@ fn main() {
         let s = structures::multiple_bools::generate();
         do_one("multiple_bools", &s, &s, results, args.iterations);
     }
+    {
+        let s = structures::string_lists::generate();
+        do_one("string_lists", &s, &s, results, args.iterations);
+    }
     print_results(results);
 }
