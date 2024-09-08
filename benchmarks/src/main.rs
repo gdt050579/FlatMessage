@@ -447,7 +447,7 @@ macro_rules! tests {
                     $(
                         $name => Self::$v,
                     )+
-                    _ => panic!("unknown test: {}", value),
+                    _ => panic!("unknown option: {}\navailable option: {}", value, Self::all().join(", ")),
                 }
             }
         }
