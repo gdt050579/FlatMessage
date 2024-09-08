@@ -1,3 +1,5 @@
+# FlatMessage
+
 FlatMessage is a schema-less serialization/deseialization library written in Rust. It is designed to be really fast (in terms of both serialization and deserialization speed) while providing an adequate serialization size.
 
 FlatMessage uses Zero-Copy deserialization, which means that it does not copy the data from the buffer to the deserialized object. Instead, it borrows the buffer and reads the data from it. 
@@ -6,7 +8,7 @@ To use FlatMessage, add the following code in your `Cargo.toml` file:
 
 ```toml
 [dependencies]
-flatmessage = "*"
+flat_message = "*"
 ```
 
 then add `#[flat_message(...)]` attribute to your struct definition. Here is an example:
