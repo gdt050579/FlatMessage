@@ -5,6 +5,8 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashSet;
 use std::fmt::Display;
+use std::fmt::Write;
+use std::fs;
 use std::{
     hint::black_box,
     time::{Duration, Instant},
@@ -338,6 +340,39 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     );
 }
 
+fn print_results_ascii_table(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
+    let mut ascii_table: AsciiTable = AsciiTable::default();
+    ascii_table.set_max_width(150);
+
+    for (i, (name, align)) in colums.iter().enumerate() {
+        ascii_table.column(i).set_header(*name).set_align(*align);
+    }
+
+    ascii_table.print(r);
+}
+
+fn print_results_markdown(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
+    let output = &mut String::with_capacity(4096);
+
+    for i in colums {
+        write!(output, "| {} ", i.0).unwrap();
+    }
+    writeln!(output, "|").unwrap();
+    for _ in colums {
+        write!(output, "| --- ").unwrap();
+    }
+    writeln!(output, "|").unwrap();
+
+    for row in r {
+        for i in row {
+            write!(output, "| {} ", i).unwrap();
+        }
+        writeln!(output, "|").unwrap();
+    }
+
+    fs::write("bench_table.md", output).unwrap();
+}
+
 fn print_results(results: &mut Vec<Result>) {
     results.sort_by(|x, y| {
         x.top_test_name
@@ -345,36 +380,15 @@ fn print_results(results: &mut Vec<Result>) {
             .then(x.time_se_de.cmp(&y.time_se_de))
     });
 
-    let mut ascii_table = AsciiTable::default();
-    ascii_table.set_max_width(150);
-    ascii_table
-        .column(0)
-        .set_header("top name")
-        .set_align(Align::Left);
-    ascii_table
-        .column(1)
-        .set_header("schema")
-        .set_align(Align::Center);
-    ascii_table
-        .column(2)
-        .set_header("name")
-        .set_align(Align::Left);
-    ascii_table
-        .column(3)
-        .set_header("size (b)")
-        .set_align(Align::Right);
-    ascii_table
-        .column(4)
-        .set_header("se time (ms)")
-        .set_align(Align::Right);
-    ascii_table
-        .column(5)
-        .set_header("de time (ms)")
-        .set_align(Align::Right);
-    ascii_table
-        .column(6)
-        .set_header("se + de time (ms)")
-        .set_align(Align::Right);
+    let colums = [
+        ("top name", Align::Left),
+        ("schema", Align::Center),
+        ("name", Align::Left),
+        ("size (b)", Align::Right),
+        ("se time (ms)", Align::Right),
+        ("de time (ms)", Align::Right),
+        ("se + de time (ms)", Align::Right),
+    ];
 
     let mut r: Vec<[&dyn Display; 7]> = Vec::new();
     let mut last = None;
@@ -398,7 +412,8 @@ fn print_results(results: &mut Vec<Result>) {
         ]);
     }
 
-    ascii_table.print(r);
+    print_results_ascii_table(&r, &colums);
+    print_results_markdown(&r, &colums);
 }
 
 fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
