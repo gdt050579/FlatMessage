@@ -35,7 +35,13 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
             Some(Vec::new())
         } else {
             let p = buf.as_ptr();
-            let mut result = Vec::with_capacity(count as usize);
+            // assume -> minim one byte per string (with value 0 for pottential mpty strings)
+            // minimal size should be count * 1+sled for all strings
+            let min_size = pos + slen + count;
+            if min_size > buf.len() {
+                return None;
+            }
+            let mut result = Vec::with_capacity(count.min(1024) as usize);
             let mut pos = pos + slen;
             for _ in 0..count {
                 let (len, size_len) = size::read(p, pos, buf.len(), SIZE_FORMAT)?;
@@ -126,7 +132,7 @@ unsafe impl<'a> SerDeVec<'a> for String {
             if min_size > buf.len() {
                 return None;
             }
-            let mut result = Vec::with_capacity(count as usize);
+            let mut result = Vec::with_capacity(count.min(1024) as usize);
             let mut pos = pos + slen;
             for _ in 0..count {
                 let (len, size_len) = size::read(p, pos, buf.len(), SIZE_FORMAT)?;
