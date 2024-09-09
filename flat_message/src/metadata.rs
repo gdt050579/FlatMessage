@@ -1,6 +1,6 @@
+use get_size::GetSize;
 use std::num::NonZeroU64;
 use std::sync::atomic::AtomicU64;
-use get_size::GetSize;
 
 #[derive(Default, Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Ord)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

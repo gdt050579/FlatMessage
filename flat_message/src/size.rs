@@ -80,12 +80,7 @@ pub unsafe fn read_unchecked(p: *const u8, pos: usize, method: Format) -> (usize
 }
 
 #[inline(always)]
-pub fn read(
-    p: *const u8,
-    pos: usize,
-    len: usize,
-    method: Format,
-) -> Option<(usize, usize)> {
+pub fn read(p: *const u8, pos: usize, len: usize, method: Format) -> Option<(usize, usize)> {
     match method {
         Format::U32 => {
             if pos + 4 > len {
@@ -190,5 +185,3 @@ pub fn len(value: u32, method: Format) -> usize {
 //         (p.add(pos) as *mut T).write_unaligned(value);
 //     }
 // }
-
-

@@ -8,19 +8,13 @@ unsafe impl<'a> SerDe<'a> for &'a str {
     #[inline(always)]
     unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Self {
         let p = buf.as_ptr();
-        let (len, slen) =
-            size::read_unchecked(p, pos, size::Format::U8withExtension);
+        let (len, slen) = size::read_unchecked(p, pos, size::Format::U8withExtension);
         let s = std::slice::from_raw_parts(p.add(pos + slen), len);
         unsafe { std::str::from_utf8_unchecked(s) }
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
-        let (len, slen) = size::read(
-            buf.as_ptr(),
-            pos,
-            buf.len(),
-            size::Format::U8withExtension,
-        )?;
+        let (len, slen) = size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)?;
         let end = pos + slen + len;
         if end > buf.len() {
             None

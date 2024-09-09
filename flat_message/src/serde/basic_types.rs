@@ -36,7 +36,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_BASIC_TYPE {
                 std::mem::size_of::<$t>()
             }
             #[inline(always)]
-            fn align_offset(_ : &Self, offset: usize) -> usize {
+            fn align_offset(_: &Self, offset: usize) -> usize {
                 offset
             }
         }

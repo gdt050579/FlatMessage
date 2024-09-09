@@ -2,7 +2,6 @@ use flat_message::*;
 use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
 #[repr(u8)]
 enum Color {
@@ -34,7 +33,6 @@ enum Negative {
     F = -1000000000000000,
 }
 
-
 #[flat_message(metadata: false, store_name: false)]
 #[derive(Clone, Serialize, Deserialize, GetSize)]
 pub struct EnumFields {
@@ -47,5 +45,9 @@ pub struct EnumFields {
 }
 
 pub fn generate() -> EnumFields {
-    EnumFields { col: Color::Magenta, math: Math::D, neg: Negative::F }
+    EnumFields {
+        col: Color::Magenta,
+        math: Math::D,
+        neg: Negative::F,
+    }
 }

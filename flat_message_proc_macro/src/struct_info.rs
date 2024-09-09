@@ -1,6 +1,6 @@
 use crate::config::Config;
-use crate::field_info::FieldInfo;
 use crate::data_type::FieldType;
+use crate::field_info::FieldInfo;
 use common::constants;
 use common::hashes;
 use quote::quote;
@@ -103,23 +103,23 @@ impl<'a> StructInfo<'a> {
         let compute_size_code = self.fields.iter().map(|field| {
             let field_name = field.name_ident();
             match field.data_type.field_type {
-                FieldType::Object =>  {          
+                FieldType::Object => {
                     quote! {
                         size += ::flat_message::SerDe::size(&self.#field_name);
                     }
-                },
-                FieldType::Slice =>   {          
+                }
+                FieldType::Slice => {
                     quote! {
                         size = ::flat_message::SerDeSlice::align_offset(&self.#field_name, size);
                         size += ::flat_message::SerDeSlice::size(&self.#field_name);
                     }
-                },
-                FieldType::Vector =>   {          
+                }
+                FieldType::Vector => {
                     quote! {
                         size = ::flat_message::SerDeVec::align_offset(&self.#field_name, size);
                         size += ::flat_message::SerDeVec::size(&self.#field_name);
                     }
-                },
+                }
             }
         });
         let mut v: Vec<_> = compute_size_code.collect();
@@ -165,10 +165,7 @@ impl<'a> StructInfo<'a> {
         }
         v
     }
-    fn generate_fields_serialize_code(
-        &self,
-        ref_size: u8,
-    ) -> Vec<proc_macro2::TokenStream> {
+    fn generate_fields_serialize_code(&self, ref_size: u8) -> Vec<proc_macro2::TokenStream> {
         let v: Vec<_> = self.fields.iter().map(|field| {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
             let hash_table_order = field.hash_table_order as usize;
@@ -348,7 +345,7 @@ impl<'a> StructInfo<'a> {
     }
     fn generate_field_deserialize_code(
         &self,
-        serde_trait: &syn::Ident, 
+        serde_trait: &syn::Ident,
         inner_var: &syn::Ident,
         ty: &syn::Type,
         field_name_hash: u32,
@@ -484,9 +481,9 @@ impl<'a> StructInfo<'a> {
                 .parse()
                 .expect("Failed to convert string into TokenStream");
 
-            v.push(quote! { 
+            v.push(quote! {
                 #[allow(non_upper_case_globals)]
-                #tokens 
+                #tokens
             });
         }
         v
@@ -709,8 +706,9 @@ impl<'a> StructInfo<'a> {
             }
 
             // now sort the key backwards based on their serialization alignment
-            data_members
-                .sort_unstable_by_key(|field_info| usize::MAX - field_info.data_type.serialization_alignment());
+            data_members.sort_unstable_by_key(|field_info| {
+                usize::MAX - field_info.data_type.serialization_alignment()
+            });
             Ok(StructInfo {
                 fields_name: fields,
                 fields: data_members,

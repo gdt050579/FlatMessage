@@ -1,5 +1,5 @@
-use proc_macro::{TokenStream, TokenTree};
 use super::enum_memory_representation::EnumMemoryRepresentation;
+use proc_macro::{TokenStream, TokenTree};
 
 pub(crate) fn value_to_i128(value: &str) -> Result<(i128, EnumMemoryRepresentation), String> {
     let original_value = value;
@@ -87,7 +87,6 @@ pub(crate) fn value_to_i128(value: &str) -> Result<(i128, EnumMemoryRepresentati
         Err(format!("Invalid numerical value: '{original_value}'"))
     }
 }
-
 
 pub(crate) fn to_bool(value: &str) -> Option<bool> {
     match value {

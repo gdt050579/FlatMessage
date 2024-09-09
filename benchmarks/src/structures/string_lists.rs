@@ -13,7 +13,7 @@ pub struct StringLists {
     list4: Vec<String>,
 }
 
-fn get_string(id: usize)->String {
+fn get_string(id: usize) -> String {
     match id {
         0 => s("hello".to_string()),
         1 => s("world".to_string()),
@@ -35,7 +35,7 @@ fn generate_string_list(count: usize) -> Vec<String> {
 }
 
 pub fn generate() -> StringLists {
-    StringLists { 
+    StringLists {
         list1: generate_string_list(10),
         list2: generate_string_list(20),
         list3: generate_string_list(30),
