@@ -7,11 +7,11 @@ use std::collections::HashSet;
 use std::fmt::Display;
 use std::fmt::Write;
 use std::fs;
+use std::hash::Hash;
 use std::{
     hint::black_box,
     time::{Duration, Instant},
 };
-
 mod structures;
 #[cfg(test)]
 mod tests;
@@ -121,8 +121,8 @@ fn de_test_postcard<S: DeserializeOwned>(data: &TestData) -> S {
 // ----------------------------------------------------------------------------
 
 struct Result {
-    name: &'static str,
-    top_test_name: &'static str,
+    name: AlgoKind,
+    top_test_name: TestKind,
     size: usize,
     time_se_de: Duration,
     time_se_ms: String,
@@ -174,8 +174,8 @@ fn se_de_bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Cl
 }
 
 fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
-    top_test_name: &'static str,
-    test_name: &'static str,
+    top_test_name: TestKind,
+    test_name: AlgoKind,
     x: &T,
     serialize: FS,
     deserialize: FD,
@@ -242,18 +242,18 @@ impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
 }
 
 fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
-    top_test_name: &'static str,
+    top_test_name: TestKind,
     x: &T,
     results: &mut Vec<Result>,
-    algos: &mut HashSet<&str>,
+    algos: &mut HashSet<AlgoKind>,
     all_algos: bool,
     iterations: u32,
 ) {
     let wrapper = Wrapper(x.clone());
 
     macro_rules! b {
-        ($name:literal, $x:expr, $se:expr, $de:expr, $needs_schema:expr) => {
-            if all_algos || algos.remove($name) {
+        ($name:expr, $x:expr, $se:expr, $de:expr, $needs_schema:expr) => {
+            if all_algos || algos.remove(&$name) {
                 bench(
                     top_test_name,
                     $name,
@@ -268,41 +268,36 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
         };
     }
 
+    use AlgoKind::*;
     b!(
-        "flat_message",
+        FlatMessage,
         x,
         se_test_flat_message,
         de_test_flat_message,
         false
     );
     b!(
-        "flat_message_unchecked",
+        FlatMessageUnchecked,
         &wrapper,
         se_test_flat_message,
         de_test_flat_message,
         false
     );
-    b!("rmp_schema", x, se_test_rmp_schema, de_test_rmp, true);
+    b!(RmpSchema, x, se_test_rmp_schema, de_test_rmp, true);
+    b!(RmpSchemaless, x, se_test_rmp_schemaless, de_test_rmp, false);
+    b!(Bincode, x, se_test_bincode, de_test_bincode, true);
     b!(
-        "rmp_schemaless",
-        x,
-        se_test_rmp_schemaless,
-        de_test_rmp,
-        false
-    );
-    b!("bincode", x, se_test_bincode, de_test_bincode, true);
-    b!(
-        "flexbuffers",
+        FlexBuffers,
         x,
         se_test_flexbuffers,
         de_test_flexbuffers,
         false
     );
-    b!("cbor", x, se_test_cbor, de_test_cbor, false);
-    b!("bson", x, se_test_bson, de_test_bson, false);
-    b!("json", x, se_test_json, de_test_json, false);
-    b!("simd_json", x, se_test_simd_json, de_test_simd_json, false);
-    b!("postcard", x, se_test_postcard, de_test_postcard, true);
+    b!(Cbor, x, se_test_cbor, de_test_cbor, false);
+    b!(Bson, x, se_test_bson, de_test_bson, false);
+    b!(Json, x, se_test_json, de_test_json, false);
+    b!(SimdJson, x, se_test_simd_json, de_test_simd_json, false);
+    b!(Postcard, x, se_test_postcard, de_test_postcard, true);
 }
 
 fn print_results_ascii_table(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
@@ -367,9 +362,9 @@ fn print_results(results: &mut Vec<Result>) {
 
         let ch = if i.needs_schema { &'*' } else { &' ' };
         r.push([
-            &i.top_test_name,
+            i.top_test_name.display(),
             ch,
-            &i.name,
+            i.name.display(),
             &i.size,
             &i.time_se_ms,
             &i.time_de_ms,
@@ -382,14 +377,102 @@ fn print_results(results: &mut Vec<Result>) {
 }
 
 fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
-    top_test_name: &'static str,
+    top_test_name: TestKind,
     x: &T,
     results: &mut Vec<Result>,
-    algos: &mut HashSet<&str>,
+    algos: &mut HashSet<AlgoKind>,
     all_algos: bool,
     iterations: u32,
 ) {
     add_benches(top_test_name, x, results, algos, all_algos, iterations);
+}
+
+macro_rules! tests {
+    ($enum_name:ident, $(($name:literal, $v:ident)),+) => {
+        #[derive(PartialEq, Eq, Hash, Clone, Copy, PartialOrd, Ord)]
+        enum $enum_name {
+            $(
+                $v,
+            )+
+        }
+        impl $enum_name {
+            // fn name(self) -> &'static str {
+            //     match self {
+            //         $(
+            //             Self::$v => $name,
+            //         )+
+            //     }
+            // }
+            fn display(self) -> &'static dyn Display {
+                match self {
+                    $(
+                        Self::$v => &$name,
+                    )+
+                }
+            }
+            fn all() -> &'static [&'static str] {
+                &[
+                    $(
+                        $name,
+                    )+
+                ]
+            }
+        }
+        impl From<&str> for $enum_name {
+            fn from(value: &str) -> Self {
+                match value {
+                    $(
+                        $name => Self::$v,
+                    )+
+                    _ => panic!("unknown option: {}\navailable option: {}", value, Self::all().join(", ")),
+                }
+            }
+        }
+    };
+}
+
+tests! {
+    TestKind,
+    ("process_create", ProcessCreate),
+    ("long_strings", LongStrings),
+    ("point", Point),
+    ("multiple_fields", MultipleFields),
+    ("multiple_integers", MultipleIntegers),
+    ("multiple_bools", MultipleBools),
+    ("vectors", Vectors),
+    ("large_vectors", LargeVectors),
+    ("enum_fields", EnumFields),
+    ("enum_lists", EnumLists),
+    ("small_enum_lists", SmallEnumLists),
+    ("strings_lists", StringLists),
+    ("one_bool", OneBool)
+}
+
+tests! {
+    AlgoKind,
+    ("flat_message", FlatMessage),
+    ("flat_message_unchecked", FlatMessageUnchecked),
+    ("rmp_schema", RmpSchema),
+    ("rmp_schemaless", RmpSchemaless),
+    ("bincode", Bincode),
+    ("flexbuffers" , FlexBuffers),
+    ("cbor", Cbor),
+    ("bson", Bson),
+    ("json", Json),
+    ("simd_json", SimdJson),
+    ("postcard", Postcard)
+}
+
+fn split_tests<'x, T>(input: &'x str) -> (bool, HashSet<T>)
+where
+    T: From<&'x str> + Eq + Hash,
+{
+    if input == "all" {
+        (true, HashSet::new())
+    } else {
+        let tests = input.split(',').map(|x| T::from(x)).collect();
+        (false, tests)
+    }
 }
 
 #[derive(clap::Parser)]
@@ -407,158 +490,81 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let tests = if args.names {
-        ""
-    } else {
-        println!("iterations: {}", args.iterations);
-        &args.tests
-    };
+    let test_names = TestKind::all().join(", ");
+    let algos_names = AlgoKind::all().join(", ");
+    if args.names {
+        println!("available tests: {}", test_names);
+        println!("available algos: {}", algos_names);
+        return;
+    }
 
-    let all_tests = tests == "all";
-    let mut tests: HashSet<&str> = tests.split(',').collect();
+    let (all_tests, mut tests) = split_tests::<TestKind>(&args.tests);
+    let (all_algos, mut algos) = split_tests(&args.algos);
 
-    let all_algos = args.algos == "all";
-    let algos: &mut HashSet<&str> = &mut args.algos.split(',').collect();
+    println!("iterations: {}", args.iterations);
 
-    let mut test_names = Vec::new();
-
+    let results = &mut Vec::new();
     macro_rules! run {
-        ($name:literal, $($args:expr),+) => {
-            test_names.push($name);
-            if all_tests || tests.remove($name) {
-                do_one($name, $($args),+);
+        ($name:expr, $x:expr) => {
+            if all_tests || tests.remove(&$name) {
+                do_one($name, $x, results, &mut algos, all_algos, args.iterations);
             }
         };
     }
 
-    let results = &mut Vec::new();
+    use TestKind::*;
     {
         let process_small = structures::process_create::generate_flat();
-        run!(
-            "process_create",
-            &process_small,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(ProcessCreate, &process_small);
     }
     {
         let s = structures::long_strings::generate(100);
-        run!(
-            "long_strings",
-            &s,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(LongStrings, &s);
     }
     {
         let s = structures::point::generate();
-        run!("point", &s, results, algos, all_algos, args.iterations);
+        run!(Point, &s);
     }
     {
         let s = structures::one_bool::generate();
-        run!("one_bool", &s, results, algos, all_algos, args.iterations);
+        run!(OneBool, &s);
     }
     {
         let s = structures::multiple_fields::generate();
-        run!(
-            "multiple_fields",
-            &s,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(MultipleFields, &s);
     }
     {
         let s = structures::multiple_integers::generate();
-        run!(
-            "multiple_integers",
-            &s,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(MultipleIntegers, &s);
     }
     {
         let s = structures::vectors::generate();
-        run!("vectors", &s, results, algos, all_algos, args.iterations);
+        run!(Vectors, &s);
     }
     {
         let s = structures::large_vectors::generate();
-        run!(
-            "large_vectors",
-            &s,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(LargeVectors, &s);
     }
     {
         let s = structures::enum_fields::generate();
-        run!(
-            "enum_fields",
-            &s,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(EnumFields, &s);
     }
     {
         let s = structures::enum_lists::generate();
-        run!("enum_lists", &s, results, algos, all_algos, args.iterations);
+        run!(EnumLists, &s);
     }
     {
         let s = structures::small_enum_lists::generate();
-        run!(
-            "small_enum_lists",
-            &s,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(SmallEnumLists, &s);
     }
     {
         let s = structures::multiple_bools::generate();
-        run!(
-            "multiple_bools",
-            &s,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(MultipleBools, &s);
     }
     {
         let s = structures::string_lists::generate();
-        run!(
-            "string_lists",
-            &s,
-            results,
-            algos,
-            all_algos,
-            args.iterations
-        );
+        run!(StringLists, &s);
     }
 
-    if args.names {
-        println!("available tests: {}", test_names.join(", "));
-        return;
-    }
     print_results(results);
-    if !tests.is_empty() {
-        eprintln!(
-            "error: tests not found: {}\navailable tests: {}",
-            tests.into_iter().collect::<Vec<_>>().join(", "),
-            test_names.join(", ")
-        );
-        std::process::exit(1);
-    }
 }
