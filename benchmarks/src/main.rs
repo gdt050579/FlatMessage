@@ -351,7 +351,7 @@ fn print_results_markdown(r: &[[&dyn Display; 8]], colums: &[(&str, Align)]) {
     fs::write("bench_table.md", output).unwrap();
 }
 
-fn print_results(results: &mut Vec<Result>) {
+fn print_results(results: &mut Vec<Result>, algos: &HashSet<AlgoKind>, all_algos: bool) {
     results.sort_by(|x, y| {
         x.top_test_name
             .cmp(&y.top_test_name)
@@ -376,9 +376,11 @@ fn print_results(results: &mut Vec<Result>) {
         &"---", &"---", &"---", &"---", &"---", &"---", &"---", &"---",
     ];
 
+    let one_algo = if all_algos { false } else { algos.len() == 1 };
+
     for i in results.iter() {
         let current = Some(&i.top_test_name);
-        if !last.is_none() && last != current {
+        if !last.is_none() && last != current && !one_algo {
             r.push(dashes);
         }
         last = current;
@@ -612,7 +614,7 @@ fn main() {
         run!(StringLists, &s);
     }
 
-    print_results(results);
+    print_results(results, &algos, all_algos);
 }
 
 fn s(mut x: String) -> String {
