@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-flat_message = { version = "1.0.0", path = "../flat_message", features = ["serde", "get-size"] }
+flat_message = { version = "1.0.0", path = "../flat_message", features = ["serde"] }
 flexbuffers = "2"
 serde = "1"
 serde_derive = "1"
@@ -18,7 +18,7 @@ ascii_table = "4"
 postcard = { version = "1", features = ["use-std"] }
 clap = { version = "4", features = ["derive"] }
 simd-json = "0.13.10"
-get-size = { version = "0.1.4", features = ["derive"] }
+get-size-derive = { version = "0.1.3" }
 
 [dev-dependencies]
 common = {path = "../common"}

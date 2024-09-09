@@ -1,9 +1,9 @@
 use flat_message::*;
-use get_size::GetSize;
+use crate::get_size_min::GetSize;
 use serde::{Deserialize, Serialize};
 
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize, GetSize)]
+#[derive(Clone, Serialize, Deserialize, get_size_derive::GetSize)]
 pub struct OneBool {
     b: bool,
 }

@@ -1,10 +1,10 @@
 use flat_message::*;
-use get_size::GetSize;
+use crate::get_size_min::GetSize;
 use serde::{Deserialize, Serialize};
 
 use crate::v;
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
+#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
 enum Color {
     Red = 1,
@@ -15,7 +15,7 @@ enum Color {
     Magenta = 102,
 }
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
+#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u32)]
 enum Math {
     A = 1,
@@ -24,7 +24,7 @@ enum Math {
     D = 1000000000,
 }
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
+#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(i64)]
 enum Negative {
     A = 1,
@@ -35,8 +35,12 @@ enum Negative {
     F = -1000000000000000,
 }
 
+crate::t!(Color);
+crate::t!(Math);
+crate::t!(Negative);
+
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize, GetSize)]
+#[derive(Clone, Serialize, Deserialize, get_size_derive::GetSize)]
 pub struct EnumLists {
     #[flat_message(repr = u8, kind = enum)]
     col: Vec<Color>,

@@ -1,11 +1,11 @@
 use flat_message::flat_message;
-use get_size::GetSize;
+use crate::get_size_min::GetSize;
 use serde::{Deserialize, Serialize};
 
 use crate::s;
 
 #[flat_message]
-#[derive(Clone, Serialize, Deserialize, GetSize)]
+#[derive(Clone, Serialize, Deserialize, get_size_derive::GetSize)]
 pub struct ProcessCreated {
     name: String,
     pid: u32,

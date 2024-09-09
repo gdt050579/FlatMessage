@@ -1,7 +1,12 @@
+mod get_size_min;
+mod structures;
+#[cfg(test)]
+mod tests;
+
+use crate::get_size_min::GetSize;
 use ascii_table::{Align, AsciiTable};
 use clap::Parser;
 use flat_message::{FlatMessage, FlatMessageOwned, Storage, VecLike};
-use get_size::GetSize;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -13,9 +18,6 @@ use std::{
     hint::black_box,
     time::{Duration, Instant},
 };
-mod structures;
-#[cfg(test)]
-mod tests;
 
 struct TestData {
     vec: Vec<u8>,
@@ -206,7 +208,7 @@ fn bench<T: GetSize, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T +
         name: test_name,
         top_test_name,
         size: data.vec.len().max(data.storage.len()),
-        in_memory_size: x.get_size().to_string(),
+        in_memory_size: x.get_heap_size().to_string(),
         needs_schema,
         //
         time_se,
@@ -221,7 +223,7 @@ fn bench<T: GetSize, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T +
 
 // Little hack to redirect the deserialize_from to deserialize_from_unchecked
 // Just for testing, don't actually do this.
-#[derive(GetSize)]
+#[derive(get_size_derive::GetSize)]
 struct Wrapper<T>(T);
 impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
     fn metadata(&self) -> &flat_message::MetaData {
@@ -617,4 +619,11 @@ fn s(mut x: String) -> String {
 fn v<T>(mut x: Vec<T>) -> Vec<T> {
     x.shrink_to_fit();
     x
+}
+
+#[macro_export]
+macro_rules! t {
+    ($n:ident) => {
+        impl GetSize for $n {}
+    };
 }
