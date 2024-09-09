@@ -8,15 +8,30 @@ pub trait GetSize {
     }
 }
 
+fn list_size(x: usize) -> usize {
+    let x = x as u64;
+    if x < u8::MAX as u64 {
+        1
+    } else if x < u16::MAX as u64 {
+        2
+    } else if x < u32::MAX as u64 {
+        4
+    } else if x < u64::MAX as u64 {
+        8
+    } else {
+        unreachable!()
+    }
+}
+
 impl<T: GetSize> GetSize for Vec<T> {
     fn get_heap_size(&self) -> usize {
-        4 + self.iter().map(|x| x.get_heap_size()).sum::<usize>()
+        list_size(self.len()) + self.iter().map(|x| x.get_heap_size()).sum::<usize>()
     }
 }
 
 impl GetSize for String {
     fn get_heap_size(&self) -> usize {
-        4 + self.len()
+        list_size(self.len()) + self.len()
     }
 }
 
