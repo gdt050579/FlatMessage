@@ -1,6 +1,7 @@
 use ascii_table::{Align, AsciiTable};
 use clap::Parser;
 use flat_message::{FlatMessage, FlatMessageOwned, Storage, VecLike};
+use get_size::GetSize;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -125,6 +126,7 @@ struct Result {
     top_test_name: TestKind,
     size: usize,
     needs_schema: bool,
+    in_memory_size: String,
     //
     time_se: Duration,
     time_de: Duration,
@@ -181,7 +183,7 @@ fn fmt_time_ms(x: Duration) -> String {
     format!("{:.2}", x.as_secs_f64() * 1000.0)
 }
 
-fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
+fn bench<T: GetSize, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     top_test_name: TestKind,
     test_name: AlgoKind,
     x: &T,
@@ -204,18 +206,22 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
         name: test_name,
         top_test_name,
         size: data.vec.len().max(data.storage.len()),
+        in_memory_size: x.get_size().to_string(),
+        needs_schema,
+        //
         time_se,
         time_de,
         time_se_de,
+        //
         time_se_ms: fmt_time_ms(time_se),
         time_de_ms: fmt_time_ms(time_de),
         time_se_de_ms: fmt_time_ms(time_se_de),
-        needs_schema,
     });
 }
 
 // Little hack to redirect the deserialize_from to deserialize_from_unchecked
 // Just for testing, don't actually do this.
+#[derive(GetSize)]
 struct Wrapper<T>(T);
 impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
     fn metadata(&self) -> &flat_message::MetaData {
@@ -251,7 +257,7 @@ impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
     }
 }
 
-fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
+fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned + GetSize>(
     top_test_name: TestKind,
     x: &T,
     results: &mut Vec<Result>,
@@ -366,8 +372,9 @@ fn print_results(results: &mut Vec<Result>) {
     let dashes: [&dyn Display; 7] = [&"---", &"---", &"---", &"---", &"---", &"---", &"---"];
 
     for i in results.iter() {
-        let current = Some(i.top_test_name);
+        let current = Some(&i.in_memory_size);
         if !last.is_none() && last != current {
+            r.push([&"in memory size", &"", &"", last.unwrap(), &"", &"", &""]);
             r.push(dashes);
         }
         last = current;
@@ -383,6 +390,7 @@ fn print_results(results: &mut Vec<Result>) {
             &i.time_se_de_ms,
         ]);
     }
+    r.push([&"in memory size", &"", &"", last.unwrap(), &"", &"", &""]);
 
     let avg_size = results.iter().map(|x| x.size).sum::<usize>() / results.len();
     let avg_se_time = results.iter().map(|x| x.time_se).sum::<Duration>() / results.len() as u32;
@@ -409,7 +417,7 @@ fn print_results(results: &mut Vec<Result>) {
     print_results_markdown(&r, &colums);
 }
 
-fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
+fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned + GetSize>(
     top_test_name: TestKind,
     x: &T,
     results: &mut Vec<Result>,
@@ -600,4 +608,13 @@ fn main() {
     }
 
     print_results(results);
+}
+
+fn s(mut x: String) -> String {
+    x.shrink_to_fit();
+    x
+}
+fn v<T>(mut x: Vec<T>) -> Vec<T> {
+    x.shrink_to_fit();
+    x
 }

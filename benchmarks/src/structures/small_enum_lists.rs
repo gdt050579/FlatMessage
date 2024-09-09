@@ -1,7 +1,10 @@
 use flat_message::*;
+use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+use crate::v;
+
+#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
 #[repr(u8)]
 enum Color {
     Red = 1,
@@ -12,7 +15,7 @@ enum Color {
     Magenta = 102,
 }
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, GetSize)]
 pub struct SmallEnumLists {
     #[flat_message(repr = u8, kind = enum)]
     col1: Vec<Color>,
@@ -28,17 +31,17 @@ pub struct SmallEnumLists {
 
 pub fn generate() -> SmallEnumLists {
     SmallEnumLists {
-        col1: [Color::Magenta, Color::Blue, Color::Green, Color::Cyan]
+        col1: v([Color::Magenta, Color::Blue, Color::Green, Color::Cyan]
             .repeat(10)
-            .to_vec(),
-        col2: [Color::Red, Color::Green, Color::Blue, Color::Yellow]
+            .to_vec()),
+        col2: v([Color::Red, Color::Green, Color::Blue, Color::Yellow]
             .repeat(100)
-            .to_vec(),
-        col3: [Color::Magenta, Color::Blue].repeat(1000).to_vec(),
-        col4: [Color::Red, Color::Green, Color::Blue]
+            .to_vec()),
+        col3: v([Color::Magenta, Color::Blue].repeat(1000).to_vec()),
+        col4: v([Color::Red, Color::Green, Color::Blue]
             .repeat(10000)
-            .to_vec(),
-        col5: [
+            .to_vec()),
+        col5: v([
             Color::Red,
             Color::Green,
             Color::Blue,
@@ -46,6 +49,6 @@ pub fn generate() -> SmallEnumLists {
             Color::Cyan,
         ]
         .repeat(50)
-        .to_vec(),
+        .to_vec()),
     }
 }

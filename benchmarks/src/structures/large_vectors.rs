@@ -1,10 +1,13 @@
 use std::ops::Add;
 
 use flat_message::*;
+use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
+use crate::v;
+
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, GetSize)]
 pub struct LargeVectors {
     buffer: Vec<u8>,
     ints: Vec<i32>,
@@ -27,7 +30,7 @@ where
             val = start.clone();
         }
     }
-    vec
+    v(vec)
 }
 
 pub fn generate() -> LargeVectors {

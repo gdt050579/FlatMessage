@@ -1,8 +1,11 @@
 use flat_message::*;
+use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
+use crate::s;
+
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, GetSize)]
 pub struct StringLists {
     list1: Vec<String>,
     list2: Vec<String>,
@@ -12,15 +15,15 @@ pub struct StringLists {
 
 fn get_string(id: usize)->String {
     match id {
-        0 => "hello".to_string(),
-        1 => "world".to_string(),
-        2 => "foo".to_string(),
-        3 => "".to_string(),
-        4 => "A really long string that can be used to test the performance of the library".to_string(),
-        5 => "Another really long string that can be used to test the performance of the library".to_string(),
-        6 => "Yet another really long string that can be used to test the performance of the library.".to_string(),
-        7 => "A string with unicode characters: 你好 from different languages such as: chineze, etc".to_string(),
-        _ => "".to_string(),
+        0 => s("hello".to_string()),
+        1 => s("world".to_string()),
+        2 => s("foo".to_string()),
+        3 => s("".to_string()),
+        4 => s("A really long string that can be used to test the performance of the library".to_string()),
+        5 => s("Another really long string that can be used to test the performance of the library".to_string()),
+        6 => s("Yet another really long string that can be used to test the performance of the library.".to_string()),
+        7 => s("A string with unicode characters: 你好 from different languages such as: chineze, etc".to_string()),
+        _ => s("".to_string()),
     }
 }
 fn generate_string_list(count: usize) -> Vec<String> {

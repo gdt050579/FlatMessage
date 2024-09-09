@@ -1,8 +1,9 @@
 use flat_message::*;
+use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, GetSize)]
 pub struct MultipleIntegers {
     a: i32,
     b: i32,
