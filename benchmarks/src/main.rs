@@ -245,7 +245,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: TestKind,
     x: &T,
     results: &mut Vec<Result>,
-    algos: &mut HashSet<AlgoKind>,
+    algos: &HashSet<AlgoKind>,
     all_algos: bool,
     iterations: u32,
 ) {
@@ -253,7 +253,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
 
     macro_rules! b {
         ($name:expr, $x:expr, $se:expr, $de:expr, $needs_schema:expr) => {
-            if all_algos || algos.remove(&$name) {
+            if all_algos || algos.contains(&$name) {
                 bench(
                     top_test_name,
                     $name,
@@ -380,7 +380,7 @@ fn do_one<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned>(
     top_test_name: TestKind,
     x: &T,
     results: &mut Vec<Result>,
-    algos: &mut HashSet<AlgoKind>,
+    algos: &HashSet<AlgoKind>,
     all_algos: bool,
     iterations: u32,
 ) {
@@ -498,16 +498,16 @@ fn main() {
         return;
     }
 
-    let (all_tests, mut tests) = split_tests::<TestKind>(&args.tests);
-    let (all_algos, mut algos) = split_tests(&args.algos);
+    let (all_tests, tests) = split_tests::<TestKind>(&args.tests);
+    let (all_algos, algos) = split_tests(&args.algos);
 
     println!("iterations: {}", args.iterations);
 
     let results = &mut Vec::new();
     macro_rules! run {
         ($name:expr, $x:expr) => {
-            if all_tests || tests.remove(&$name) {
-                do_one($name, $x, results, &mut algos, all_algos, args.iterations);
+            if all_tests || tests.contains(&$name) {
+                do_one($name, $x, results, &algos, all_algos, args.iterations);
             }
         };
     }
