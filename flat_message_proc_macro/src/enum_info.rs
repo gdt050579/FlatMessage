@@ -230,11 +230,11 @@ impl EnumInfo {
                         None
                     } else {
                         unsafe {
-                            let hash =buf.as_ptr().add(pos) as *const u32;
-                            if *hash != #name_hash {
+                            let hash = (buf.as_ptr().add(pos) as *const u32).read_unaligned();
+                            if hash != #name_hash {
                                 return None;
                             }
-                            let value = *(buf.as_ptr().add(pos+4) as *const #repr_type);
+                            let value = ((buf.as_ptr().add(pos+4) as *const #repr_type)).read_unaligned();
                             #variant_validation
                         }
                     }
