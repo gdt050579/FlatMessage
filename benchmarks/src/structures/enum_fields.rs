@@ -1,5 +1,5 @@
-use flat_message::*;
 use crate::get_size_min::GetSize;
+use flat_message::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
