@@ -124,11 +124,15 @@ struct Result {
     name: AlgoKind,
     top_test_name: TestKind,
     size: usize,
+    needs_schema: bool,
+    //
+    time_se: Duration,
+    time_de: Duration,
     time_se_de: Duration,
+    //
     time_se_ms: String,
     time_de_ms: String,
     time_se_de_ms: String,
-    needs_schema: bool,
 }
 
 fn se_bench<T, FS: Fn(&T, &mut TestData) + Clone>(
@@ -173,6 +177,10 @@ fn se_de_bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Cl
     start.elapsed()
 }
 
+fn fmt_time_ms(x: Duration) -> String {
+    format!("{:.2}", x.as_secs_f64() * 1000.0)
+}
+
 fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     top_test_name: TestKind,
     test_name: AlgoKind,
@@ -196,10 +204,12 @@ fn bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
         name: test_name,
         top_test_name,
         size: data.vec.len().max(data.storage.len()),
+        time_se,
+        time_de,
         time_se_de,
-        time_se_ms: format!("{:.2}", time_se.as_secs_f64() * 1000.0),
-        time_de_ms: format!("{:.2}", time_de.as_secs_f64() * 1000.0),
-        time_se_de_ms: format!("{:.2}", time_se_de.as_secs_f64() * 1000.0),
+        time_se_ms: fmt_time_ms(time_se),
+        time_de_ms: fmt_time_ms(time_de),
+        time_se_de_ms: fmt_time_ms(time_se_de),
         needs_schema,
     });
 }
@@ -353,10 +363,12 @@ fn print_results(results: &mut Vec<Result>) {
     let mut r: Vec<[&dyn Display; 7]> = Vec::new();
     let mut last = None;
 
-    for i in results {
+    let dashes: [&dyn Display; 7] = [&"---", &"---", &"---", &"---", &"---", &"---", &"---"];
+
+    for i in results.iter() {
         let current = Some(i.top_test_name);
         if !last.is_none() && last != current {
-            r.push([&"---", &"---", &"---", &"---", &"---", &"---", &"---"]);
+            r.push(dashes);
         }
         last = current;
 
@@ -371,6 +383,27 @@ fn print_results(results: &mut Vec<Result>) {
             &i.time_se_de_ms,
         ]);
     }
+
+    let avg_size = results.iter().map(|x| x.size).sum::<usize>() / results.len();
+    let avg_se_time = results.iter().map(|x| x.time_se).sum::<Duration>() / results.len() as u32;
+    let avg_de_time = results.iter().map(|x| x.time_de).sum::<Duration>() / results.len() as u32;
+    let avg_se_de_time =
+        results.iter().map(|x| x.time_se_de).sum::<Duration>() / results.len() as u32;
+
+    let avg_se_time = fmt_time_ms(avg_se_time);
+    let avg_de_time = fmt_time_ms(avg_de_time);
+    let avg_se_de_time = fmt_time_ms(avg_se_de_time);
+
+    r.push(dashes);
+    r.push([
+        &"average",
+        &"",
+        &"",
+        &avg_size,
+        &avg_se_time,
+        &avg_de_time,
+        &avg_se_de_time,
+    ]);
 
     print_results_ascii_table(&r, &colums);
     print_results_markdown(&r, &colums);
