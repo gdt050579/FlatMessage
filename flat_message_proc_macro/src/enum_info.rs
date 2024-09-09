@@ -62,10 +62,10 @@ impl EnumInfo {
         }
     }
 
-    fn generate_vector_serde_implementation(&self)->TokenStream {
+    fn generate_vector_serde_implementation(&self) -> TokenStream {
         let data_format = self.repr.data_format();
         let name = &self.name;
-        
+
         quote! {
             unsafe impl SerDeVec<'_> for #name {
                 const DATA_FORMAT: flat_message::DataFormat = #data_format;
@@ -92,7 +92,7 @@ impl EnumInfo {
                 fn align_offset(obj: &Vec<Self>, offset: usize) -> usize {
                     SerDeSlice::align_offset(&obj.as_slice(), offset)
                 }
-            }            
+            }
         }
     }
     fn generate_slice_serde_implementation(&self) -> TokenStream {

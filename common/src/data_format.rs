@@ -70,7 +70,7 @@ impl Display for DataFormat {
             DataFormat::EnumU32 => write!(f, "EnumU32"),
             DataFormat::EnumU64 => write!(f, "EnumU64"),
 
-            DataFormat::GenericObject => write!(f, "GenericObject"),           
+            DataFormat::GenericObject => write!(f, "GenericObject"),
         }
     }
 }
@@ -105,5 +105,3 @@ impl From<&str> for DataFormat {
         }
     }
 }
-
-

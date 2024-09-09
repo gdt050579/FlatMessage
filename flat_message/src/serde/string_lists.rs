@@ -29,8 +29,7 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Vec<Self>> {
-        let (count, slen) =
-            size::read(buf.as_ptr(), pos, buf.len(), SIZE_FORMAT)?;
+        let (count, slen) = size::read(buf.as_ptr(), pos, buf.len(), SIZE_FORMAT)?;
         if count == 0 {
             Some(Vec::new())
         } else {
@@ -68,8 +67,7 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
             let mut offset = pos + count_len;
             for s in obj.iter() {
                 let string_len = s.len() as u32;
-                let string_len_size =
-                    size::write(p, offset, string_len, SIZE_FORMAT);
+                let string_len_size = size::write(p, offset, string_len, SIZE_FORMAT);
                 offset += string_len_size;
                 std::ptr::copy_nonoverlapping(s.as_ptr(), p.add(offset), s.len());
                 offset += string_len as usize;
@@ -90,7 +88,6 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
         offset
     }
 }
-
 
 /// Implementation for String
 unsafe impl<'a> SerDeVec<'a> for String {
@@ -120,8 +117,7 @@ unsafe impl<'a> SerDeVec<'a> for String {
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Vec<Self>> {
-        let (count, slen) =
-            size::read(buf.as_ptr(), pos, buf.len(), SIZE_FORMAT)?;
+        let (count, slen) = size::read(buf.as_ptr(), pos, buf.len(), SIZE_FORMAT)?;
         if count == 0 {
             Some(Vec::new())
         } else {
@@ -159,8 +155,7 @@ unsafe impl<'a> SerDeVec<'a> for String {
             let mut offset = pos + count_len;
             for s in obj.iter() {
                 let string_len = s.len() as u32;
-                let string_len_size =
-                    size::write(p, offset, string_len, SIZE_FORMAT);
+                let string_len_size = size::write(p, offset, string_len, SIZE_FORMAT);
                 offset += string_len_size;
                 std::ptr::copy_nonoverlapping(s.as_ptr(), p.add(offset), s.len());
                 offset += string_len as usize;

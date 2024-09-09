@@ -1,8 +1,11 @@
 use flat_message::*;
+use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
+use crate::s;
+
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, GetSize)]
 pub struct LongStringStructure {
     string_one: String,
     string_two: String,
@@ -14,10 +17,10 @@ pub struct LongStringStructure {
 
 pub fn generate(count: usize) -> LongStringStructure {
     LongStringStructure {
-        string_one: "Hello, World".repeat(count),
-        string_two: "How are you doing ?".repeat(count),
-        string_three: "Testing".repeat(count),
-        string_four: "X".repeat(count),
+        string_one: s("Hello, World".repeat(count)),
+        string_two: s("How are you doing ?".repeat(count)),
+        string_three: s("Testing".repeat(count)),
+        string_four: s("X".repeat(count)),
         value_one: 1000000,
         value_two: 1000000000,
     }

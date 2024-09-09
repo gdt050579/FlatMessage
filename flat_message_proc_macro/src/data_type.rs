@@ -10,7 +10,7 @@ pub(crate) enum FieldType {
 }
 
 impl FieldType {
-    pub(crate) fn serde_trait(&self)->&'static str {
+    pub(crate) fn serde_trait(&self) -> &'static str {
         match self {
             FieldType::Object => "SerDe",
             FieldType::Slice => "SerDeSlice",
@@ -50,21 +50,27 @@ impl DataType {
                 field_type: FieldType::Slice,
                 data_format: DataFormat::from(def.as_str()),
                 name: def,
-                ty
+                ty,
             };
         }
         DataType {
             field_type: FieldType::Object,
             data_format: DataFormat::from(def.as_str()),
             name: def,
-            ty
+            ty,
         }
     }
 
-    pub(crate) fn update(&mut self, attr: &HashMap<String,String>, field_nane: &str) -> Result<(), String> {
+    pub(crate) fn update(
+        &mut self,
+        attr: &HashMap<String, String>,
+        field_nane: &str,
+    ) -> Result<(), String> {
         let has_repr = attr.contains_key("repr");
         let has_kind = attr.contains_key("kind");
-        if (!has_repr) && (!has_kind) { return Ok(()); }
+        if (!has_repr) && (!has_kind) {
+            return Ok(());
+        }
         if has_repr && !has_kind {
             return Err(format!("If we provided the 'repr' attribute you need to also provide the attribute 'kind' (for field: '{}')",field_nane));
         }
@@ -73,7 +79,7 @@ impl DataType {
         }
         // kind and repr are present
         let kind = attr.get("kind").unwrap();
-        let repr = attr.get("repr").unwrap();   
+        let repr = attr.get("repr").unwrap();
         if kind == "enum" {
             let new_name = format!("enum_{}", repr);
             let new_data_format = DataFormat::from(new_name.as_str());
@@ -83,39 +89,40 @@ impl DataType {
             self.data_format = new_data_format;
             return Ok(());
         }
-        Err(format!("Invalid kind: '{}' in field: '{}'. The possible kinds are: 'enum'.",kind, field_nane))
+        Err(format!(
+            "Invalid kind: '{}' in field: '{}'. The possible kinds are: 'enum'.",
+            kind, field_nane
+        ))
     }
 
     pub(crate) fn serialization_alignment(&self) -> usize {
         match self.field_type {
             FieldType::Object => 1,
-            FieldType::Slice | FieldType::Vector => {
-                match self.data_format {
-                    DataFormat::GenericObject => 1,
-                    DataFormat::U8 => 1,
-                    DataFormat::U16 => 2,
-                    DataFormat::U32 => 4,
-                    DataFormat::U64 => 8,
-                    DataFormat::U128 => 16,
-                    DataFormat::I8 => 1,
-                    DataFormat::I16 => 2,
-                    DataFormat::I32 => 4,
-                    DataFormat::I64 => 8,
-                    DataFormat::I128 => 16,
-                    DataFormat::F32 => 4,
-                    DataFormat::F64 => 8,
-                    DataFormat::Bool => 1,
-                    DataFormat::String => 1,
-                    DataFormat::EnumI8 => 2,
-                    DataFormat::EnumI16 => 2,
-                    DataFormat::EnumI32 => 4,
-                    DataFormat::EnumI64 => 8,
-                    DataFormat::EnumU8 => 1,
-                    DataFormat::EnumU16 => 2,
-                    DataFormat::EnumU32 => 4,
-                    DataFormat::EnumU64 => 8,
-                }
-            }
+            FieldType::Slice | FieldType::Vector => match self.data_format {
+                DataFormat::GenericObject => 1,
+                DataFormat::U8 => 1,
+                DataFormat::U16 => 2,
+                DataFormat::U32 => 4,
+                DataFormat::U64 => 8,
+                DataFormat::U128 => 16,
+                DataFormat::I8 => 1,
+                DataFormat::I16 => 2,
+                DataFormat::I32 => 4,
+                DataFormat::I64 => 8,
+                DataFormat::I128 => 16,
+                DataFormat::F32 => 4,
+                DataFormat::F64 => 8,
+                DataFormat::Bool => 1,
+                DataFormat::String => 1,
+                DataFormat::EnumI8 => 2,
+                DataFormat::EnumI16 => 2,
+                DataFormat::EnumI32 => 4,
+                DataFormat::EnumI64 => 8,
+                DataFormat::EnumU8 => 1,
+                DataFormat::EnumU16 => 2,
+                DataFormat::EnumU32 => 4,
+                DataFormat::EnumU64 => 8,
+            },
         }
     }
 }

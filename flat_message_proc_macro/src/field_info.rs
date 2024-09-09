@@ -1,19 +1,16 @@
+use super::attribute_parser;
 use common::hashes;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::Field;
-use super::attribute_parser;
 
 use crate::data_type::DataType;
-
-
-
 
 pub(crate) struct FieldInfo {
     pub(crate) name: String,
     pub(crate) hash: u32,
     pub(crate) hash_table_order: u32,
-    pub(crate) data_type: DataType
+    pub(crate) data_type: DataType,
 }
 impl FieldInfo {
     pub(crate) fn inner_var(&self) -> syn::Ident {
@@ -23,12 +20,15 @@ impl FieldInfo {
         )
     }
     #[inline(always)]
-    pub(crate) fn name_ident(&self)->syn::Ident {
+    pub(crate) fn name_ident(&self) -> syn::Ident {
         syn::Ident::new(self.name.as_str(), proc_macro2::Span::call_site())
     }
     #[inline(always)]
-    pub(crate) fn serialization_trait(&self)->syn::Ident {
-        syn::Ident::new(self.data_type.field_type.serde_trait(), proc_macro2::Span::call_site())
+    pub(crate) fn serialization_trait(&self) -> syn::Ident {
+        syn::Ident::new(
+            self.data_type.field_type.serde_trait(),
+            proc_macro2::Span::call_site(),
+        )
     }
 }
 impl TryFrom<&Field> for FieldInfo {
@@ -72,7 +72,7 @@ impl TryFrom<&Field> for FieldInfo {
             name,
             hash,
             hash_table_order: 0,
-            data_type
+            data_type,
         })
     }
 }

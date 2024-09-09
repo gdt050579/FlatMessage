@@ -1369,10 +1369,10 @@ fn check_enum_slice_u8bits() {
             71, 84, 72, 1, 2, 0, 0, 0, // TestStruct::color
             // Hash for Color
             237, 103, 151, 167, // number of elements in TestStruct::color
-            5, // u8 value for TestStruct::color
+            5,   // u8 value for TestStruct::color
             10, 100, 1, 10, 100, // value of TestStruct::value
             123, // alignament padding (to 4 bytes)
-            0, // Hash for color
+            0,   // Hash for color
             147, 98, 126, 61, // Hash for value
             1, 211, 94, 66, // Offsets
             8, 18
@@ -1451,7 +1451,7 @@ fn check_enum_slice_u16bits() {
             71, 84, 72, 1, 2, 0, 0, 0, // Hash for Color
             237, 103, 151, 167, // number of items in TestStruct::color (u16)
             5, 0, // 5 items of TestStruct::color (u16) each
-            57, 48, 2, 0, 210, 4, 57, 48, 2, 0, // TestStruct::value
+            57, 48, 2, 0, 210, 4, 57, 48, 2, 0,   // TestStruct::value
             123, // alignament padding (to 4 bytes)
             0, 0, 0, // Hash for color
             148, 98, 126, 61, // Hash for value
@@ -1665,10 +1665,10 @@ fn check_enum_vec_u8bits() {
             71, 84, 72, 1, 2, 0, 0, 0, // TestStruct::color
             // Hash for Color
             237, 103, 151, 167, // number of elements in TestStruct::color
-            5, // u8 value for TestStruct::color
+            5,   // u8 value for TestStruct::color
             10, 100, 1, 10, 100, // value of TestStruct::value
             123, // alignament padding (to 4 bytes)
-            0, // Hash for color
+            0,   // Hash for color
             147, 98, 126, 61, // Hash for value
             1, 211, 94, 66, // Offsets
             8, 18
@@ -1780,7 +1780,6 @@ fn check_enum_vec_and_slice_u32align() {
     );
 }
 
-
 #[test]
 fn check_serde_buffer_bool() {
     #[flat_message(metadata: false)]
@@ -1819,27 +1818,27 @@ fn check_serde_vec_str() {
     assert_eq!(s.value, ds.value);
     assert_eq!(s.v1, ds.v1);
 
-    assert_eq!(v.as_slice(), &[
-        /* Header                      */ 71, 84, 72, 1, 2, 0, 0, 0, 
-        /* TestStruct: value           */ 64, 226, 1, 0, 
-        /* v1                          */
-        /* v1 (items count)            */ 4, 
-        /* v1.item[0].len              */ 5, 
-        /* v1.item[0].data             */ 72, 101, 108, 108, 111, // Hello
-        /* v1.item[1].len              */ 5,
-        /* v1.item[1].data             */ 87, 111, 114, 108, 100, // World
-        /* v1.item[2].len              */ 4,
-        /* v1.item[2].data             */ 74, 111, 104, 110, // John
-        /* v1.item[3].len              */ 3,
-        /* v1.item[3].data             */ 68, 111, 101, // Doe
-        /* alignamnt                   */ 0, 0,
-        /* Hash for TestStruct::value  */ 3, 211, 94, 66, 
-        /* Hash for TestStruct::v1     */ 142, 70, 74, 148, 
-        /* Offset of TestStruct::value */ 8,
-        /* Offset of TestStruct::v1    */ 12
-    ]);
+    assert_eq!(
+        v.as_slice(),
+        &[
+            /* Header                      */ 71, 84, 72, 1, 2, 0, 0, 0,
+            /* TestStruct: value           */ 64, 226, 1, 0,
+            /* v1                          */
+            /* v1 (items count)            */ 4,
+            /* v1.item[0].len              */ 5, /* v1.item[0].data             */ 72,
+            101, 108, 108, 111, // Hello
+            /* v1.item[1].len              */ 5, /* v1.item[1].data             */ 87,
+            111, 114, 108, 100, // World
+            /* v1.item[2].len              */ 4, /* v1.item[2].data             */ 74,
+            111, 104, 110, // John
+            /* v1.item[3].len              */ 3, /* v1.item[3].data             */ 68,
+            111, 101, // Doe
+            /* alignamnt                   */ 0, 0, /* Hash for TestStruct::value  */ 3,
+            211, 94, 66, /* Hash for TestStruct::v1     */ 142, 70, 74, 148,
+            /* Offset of TestStruct::value */ 8, /* Offset of TestStruct::v1    */ 12
+        ]
+    );
 }
-
 
 #[test]
 fn check_serde_vec_string() {
@@ -1851,32 +1850,38 @@ fn check_serde_vec_string() {
     let mut v = Storage::default();
     let s = TestStruct {
         value: 123456,
-        v1: vec!["Hello".to_string(), "World".to_string(), "John".to_string(), "Doe".to_string()],
+        v1: vec![
+            "Hello".to_string(),
+            "World".to_string(),
+            "John".to_string(),
+            "Doe".to_string(),
+        ],
     };
     s.serialize_to(&mut v, Config::default()).unwrap();
     let ds = TestStruct::deserialize_from(&v).unwrap();
     assert_eq!(s.value, ds.value);
     assert_eq!(s.v1, ds.v1);
 
-    assert_eq!(v.as_slice(), &[
-        /* Header                      */ 71, 84, 72, 1, 2, 0, 0, 0, 
-        /* TestStruct: value           */ 64, 226, 1, 0, 
-        /* v1                          */
-        /* v1 (items count)            */ 4, 
-        /* v1.item[0].len              */ 5, 
-        /* v1.item[0].data             */ 72, 101, 108, 108, 111, // Hello
-        /* v1.item[1].len              */ 5,
-        /* v1.item[1].data             */ 87, 111, 114, 108, 100, // World
-        /* v1.item[2].len              */ 4,
-        /* v1.item[2].data             */ 74, 111, 104, 110, // John
-        /* v1.item[3].len              */ 3,
-        /* v1.item[3].data             */ 68, 111, 101, // Doe
-        /* alignamnt                   */ 0, 0,
-        /* Hash for TestStruct::value  */ 3, 211, 94, 66, 
-        /* Hash for TestStruct::v1     */ 142, 70, 74, 148, 
-        /* Offset of TestStruct::value */ 8,
-        /* Offset of TestStruct::v1    */ 12
-    ]);
+    assert_eq!(
+        v.as_slice(),
+        &[
+            /* Header                      */ 71, 84, 72, 1, 2, 0, 0, 0,
+            /* TestStruct: value           */ 64, 226, 1, 0,
+            /* v1                          */
+            /* v1 (items count)            */ 4,
+            /* v1.item[0].len              */ 5, /* v1.item[0].data             */ 72,
+            101, 108, 108, 111, // Hello
+            /* v1.item[1].len              */ 5, /* v1.item[1].data             */ 87,
+            111, 114, 108, 100, // World
+            /* v1.item[2].len              */ 4, /* v1.item[2].data             */ 74,
+            111, 104, 110, // John
+            /* v1.item[3].len              */ 3, /* v1.item[3].data             */ 68,
+            111, 101, // Doe
+            /* alignamnt                   */ 0, 0, /* Hash for TestStruct::value  */ 3,
+            211, 94, 66, /* Hash for TestStruct::v1     */ 142, 70, 74, 148,
+            /* Offset of TestStruct::value */ 8, /* Offset of TestStruct::v1    */ 12
+        ]
+    );
 }
 
 #[test]
@@ -1890,8 +1895,16 @@ fn check_serde_vec_string_and_str() {
     let mut v = Storage::default();
     let s = TestStruct {
         value: 123456,
-        v1: vec!["Hello".to_string(), "World".to_string(), "John".to_string(), "Doe".to_string()],
-        v2: vec!["Hello", "World", "John", "Doe", "this", "is", "a", "test", "of", "strings", "and", "more"],
+        v1: vec![
+            "Hello".to_string(),
+            "World".to_string(),
+            "John".to_string(),
+            "Doe".to_string(),
+        ],
+        v2: vec![
+            "Hello", "World", "John", "Doe", "this", "is", "a", "test", "of", "strings", "and",
+            "more",
+        ],
     };
     s.serialize_to(&mut v, Config::default()).unwrap();
     let ds = TestStruct::deserialize_from(&v).unwrap();
@@ -1911,8 +1924,16 @@ fn check_serde_vec_string_and_str_unchecked() {
     let mut v = Storage::default();
     let s = TestStruct {
         value: 123456,
-        v1: vec!["Hello".to_string(), "World".to_string(), "John".to_string(), "Doe".to_string()],
-        v2: vec!["Hello", "World", "John", "Doe", "this", "is", "a", "test", "of", "strings", "and", "more"],
+        v1: vec![
+            "Hello".to_string(),
+            "World".to_string(),
+            "John".to_string(),
+            "Doe".to_string(),
+        ],
+        v2: vec![
+            "Hello", "World", "John", "Doe", "this", "is", "a", "test", "of", "strings", "and",
+            "more",
+        ],
     };
     s.serialize_to(&mut v, Config::default()).unwrap();
     let ds = unsafe { TestStruct::deserialize_from_unchecked(&v).unwrap() };

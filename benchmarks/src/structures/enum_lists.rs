@@ -1,7 +1,10 @@
 use flat_message::*;
+use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+use crate::v;
+
+#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
 #[repr(u8)]
 enum Color {
     Red = 1,
@@ -12,7 +15,7 @@ enum Color {
     Magenta = 102,
 }
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
 #[repr(u32)]
 enum Math {
     A = 1,
@@ -21,7 +24,7 @@ enum Math {
     D = 1000000000,
 }
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
 #[repr(i64)]
 enum Negative {
     A = 1,
@@ -33,7 +36,7 @@ enum Negative {
 }
 
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, GetSize)]
 pub struct EnumLists {
     #[flat_message(repr = u8, kind = enum)]
     col: Vec<Color>,
@@ -45,11 +48,11 @@ pub struct EnumLists {
 
 pub fn generate() -> EnumLists {
     EnumLists {
-        col: [Color::Magenta, Color::Blue, Color::Green, Color::Cyan]
+        col: v([Color::Magenta, Color::Blue, Color::Green, Color::Cyan]
             .repeat(10)
-            .to_vec(),
-        math: [Math::D, Math::A, Math::B, Math::C].repeat(100).to_vec(),
-        neg: [
+            .to_vec()),
+        math: v([Math::D, Math::A, Math::B, Math::C].repeat(100).to_vec()),
+        neg: v([
             Negative::F,
             Negative::A,
             Negative::B,
@@ -57,6 +60,6 @@ pub fn generate() -> EnumLists {
             Negative::D,
         ]
         .repeat(1000)
-        .to_vec(),
+        .to_vec()),
     }
 }

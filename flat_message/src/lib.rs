@@ -1,3 +1,12 @@
+mod buffer;
+mod config;
+mod error;
+mod flat_message;
+mod flat_message_buffer;
+pub mod headers;
+mod metadata;
+mod name;
+mod serde;
 /// FlatMessage format
 /// |--------|-------------|------|----------------------------------------------------------|
 /// | Offset | Name        | Type | Observation                                              |
@@ -23,15 +32,6 @@
 /// | Last   | CRC32 value | u32  | Last 4 bytes, only if CRC32 flags is set                 |
 /// |--------|-------------|------|----------------------------------------------------------|
 pub mod size;
-mod buffer;
-mod config;
-mod error;
-mod flat_message;
-mod flat_message_buffer;
-pub mod headers;
-mod metadata;
-mod name;
-mod serde;
 mod storage;
 mod structure_information;
 
@@ -46,14 +46,14 @@ pub use self::name::Name;
 pub use self::serde::SerDe;
 pub use self::serde::SerDeSlice;
 pub use self::serde::SerDeVec;
-pub use self::structure_information::StructureInformation;
 pub use self::storage::Storage;
 pub use self::storage::VecLike;
+pub use self::structure_information::StructureInformation;
 
 pub use flat_message_proc_macro::*;
 
-pub use common::hashes::crc32;
 pub use common::data_format::DataFormat;
+pub use common::hashes::crc32;
 
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}

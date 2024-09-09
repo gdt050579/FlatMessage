@@ -1,5 +1,6 @@
 mod attribute_parser;
 mod config;
+mod data_type;
 mod enum_info;
 mod enum_memory_representation;
 mod field_info;
@@ -7,7 +8,6 @@ mod struct_info;
 mod utils;
 mod validate_checksum;
 mod version_validator_parser;
-mod data_type;
 
 use config::Config;
 use core::panic;
