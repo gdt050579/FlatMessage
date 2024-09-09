@@ -1,13 +1,13 @@
 use std::ops::Add;
 
+use crate::get_size_min::GetSize;
 use flat_message::*;
-use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
 use crate::v;
 
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize, GetSize)]
+#[derive(Clone, Serialize, Deserialize, get_size_derive::GetSize)]
 pub struct LargeVectors {
     buffer: Vec<u8>,
     ints: Vec<i32>,

@@ -1,7 +1,12 @@
+mod get_size_min;
+mod structures;
+#[cfg(test)]
+mod tests;
+
+use crate::get_size_min::GetSize;
 use ascii_table::{Align, AsciiTable};
 use clap::Parser;
 use flat_message::{FlatMessage, FlatMessageOwned, Storage, VecLike};
-use get_size::GetSize;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -13,9 +18,6 @@ use std::{
     hint::black_box,
     time::{Duration, Instant},
 };
-mod structures;
-#[cfg(test)]
-mod tests;
 
 struct TestData {
     vec: Vec<u8>,
@@ -126,7 +128,7 @@ struct Result {
     top_test_name: TestKind,
     size: usize,
     needs_schema: bool,
-    in_memory_size: String,
+    min_size: String,
     //
     time_se: Duration,
     time_de: Duration,
@@ -206,7 +208,7 @@ fn bench<T: GetSize, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T +
         name: test_name,
         top_test_name,
         size: data.vec.len().max(data.storage.len()),
-        in_memory_size: x.get_size().to_string(),
+        min_size: x.get_heap_size().to_string(),
         needs_schema,
         //
         time_se,
@@ -221,7 +223,7 @@ fn bench<T: GetSize, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T +
 
 // Little hack to redirect the deserialize_from to deserialize_from_unchecked
 // Just for testing, don't actually do this.
-#[derive(GetSize)]
+#[derive(get_size_derive::GetSize)]
 struct Wrapper<T>(T);
 impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
     fn metadata(&self) -> &flat_message::MetaData {
@@ -316,7 +318,7 @@ fn add_benches<'a, T: FlatMessageOwned + Clone + Serialize + DeserializeOwned + 
     b!(Postcard, x, se_test_postcard, de_test_postcard, true);
 }
 
-fn print_results_ascii_table(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
+fn print_results_ascii_table(r: &[[&dyn Display; 8]], colums: &[(&str, Align)]) {
     let mut ascii_table: AsciiTable = AsciiTable::default();
     ascii_table.set_max_width(150);
 
@@ -327,7 +329,7 @@ fn print_results_ascii_table(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) 
     ascii_table.print(r);
 }
 
-fn print_results_markdown(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
+fn print_results_markdown(r: &[[&dyn Display; 8]], colums: &[(&str, Align)]) {
     let output = &mut String::with_capacity(4096);
 
     for i in colums {
@@ -349,7 +351,7 @@ fn print_results_markdown(r: &[[&dyn Display; 7]], colums: &[(&str, Align)]) {
     fs::write("bench_table.md", output).unwrap();
 }
 
-fn print_results(results: &mut Vec<Result>) {
+fn print_results(results: &mut Vec<Result>, algos: &HashSet<AlgoKind>, all_algos: bool) {
     results.sort_by(|x, y| {
         x.top_test_name
             .cmp(&y.top_test_name)
@@ -361,20 +363,24 @@ fn print_results(results: &mut Vec<Result>) {
         ("schema", Align::Center),
         ("name", Align::Left),
         ("size (b)", Align::Right),
+        ("min size (b)", Align::Right),
         ("se time (ms)", Align::Right),
         ("de time (ms)", Align::Right),
         ("se + de time (ms)", Align::Right),
     ];
 
-    let mut r: Vec<[&dyn Display; 7]> = Vec::new();
+    let mut r: Vec<[&dyn Display; 8]> = Vec::new();
     let mut last = None;
 
-    let dashes: [&dyn Display; 7] = [&"---", &"---", &"---", &"---", &"---", &"---", &"---"];
+    let dashes: [&dyn Display; 8] = [
+        &"---", &"---", &"---", &"---", &"---", &"---", &"---", &"---",
+    ];
+
+    let one_algo = if all_algos { false } else { algos.len() == 1 };
 
     for i in results.iter() {
-        let current = Some(&i.in_memory_size);
-        if !last.is_none() && last != current {
-            r.push([&"in memory size", &"", &"", last.unwrap(), &"", &"", &""]);
+        let current = Some(&i.top_test_name);
+        if !last.is_none() && last != current && !one_algo {
             r.push(dashes);
         }
         last = current;
@@ -385,12 +391,12 @@ fn print_results(results: &mut Vec<Result>) {
             ch,
             i.name.display(),
             &i.size,
+            &i.min_size,
             &i.time_se_ms,
             &i.time_de_ms,
             &i.time_se_de_ms,
         ]);
     }
-    r.push([&"in memory size", &"", &"", last.unwrap(), &"", &"", &""]);
 
     let avg_size = results.iter().map(|x| x.size).sum::<usize>() / results.len();
     let avg_se_time = results.iter().map(|x| x.time_se).sum::<Duration>() / results.len() as u32;
@@ -408,6 +414,7 @@ fn print_results(results: &mut Vec<Result>) {
         &"",
         &"",
         &avg_size,
+        &"",
         &avg_se_time,
         &avg_de_time,
         &avg_se_de_time,
@@ -607,7 +614,7 @@ fn main() {
         run!(StringLists, &s);
     }
 
-    print_results(results);
+    print_results(results, &algos, all_algos);
 }
 
 fn s(mut x: String) -> String {
@@ -617,4 +624,11 @@ fn s(mut x: String) -> String {
 fn v<T>(mut x: Vec<T>) -> Vec<T> {
     x.shrink_to_fit();
     x
+}
+
+#[macro_export]
+macro_rules! t {
+    ($n:ident) => {
+        impl GetSize for $n {}
+    };
 }

@@ -1,10 +1,10 @@
+use crate::get_size_min::GetSize;
 use flat_message::*;
-use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
 use crate::v;
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, GetSize)]
+#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
 enum Color {
     Red = 1,
@@ -14,8 +14,11 @@ enum Color {
     Cyan = 101,
     Magenta = 102,
 }
+
+crate::t!(Color);
+
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize, GetSize)]
+#[derive(Clone, Serialize, Deserialize, get_size_derive::GetSize)]
 pub struct SmallEnumLists {
     #[flat_message(repr = u8, kind = enum)]
     col1: Vec<Color>,

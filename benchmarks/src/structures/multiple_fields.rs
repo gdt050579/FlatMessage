@@ -1,11 +1,11 @@
+use crate::get_size_min::GetSize;
 use flat_message::*;
-use get_size::GetSize;
 use serde::{Deserialize, Serialize};
 
 use crate::s;
 
 #[flat_message(metadata: false, store_name: false)]
-#[derive(Clone, Serialize, Deserialize, GetSize)]
+#[derive(Clone, Serialize, Deserialize, get_size_derive::GetSize)]
 pub struct MultipleFields {
     field_of_type_string: String,
     field_of_type_u32: u32,
