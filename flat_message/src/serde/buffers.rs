@@ -4,7 +4,7 @@ use crate::size;
 use common::data_format::DataFormat;
 
 macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
-    ($t:ty, $data_format:ident, $align_method:ident, $offset_alignament_mask:expr) => {
+    ($t:ty, $data_format:ident, $align_method:ident) => {
         unsafe impl<'a> SerDeSlice<'a> for $t {
             const DATA_FORMAT: DataFormat = DataFormat::$data_format;
             #[inline(always)]
@@ -47,16 +47,12 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
                 size::len(obj.len() as u32, size::Format::$align_method)
                     + obj.len() * std::mem::size_of::<$t>()
             }
-            #[inline(always)]
-            fn align_offset(_: &[Self], offset: usize) -> usize {
-                (offset + ($offset_alignament_mask as usize)) & !($offset_alignament_mask as usize)
-            }
         }
     };
 }
 
 macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
-    ($t:ty, $data_format:ident, $align_method:ident, $offset_alignament_mask:expr) => {
+    ($t:ty, $data_format:ident, $align_method:ident) => {
         unsafe impl SerDeVec<'_> for $t {
             const DATA_FORMAT: DataFormat = DataFormat::$data_format;
             #[inline(always)]
@@ -78,32 +74,28 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
                 size::len(obj.len() as u32, size::Format::$align_method)
                     + obj.len() * std::mem::size_of::<$t>()
             }
-            #[inline(always)]
-            fn align_offset(_: &Vec<Self>, offset: usize) -> usize {
-                (offset + ($offset_alignament_mask as usize)) & !($offset_alignament_mask as usize)
-            }
         }
     };
 }
 
-IMPLEMENT_SERDE_FOR_SLICE!(u16, U16, U16withExtension, 1);
-IMPLEMENT_SERDE_FOR_SLICE!(i16, I16, U16withExtension, 1);
-IMPLEMENT_SERDE_FOR_SLICE!(u32, U32, U32, 3);
-IMPLEMENT_SERDE_FOR_SLICE!(i32, I32, U32, 3);
-IMPLEMENT_SERDE_FOR_SLICE!(f32, F32, U32, 3);
-IMPLEMENT_SERDE_FOR_SLICE!(u64, U64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_SLICE!(i64, I64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_SLICE!(f64, F64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_SLICE!(u128, U128, U32on128bits, 15);
-IMPLEMENT_SERDE_FOR_SLICE!(i128, I128, U32on128bits, 15);
+IMPLEMENT_SERDE_FOR_SLICE!(u16, U16, U16withExtension);
+IMPLEMENT_SERDE_FOR_SLICE!(i16, I16, U16withExtension);
+IMPLEMENT_SERDE_FOR_SLICE!(u32, U32, U32);
+IMPLEMENT_SERDE_FOR_SLICE!(i32, I32, U32);
+IMPLEMENT_SERDE_FOR_SLICE!(f32, F32, U32);
+IMPLEMENT_SERDE_FOR_SLICE!(u64, U64, U32on64bits);
+IMPLEMENT_SERDE_FOR_SLICE!(i64, I64, U32on64bits);
+IMPLEMENT_SERDE_FOR_SLICE!(f64, F64, U32on64bits);
+IMPLEMENT_SERDE_FOR_SLICE!(u128, U128, U32on128bits);
+IMPLEMENT_SERDE_FOR_SLICE!(i128, I128, U32on128bits);
 
-IMPLEMENT_SERDE_FOR_VECTOR!(u16, U16, U16withExtension, 1);
-IMPLEMENT_SERDE_FOR_VECTOR!(i16, I16, U16withExtension, 1);
-IMPLEMENT_SERDE_FOR_VECTOR!(u32, U32, U32, 3);
-IMPLEMENT_SERDE_FOR_VECTOR!(i32, I32, U32, 3);
-IMPLEMENT_SERDE_FOR_VECTOR!(f32, F32, U32, 3);
-IMPLEMENT_SERDE_FOR_VECTOR!(u64, U64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_VECTOR!(i64, I64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_VECTOR!(f64, F64, U32on64bits, 7);
-IMPLEMENT_SERDE_FOR_VECTOR!(u128, U128, U32on128bits, 15);
-IMPLEMENT_SERDE_FOR_VECTOR!(i128, I128, U32on128bits, 15);
+IMPLEMENT_SERDE_FOR_VECTOR!(u16, U16, U16withExtension);
+IMPLEMENT_SERDE_FOR_VECTOR!(i16, I16, U16withExtension);
+IMPLEMENT_SERDE_FOR_VECTOR!(u32, U32, U32);
+IMPLEMENT_SERDE_FOR_VECTOR!(i32, I32, U32);
+IMPLEMENT_SERDE_FOR_VECTOR!(f32, F32, U32);
+IMPLEMENT_SERDE_FOR_VECTOR!(u64, U64, U32on64bits);
+IMPLEMENT_SERDE_FOR_VECTOR!(i64, I64, U32on64bits);
+IMPLEMENT_SERDE_FOR_VECTOR!(f64, F64, U32on64bits);
+IMPLEMENT_SERDE_FOR_VECTOR!(u128, U128, U32on128bits);
+IMPLEMENT_SERDE_FOR_VECTOR!(i128, I128, U32on128bits);

@@ -38,10 +38,6 @@ unsafe impl SerDe<'_> for bool {
     fn size(_: &Self) -> usize {
         1
     }
-    #[inline(always)]
-    fn align_offset(_: &Self, offset: usize) -> usize {
-        offset
-    }
 }
 
 unsafe impl<'a> SerDeSlice<'a> for bool {
@@ -87,10 +83,6 @@ unsafe impl<'a> SerDeSlice<'a> for bool {
     fn size(obj: &[Self]) -> usize {
         size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
     }
-    #[inline(always)]
-    fn align_offset(_: &[Self], offset: usize) -> usize {
-        offset
-    }
 }
 
 unsafe impl SerDeVec<'_> for bool {
@@ -112,9 +104,5 @@ unsafe impl SerDeVec<'_> for bool {
     #[inline(always)]
     fn size(obj: &Vec<Self>) -> usize {
         size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
-    }
-    #[inline(always)]
-    fn align_offset(_: &Vec<Self>, offset: usize) -> usize {
-        offset
     }
 }

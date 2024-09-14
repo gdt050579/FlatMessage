@@ -30,6 +30,10 @@ impl FieldInfo {
             proc_macro2::Span::call_site(),
         )
     }
+    #[inline(always)]
+    pub(crate) fn serialization_alignment(&self) -> usize {
+        self.data_type.serialization_alignment()
+    }
 }
 impl TryFrom<&Field> for FieldInfo {
     type Error = String;

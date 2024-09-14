@@ -42,6 +42,33 @@ impl DataFormat {
             _ => false,
         }
     }
+    pub const fn alignament(&self)->u8 {
+        match self {
+            DataFormat::U8 => 1,
+            DataFormat::U16 => 2,
+            DataFormat::U32 => 4,
+            DataFormat::U64 => 8,
+            DataFormat::U128 => 16,
+            DataFormat::I8 => 1,
+            DataFormat::I16 => 2,
+            DataFormat::I32 => 4,
+            DataFormat::I64 => 8,
+            DataFormat::I128 => 16,
+            DataFormat::F32 => 4,
+            DataFormat::F64 => 8,
+            DataFormat::Bool => 1,
+            DataFormat::String => 1,
+            DataFormat::EnumI8 => 1,
+            DataFormat::EnumI16 => 2,
+            DataFormat::EnumI32 => 4,
+            DataFormat::EnumI64 => 8,
+            DataFormat::EnumU8 => 1,
+            DataFormat::EnumU16 => 2,
+            DataFormat::EnumU32 => 4,
+            DataFormat::EnumU64 => 8,
+            DataFormat::GenericObject => 1,
+        }
+    }
 }
 impl Display for DataFormat {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

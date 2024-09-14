@@ -102,23 +102,16 @@ impl<'a> StructInfo<'a> {
     fn generate_compute_size_code(&self) -> Vec<proc_macro2::TokenStream> {
         let compute_size_code = self.fields.iter().map(|field| {
             let field_name = field.name_ident();
-            match field.data_type.field_type {
-                FieldType::Object => {
-                    quote! {
-                        size += ::flat_message::SerDe::size(&self.#field_name);
-                    }
+            let serialization_trait = field.serialization_trait();
+            let serialization_alignment = field.serialization_alignment();
+            if serialization_alignment>1 {
+                quote! {
+                    size = (size + #serialization_alignment - 1) & !(#serialization_alignment - 1);
+                    size += ::flat_message::#serialization_trait::size(&self.#field_name);
                 }
-                FieldType::Slice => {
-                    quote! {
-                        size = ::flat_message::SerDeSlice::align_offset(&self.#field_name, size);
-                        size += ::flat_message::SerDeSlice::size(&self.#field_name);
-                    }
-                }
-                FieldType::Vector => {
-                    quote! {
-                        size = ::flat_message::SerDeVec::align_offset(&self.#field_name, size);
-                        size += ::flat_message::SerDeVec::size(&self.#field_name);
-                    }
+            } else {
+                quote! {
+                    size += ::flat_message::#serialization_trait::size(&self.#field_name);
                 }
             }
         });
@@ -170,11 +163,17 @@ impl<'a> StructInfo<'a> {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
             let hash_table_order = field.hash_table_order as usize;
             let serde_trait = field.serialization_trait();
+            let serialization_alignment = field.serialization_alignment();
             let alignament_code = match field.data_type.field_type {
                 FieldType::Object => quote! {},
-                FieldType::Slice | FieldType::Vector => quote! {
-                    buf_pos = ::flat_message::#serde_trait::align_offset(&self.#field_name, buf_pos);
-                },
+                FieldType::Slice | FieldType::Vector => 
+                if serialization_alignment>1 {
+                    quote! {
+                        buf_pos = (buf_pos + #serialization_alignment - 1) & !(#serialization_alignment - 1);
+                    }
+                } else {
+                    quote! {}
+                }
             };
             let refcode = 
             match ref_size {

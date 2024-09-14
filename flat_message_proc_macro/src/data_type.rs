@@ -98,31 +98,7 @@ impl DataType {
     pub(crate) fn serialization_alignment(&self) -> usize {
         match self.field_type {
             FieldType::Object => 1,
-            FieldType::Slice | FieldType::Vector => match self.data_format {
-                DataFormat::GenericObject => 1,
-                DataFormat::U8 => 1,
-                DataFormat::U16 => 2,
-                DataFormat::U32 => 4,
-                DataFormat::U64 => 8,
-                DataFormat::U128 => 16,
-                DataFormat::I8 => 1,
-                DataFormat::I16 => 2,
-                DataFormat::I32 => 4,
-                DataFormat::I64 => 8,
-                DataFormat::I128 => 16,
-                DataFormat::F32 => 4,
-                DataFormat::F64 => 8,
-                DataFormat::Bool => 1,
-                DataFormat::String => 1,
-                DataFormat::EnumI8 => 2,
-                DataFormat::EnumI16 => 2,
-                DataFormat::EnumI32 => 4,
-                DataFormat::EnumI64 => 8,
-                DataFormat::EnumU8 => 1,
-                DataFormat::EnumU16 => 2,
-                DataFormat::EnumU32 => 4,
-                DataFormat::EnumU64 => 8,
-            },
+            FieldType::Slice | FieldType::Vector => self.data_format.alignament() as usize,
         }
     }
 }

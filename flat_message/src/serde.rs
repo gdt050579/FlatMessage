@@ -17,7 +17,6 @@ pub unsafe trait SerDe<'a> {
         Self: Sized;
     unsafe fn write(obj: &Self, p: *mut u8, pos: usize) -> usize;
     fn size(obj: &Self) -> usize;
-    fn align_offset(obj: &Self, offset: usize) -> usize;
 }
 
 pub unsafe trait SerDeSlice<'a> {
@@ -34,9 +33,6 @@ pub unsafe trait SerDeSlice<'a> {
     fn size(obj: &[Self]) -> usize
     where
         Self: Sized;
-    fn align_offset(obj: &[Self], offset: usize) -> usize
-    where
-        Self: Sized;
 }
 
 pub unsafe trait SerDeVec<'a> {
@@ -51,9 +47,6 @@ pub unsafe trait SerDeVec<'a> {
     where
         Self: Sized;
     fn size(obj: &Vec<Self>) -> usize
-    where
-        Self: Sized;
-    fn align_offset(obj: &Vec<Self>, offset: usize) -> usize
     where
         Self: Sized;
 }

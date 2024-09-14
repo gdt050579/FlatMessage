@@ -88,10 +88,6 @@ impl EnumInfo {
                 fn size(obj: &Vec<Self>) -> usize {
                     SerDeSlice::size(obj.as_slice())
                 }
-                #[inline(always)]
-                fn align_offset(obj: &Vec<Self>, offset: usize) -> usize {
-                    SerDeSlice::align_offset(&obj.as_slice(), offset)
-                }
             }
         }
     }
@@ -101,23 +97,20 @@ impl EnumInfo {
         let variant_validation = self.generate_variant_validation_match(false);
         let name_hash = self.compute_hash();
         let repr_type = self.repr.repr_type();
-        let (size_format, multiplier, alignament, slice) = match self.repr {
+        let (size_format, multiplier, slice) = match self.repr {
             EnumMemoryRepresentation::U8 | EnumMemoryRepresentation::I8 => (
                 quote! { U8withExtension },
                 quote! {},
-                quote! { offset },
                 quote! {&buf[pos + size_len..end];},
             ),
             EnumMemoryRepresentation::U16 | EnumMemoryRepresentation::I16 => (
                 quote! { U16withExtension },
                 quote! { * 2 },
-                quote! { (offset + 1usize) & !(1usize) },
                 quote! { unsafe { std::slice::from_raw_parts(buf.as_ptr().add(pos+size_len) as *const #repr_type, count) }; },
             ),
             EnumMemoryRepresentation::U32 | EnumMemoryRepresentation::I32 => (
                 quote! { U32 },
                 quote! { *4 },
-                quote! { (offset + 3usize) & !(3usize) },
                 quote! { unsafe { std::slice::from_raw_parts(buf.as_ptr().add(pos+size_len) as *const #repr_type, count) }; },
             ),
             EnumMemoryRepresentation::U64 | EnumMemoryRepresentation::I64 => {
@@ -125,7 +118,6 @@ impl EnumInfo {
                 (
                     quote! { U32 },
                     quote! { *8 },
-                    quote! { (offset + 7usize) & !(7usize) },
                     quote! { unsafe { std::slice::from_raw_parts(buf.as_ptr().add(pos+size_len) as *const #repr_type, count) }; },
                 )
             }
@@ -199,10 +191,6 @@ impl EnumInfo {
                     flat_message::size::len(obj.len() as u32, flat_message::size::Format::#size_format)
                     + obj.len() #multiplier + 4usize /* name hash */
                 }
-                #[inline(always)]
-                fn align_offset(_: &[Self], offset: usize) -> usize {
-                    #alignament
-                }
             }
         }
     }
@@ -250,10 +238,6 @@ impl EnumInfo {
                 #[inline(always)]
                 fn size(_: &Self) -> usize {
                     std::mem::size_of::<#repr_type>()+4 /* name hashe */
-                }
-                #[inline(always)]
-                fn align_offset(_: &Self, offset: usize) -> usize {
-                    offset
                 }
             }
         }

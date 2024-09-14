@@ -46,10 +46,6 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             fn size(obj: &[Self]) -> usize {
                 size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
             }
-            #[inline(always)]
-            fn align_offset(_: &[Self], offset: usize) -> usize {
-                offset
-            }
         }
     };
 }
@@ -75,10 +71,6 @@ macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
             #[inline(always)]
             fn size(obj: &Vec<Self>) -> usize {
                 size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
-            }
-            #[inline(always)]
-            fn align_offset(_: &Vec<Self>, offset: usize) -> usize {
-                offset
             }
         }
     };

@@ -40,10 +40,6 @@ unsafe impl<'a> SerDe<'a> for &'a str {
     fn size(obj: &&str) -> usize {
         size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
     }
-    #[inline(always)]
-    fn align_offset(_: &&str, offset: usize) -> usize {
-        offset
-    }
 }
 
 /// Implementation for String
@@ -66,9 +62,5 @@ unsafe impl SerDe<'_> for String {
     #[inline(always)]
     fn size(obj: &String) -> usize {
         size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
-    }
-    #[inline(always)]
-    fn align_offset(_: &String, offset: usize) -> usize {
-        offset
     }
 }

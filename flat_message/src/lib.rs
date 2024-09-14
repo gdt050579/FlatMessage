@@ -34,6 +34,7 @@ mod serde;
 pub mod size;
 mod storage;
 mod structure_information;
+mod builder;
 
 pub use self::config::Config;
 pub use self::config::ConfigBuilder;

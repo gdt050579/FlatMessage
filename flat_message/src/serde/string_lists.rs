@@ -83,10 +83,6 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
         }
         total_size
     }
-    #[inline(always)]
-    fn align_offset(_: &Vec<Self>, offset: usize) -> usize {
-        offset
-    }
 }
 
 /// Implementation for String
@@ -170,9 +166,5 @@ unsafe impl<'a> SerDeVec<'a> for String {
             total_size += size::len(s.len() as u32, SIZE_FORMAT) + s.len();
         }
         total_size
-    }
-    #[inline(always)]
-    fn align_offset(_: &Vec<Self>, offset: usize) -> usize {
-        offset
     }
 }
