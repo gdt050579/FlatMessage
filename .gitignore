@@ -18,3 +18,4 @@ Cargo.lock
 
 bench_table.md
 bench_table.html
+/.vscode
