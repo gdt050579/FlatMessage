@@ -51,7 +51,7 @@ unsafe impl<'a> SerDe<'a> for IpAddr {
     unsafe fn write(obj: &IpAddr, p: *mut u8, pos: usize) -> usize {
         match obj {
             IpAddr::V4(addr) => unsafe {
-                ptr::write_unaligned(p.add(pos) as *mut u8, 0);
+                ptr::write_unaligned(p.add(pos), 0);
                 ptr::write_unaligned(
                     p.add(pos + 1) as *mut u32,
                     u32::from_le_bytes(addr.octets()),
@@ -59,7 +59,7 @@ unsafe impl<'a> SerDe<'a> for IpAddr {
                 pos + 5
             },
             IpAddr::V6(addr) => unsafe {
-                ptr::write_unaligned(p.add(pos) as *mut u8, 1);
+                ptr::write_unaligned(p.add(pos), 1);
                 ptr::write_unaligned(
                     p.add(pos + 1) as *mut u128,
                     u128::from_le_bytes(addr.octets()),

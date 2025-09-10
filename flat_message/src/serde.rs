@@ -4,10 +4,10 @@ mod basic_types;
 mod bool;
 mod buffers;
 mod buffers_8bits;
+mod fix_array;
+mod ip;
 mod string;
 mod string_lists;
-mod ip;
-mod fix_array;
 
 pub unsafe trait SerDe<'a> {
     const DATA_FORMAT: DataFormat;

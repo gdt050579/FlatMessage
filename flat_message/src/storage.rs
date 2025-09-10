@@ -26,14 +26,13 @@ impl Storage {
     /// let data = [1, 2, 3, 4, 5];
     /// let storage = Storage::from_buffer(&data);
     /// assert_eq!(storage.as_slice(), &data);
-    /// ``` 
+    /// ```
     pub fn from_buffer(input: &[u8]) -> Storage {
         let mut r = Storage::default();
         r.resize_zero(input.len());
         r.as_mut_slice().copy_from_slice(input);
         r
     }
-
 
     /// Creates a new `Storage` instance with a given capacity filled with zeros.
     /// Since a Storage object can be reused, this is a good way to create an initial object and then use it to serrialize / deserialize multiple objects.
@@ -47,6 +46,11 @@ impl Storage {
     #[inline(always)]
     pub fn len(&self) -> usize {
         self.size
+    }
+
+    /// Returns whether the length of the data stored in the `Storage` instance is zero.
+    pub fn is_empty(&self) -> bool {
+        self.size == 0
     }
 
     /// Clears the contents of the buffer.
@@ -75,7 +79,6 @@ impl Storage {
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         unsafe { slice::from_raw_parts_mut(self.vec.as_mut_ptr() as *mut u8, self.size) }
     }
-
 }
 
 impl Debug for Storage {
@@ -89,4 +92,3 @@ impl PartialEq<Storage> for Storage {
         self.as_slice() == other.as_slice()
     }
 }
-

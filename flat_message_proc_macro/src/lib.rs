@@ -8,12 +8,12 @@ mod enum_memory_representation;
 mod field_info;
 mod flags;
 mod packed_struct;
+mod serde_definition;
 mod struct_info;
 mod utils;
 mod validate_checksum;
 mod variant;
 mod version_validator_parser;
-mod serde_definition;
 
 use config::Config;
 use const_assetions::ConstAssertions;
@@ -158,7 +158,7 @@ pub fn flat_message_variant(input: TokenStream) -> TokenStream {
 pub fn name(input: TokenStream) -> TokenStream {
     let value = utils::validate_one_string_parameter(input, "name");
     let hash = common::hashes::fnv_32(&value);
-    TokenStream::from_str(format!("Name {{ value: {hash} }}").as_str())
+    TokenStream::from_str(format!("Name {{ value: {} }}", hash).as_str())
         .expect("Fail to convert name! to stream")
 }
 

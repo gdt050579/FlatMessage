@@ -39,7 +39,7 @@ impl Config {
                 "compatible_versions" => {
                     match VersionValidatorParser::try_from(attr_value.as_str()) {
                         Ok(cv) => compatible_versions = Some(cv),
-                        Err(def) => panic!("Fail to parse compatible_versions: {def}"),
+                        Err(def) => panic!("Fail to parse compatible_versions: {}", def),
                     }
                 }
                 "optimized_unchecked_code" => optimized_unchecked_code = utils::to_bool(attr_value.as_str()).unwrap_or_else(|| panic!("Invalid boolean value ('{}') for attribute '{}'. Allowed values are 'true' or 'false' !",attr_value.as_str(), attr_name)),
@@ -51,12 +51,12 @@ impl Config {
                     }
                 }
                 _ => {
-                    panic!("Unknown attribute: {attr_name}. Supported attributes are: 'store_name', 'metadata', 'checksum', validate_name', 'optimized_unchecked_code', 'validate', 'compatible_versions' and 'version' !");
+                    panic!("Unknown attribute: {}. Supported attributes are: 'store_name', 'metadata', 'checksum', validate_name', 'optimized_unchecked_code', 'validate', 'compatible_versions' and 'version' !", attr_name);
                 }
             }
         }
 
-        if (!store_name) && (validate_name) {
+        if !store_name && validate_name {
             panic!("You can not use the attribute 'validate_name' with value 'true' unless the attribute 'store_name' is also set to 'true'.  If this was allowed, you will not be able to deserialize a structure of this type !");
         }
 

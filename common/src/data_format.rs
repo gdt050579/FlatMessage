@@ -86,7 +86,11 @@ impl DataFormat {
     pub fn is_packed_struct(&self) -> bool {
         matches!(
             self,
-            DataFormat::PackedStruct8 | DataFormat::PackedStruct16 | DataFormat::PackedStruct32 | DataFormat::PackedStruct64 | DataFormat::PackedStruct128
+            DataFormat::PackedStruct8
+                | DataFormat::PackedStruct16
+                | DataFormat::PackedStruct32
+                | DataFormat::PackedStruct64
+                | DataFormat::PackedStruct128
         )
     }
     pub fn is_struct(&self) -> bool {
@@ -96,22 +100,28 @@ impl DataFormat {
         )
     }
     pub fn is_enum(&self) -> bool {
-        matches!(self, DataFormat::EnumI8
-            | DataFormat::EnumI16
-            | DataFormat::EnumI32
-            | DataFormat::EnumI64
-            | DataFormat::EnumU8
-            | DataFormat::EnumU16
-            | DataFormat::EnumU32
-            | DataFormat::EnumU64)
+        matches!(
+            self,
+            DataFormat::EnumI8
+                | DataFormat::EnumI16
+                | DataFormat::EnumI32
+                | DataFormat::EnumI64
+                | DataFormat::EnumU8
+                | DataFormat::EnumU16
+                | DataFormat::EnumU32
+                | DataFormat::EnumU64
+        )
     }
 
     pub fn is_flags(&self) -> bool {
-        matches!(self, DataFormat::Flags8
-            | DataFormat::Flags16
-            | DataFormat::Flags32
-            | DataFormat::Flags64
-            | DataFormat::Flags128)
+        matches!(
+            self,
+            DataFormat::Flags8
+                | DataFormat::Flags16
+                | DataFormat::Flags32
+                | DataFormat::Flags64
+                | DataFormat::Flags128
+        )
     }
     pub const fn requires_padding(&self) -> bool {
         (self.alignament() > 1) && (self.is_object_container())

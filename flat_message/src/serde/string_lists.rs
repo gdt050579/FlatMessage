@@ -16,7 +16,7 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
         if count == 0 {
             Vec::new()
         } else {
-            let mut result = Vec::with_capacity(count as usize);
+            let mut result = Vec::with_capacity(count);
             let mut pos = pos + slen;
             for _ in 0..count {
                 let (len, slen) = size::read_unchecked(p, pos, SIZE_FORMAT);
@@ -40,7 +40,7 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
             if min_size > buf.len() {
                 return None;
             }
-            let mut result = Vec::with_capacity(count.min(1024) as usize);
+            let mut result = Vec::with_capacity(count.min(1024));
             let mut pos = pos + slen;
             for _ in 0..count {
                 let (len, size_len) = size::read(p, pos, buf.len(), SIZE_FORMAT)?;
@@ -95,7 +95,7 @@ unsafe impl<'a> SerDeVec<'a> for String {
         if count == 0 {
             Vec::new()
         } else {
-            let mut result: Vec<String> = Vec::with_capacity(count as usize);
+            let mut result: Vec<String> = Vec::with_capacity(count);
             let mut pos = pos + slen;
             let mut result_inner_data_ptr = result.as_mut_ptr();
             for _ in 0..count {
@@ -124,7 +124,7 @@ unsafe impl<'a> SerDeVec<'a> for String {
             if min_size > buf.len() {
                 return None;
             }
-            let mut result = Vec::with_capacity(count.min(1024) as usize);
+            let mut result = Vec::with_capacity(count.min(1024));
             let mut pos = pos + slen;
             for _ in 0..count {
                 let (len, size_len) = size::read(p, pos, buf.len(), SIZE_FORMAT)?;
