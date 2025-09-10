@@ -993,7 +993,10 @@ fn run_tests(args: Args, test_name: &str) {
     print_results(results, &algos, all_algos, args.output, &args.file_name);
 }
 
-fn run_one_mdbook_test(test_name: &str, times: u32) {
+fn run_one_mdbook_test(test_name: &str, test_filter: &str, times: u32) {
+    if test_filter != "all" && !test_filter.contains(test_name) {
+        return;
+    }
     let a = Args {
         tests: test_name.to_string(),
         algos: "all".to_string(),
@@ -1006,10 +1009,10 @@ fn run_one_mdbook_test(test_name: &str, times: u32) {
     };
     run_tests(a, test_name);
 }
-fn run_mdbook_tests() {
-    run_one_mdbook_test("multiple_fields", 100_000);
-    run_one_mdbook_test("point", 500_000);
-    //run_one_mdbook_test("long_strings", 1000); 
+fn run_mdbook_tests(test_filter: &str) {
+    run_one_mdbook_test("multiple_fields", test_filter,100_000);
+    run_one_mdbook_test("point", test_filter, 500_000);
+    run_one_mdbook_test("long_strings", test_filter, 100_000); 
 }
 
 fn main() {
@@ -1027,6 +1030,6 @@ fn main() {
         Commands::ListTests => {
             println!("available tests: {}", TestKind::all().join(", "));
         }
-        Commands::MDBookTests => run_mdbook_tests(),
+        Commands::MDBookTests => run_mdbook_tests(&args.tests),
     }
 }
