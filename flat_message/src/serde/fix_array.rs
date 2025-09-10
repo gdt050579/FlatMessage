@@ -35,7 +35,7 @@ unsafe impl<'a, const N: usize> SerDe<'a> for [u8; N] {
         unsafe {
             let slen = size::write(p, pos, N as u32, size::Format::U8withExtension);
             std::ptr::copy_nonoverlapping(obj.as_ptr(), p.add(pos + slen), obj.len());
-            pos + slen + N as usize
+            pos + slen + N
         }
     }
 
@@ -92,7 +92,7 @@ unsafe impl<'a, const N: usize> SerDeSlice<'a> for [u8; N] {
                 p.add(pos + slen1 + slen2),
                 obj.len() * N,
             );
-            pos + slen1 + slen2 + obj.len() * N as usize
+            pos + slen1 + slen2 + obj.len() * N
         }
     }
     #[inline(always)]
@@ -158,7 +158,7 @@ unsafe impl<'a, const N: usize> SerDe<'a> for &'a [u8; N] {
         unsafe {
             let slen = size::write(p, pos, N as u32, size::Format::U8withExtension);
             std::ptr::copy_nonoverlapping(obj.as_ptr(), p.add(pos + slen), obj.len());
-            pos + slen + N as usize
+            pos + slen + N
         }
     }
 

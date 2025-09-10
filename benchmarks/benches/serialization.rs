@@ -1,4 +1,4 @@
-use std::num::{NonZeroU64, NonZeroU8};
+use std::num::NonZeroU8;
 
 use criterion::BenchmarkId;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};

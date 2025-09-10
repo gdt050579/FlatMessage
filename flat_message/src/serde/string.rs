@@ -20,11 +20,7 @@ unsafe impl<'a> SerDe<'a> for &'a str {
             None
         } else {
             let s = &buf[pos + slen..end];
-            if let Ok(new_string_slice) = std::str::from_utf8(s) {
-                Some(new_string_slice)
-            } else {
-                None
-            }
+            std::str::from_utf8(s).ok()
         }
     }
     #[inline(always)]
