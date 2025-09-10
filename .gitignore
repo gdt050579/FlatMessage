@@ -19,3 +19,4 @@ Cargo.lock
 bench_table.md
 bench_table.html
 /.vscode
+.vscode/settings.json
