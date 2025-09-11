@@ -61,5 +61,6 @@ For each structure we also compute the `Data size` (the minimum size required to
 The tests were performed on the following OSes:
 1. **Windows** - Windows 11, 64 bit,11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz (2.80 GHz), RAM 32.0 GB 
 2. **MacOS** - MacOS 15.6.1 24G90 arm64, Apple M1 Pro, RAM 32.0 GB
+3. **Linux** - Kubuntu 24.04.3 LTS x86_64, kernel: 6.8.0-71-generic, 11th Gen Intel(R) Core(TM) i7-11850H (16) @ 4.80GHz , RAM 64.0 GB
 
 
