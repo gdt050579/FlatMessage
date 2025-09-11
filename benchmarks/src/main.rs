@@ -660,7 +660,7 @@ fn print_results(
     let min_size = results[0].min_size;
     for i in results.iter_mut() {
         let current = Some(&i.top_test_name);
-        if !last.is_none() && last != current && !one_algo {
+        if last.is_some() && last != current && !one_algo {
             r.push(dashes);
         }
         last = current;

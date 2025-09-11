@@ -92,8 +92,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
         user: String::from("Administrator").repeat(repeat),
         command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
-        unique_id: 0xABABABAB as u32,  
-        timestamp: 0xFEFEFEFE as u32,
+        unique_id: 0xABABABAB_u32,  
+        timestamp: 0xFEFEFEFE_u32,
     };
     let process_s = ProcessCreatedS {
         struct_name: "ProcessCreated",
@@ -103,8 +103,8 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
         user: String::from("Administrator").repeat(repeat),
         command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
-        timestamp: 0xFEFEFEFE as u32,
-        unique_id: 0xABABABAB as u32,
+        timestamp: 0xFEFEFEFE_u32,
+        unique_id: 0xABABABAB_u32,
         version: NonZeroU8::new(1).unwrap(),
     };
     let mut output = Vec::new();

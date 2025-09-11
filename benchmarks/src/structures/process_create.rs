@@ -33,7 +33,7 @@ pub fn generate() -> ProcessCreated {
         parent: s(String::from("C:\\Windows\\System32\\explorer.exe")),
         user: s(String::from("Administrator")),
         command_line: s(String::from("-help -verbose -debug -output C:\\output.txt")),
-        timestamp: 0xFEFEFEFE as u32,
-        unique_id: 0xABABABAB as u32,
+        timestamp: 0xFEFEFEFE_u32,
+        unique_id: 0xABABABAB_u32,
     }
 }

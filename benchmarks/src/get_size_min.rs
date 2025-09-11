@@ -16,7 +16,7 @@ fn list_size(x: usize) -> usize {
         2
     } else if x < u32::MAX as u64 {
         4
-    } else if x < u64::MAX as u64 {
+    } else if x < u64::MAX {
         8
     } else {
         unreachable!()
