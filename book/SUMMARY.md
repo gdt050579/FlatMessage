@@ -38,6 +38,7 @@
     - [Point](chapter-5/results/point.md)
     - [Long Strings](chapter-5/results/long_strings.md)
     - [Large Vectors](chapter-5/results/large_vectors.md)
+    - [Enum Fields](chapter-5/results/enum_fields.md)
 <!--
   - [Versioning](chapter-3/versioning.md)
   - [Metadata and Introspection](chapter-3/metadata_and_introspection.md)

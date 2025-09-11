@@ -1014,6 +1014,7 @@ fn run_mdbook_tests(test_filter: &str) {
     run_one_mdbook_test("point", test_filter, 500_000);
     run_one_mdbook_test("long_strings", test_filter, 100_000); 
     run_one_mdbook_test("large_vectors", test_filter, 100); 
+    run_one_mdbook_test("enum_fields", test_filter, 500_000);
 }
 
 fn main() {
