@@ -8,6 +8,11 @@ pub enum Format {
     U32on128bits,
 }
 
+/// This function writes a u32 value to a buffer using the specified format.
+/// 
+/// # Safety
+///
+/// This function is unsafe because and should not be used directly (it will be called from the SerDe::write method)
 #[inline(always)]
 pub unsafe fn write(p: *mut u8, pos: usize, value: u32, method: Format) -> usize {
     match method {
@@ -57,6 +62,11 @@ pub unsafe fn write(p: *mut u8, pos: usize, value: u32, method: Format) -> usize
     }
 }
 
+/// This function reads a u32 value from a buffer using the specified format.
+/// 
+/// # Safety
+///
+/// This function is unsafe because and should not be used directly (it will be called from the SerDe::from_buffer_unchecked method)
 #[inline(always)]
 pub unsafe fn read_unchecked(p: *const u8, pos: usize, method: Format) -> (usize, usize) {
     match method {
@@ -85,6 +95,11 @@ pub unsafe fn read_unchecked(p: *const u8, pos: usize, method: Format) -> (usize
     }
 }
 
+/// This function reads a u32 value from a buffer using the specified format.
+/// 
+/// # Safety
+///
+/// This function is unsafe because and should not be used directly (it will be called from the SerDe::from_buffer method)
 #[inline(always)]
 pub unsafe fn read(p: *const u8, pos: usize, len: usize, method: Format) -> Option<(usize, usize)> {
     match method {
