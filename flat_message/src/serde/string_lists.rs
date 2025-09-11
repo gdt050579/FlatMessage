@@ -29,7 +29,7 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Vec<Self>> {
-        let (count, slen) = size::read(buf.as_ptr(), pos, buf.len(), SIZE_FORMAT)?;
+        let (count, slen) = unsafe { size::read(buf.as_ptr(), pos, buf.len(), SIZE_FORMAT)? };
         if count == 0 {
             Some(Vec::new())
         } else {
@@ -43,7 +43,7 @@ unsafe impl<'a> SerDeVec<'a> for &'a str {
             let mut result = Vec::with_capacity(count.min(1024));
             let mut pos = pos + slen;
             for _ in 0..count {
-                let (len, size_len) = size::read(p, pos, buf.len(), SIZE_FORMAT)?;
+                let (len, size_len) = unsafe { size::read(p, pos, buf.len(), SIZE_FORMAT)? };
                 let end = pos + size_len + len;
                 if end > buf.len() {
                     return None;
@@ -113,7 +113,7 @@ unsafe impl<'a> SerDeVec<'a> for String {
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Vec<Self>> {
-        let (count, slen) = size::read(buf.as_ptr(), pos, buf.len(), SIZE_FORMAT)?;
+        let (count, slen) = unsafe { size::read(buf.as_ptr(), pos, buf.len(), SIZE_FORMAT)? };
         if count == 0 {
             Some(Vec::new())
         } else {
@@ -127,7 +127,7 @@ unsafe impl<'a> SerDeVec<'a> for String {
             let mut result = Vec::with_capacity(count.min(1024));
             let mut pos = pos + slen;
             for _ in 0..count {
-                let (len, size_len) = size::read(p, pos, buf.len(), SIZE_FORMAT)?;
+                let (len, size_len) = unsafe { size::read(p, pos, buf.len(), SIZE_FORMAT)? };
                 let end = pos + size_len + len;
                 if end > buf.len() {
                     return None;

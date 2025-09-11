@@ -86,7 +86,7 @@ pub unsafe fn read_unchecked(p: *const u8, pos: usize, method: Format) -> (usize
 }
 
 #[inline(always)]
-pub fn read(p: *const u8, pos: usize, len: usize, method: Format) -> Option<(usize, usize)> {
+pub unsafe fn read(p: *const u8, pos: usize, len: usize, method: Format) -> Option<(usize, usize)> {
     match method {
         Format::U32 => {
             if pos + 4 > len {

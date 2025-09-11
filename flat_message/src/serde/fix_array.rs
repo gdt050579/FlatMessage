@@ -20,7 +20,7 @@ unsafe impl<'a, const N: usize> SerDe<'a> for [u8; N] {
         Self: Sized,
     {
         let (count, slen) =
-            size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)?;
+            unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
         if count != N {
             None
         } else {
@@ -55,16 +55,16 @@ unsafe impl<'a, const N: usize> SerDeSlice<'a> for [u8; N] {
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<&'a [Self]> {
         let (count, slen1) =
-            size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)?;
+            unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
         if count != N {
             return None;
         }
-        let (count, slen2) = size::read(
+        let (count, slen2) = unsafe { size::read(
             buf.as_ptr(),
             pos + slen1,
             buf.len(),
             size::Format::U8withExtension,
-        )?;
+        )? };
         let end = pos + count * N + slen1 + slen2;
         if end > buf.len() {
             None
@@ -143,7 +143,7 @@ unsafe impl<'a, const N: usize> SerDe<'a> for &'a [u8; N] {
         Self: Sized,
     {
         let (count, slen) =
-            size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)?;
+            unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? } ;
         if count != N {
             None
         } else {

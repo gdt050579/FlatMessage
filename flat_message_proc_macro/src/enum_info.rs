@@ -132,7 +132,7 @@ impl EnumInfo {
                     let p = buf.as_ptr();
                     let pos = pos + 4; // skip the name hash
                     let (count, size_len) =
-                        flat_message::size::read_unchecked(p, pos, flat_message::size::Format::#size_format);
+                        unsafe { flat_message::size::read_unchecked(p, pos, flat_message::size::Format::#size_format) };
                     std::slice::from_raw_parts(p.add(pos + size_len) as *const #name, count)
                 }
                 #[inline(always)]
@@ -147,12 +147,12 @@ impl EnumInfo {
                         }
                     }
                     let pos = pos + 4;
-                    let (count, size_len) =  flat_message::size::read(
+                    let (count, size_len) =  unsafe { flat_message::size::read(
                         buf.as_ptr(),
                         pos,
                         buf.len(),
                         flat_message::size::Format::#size_format,
-                    )?;
+                    )? };
                     let end = pos + size_len + count #multiplier;
                     if end > buf.len() {
                         None

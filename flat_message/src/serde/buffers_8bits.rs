@@ -16,7 +16,7 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             #[inline(always)]
             fn from_buffer(buf: &'a [u8], pos: usize) -> Option<&'a [Self]> {
                 let (len, buf_len) =
-                    size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)?;
+                    unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
                 let end = pos + buf_len + len;
                 if end > buf.len() {
                     None
