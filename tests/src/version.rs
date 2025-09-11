@@ -1675,7 +1675,7 @@ mod scenario_30_change_type {
             Active(u8),
             Pending(String),
             #[default] Cancelled,
-        }
+        } 
 
         #[derive(Debug, PartialEq, Eq, FlatMessage)]
         pub struct TestStruct {
@@ -1894,14 +1894,12 @@ fn check_v1_to_v2_scenario_2_using_compatible_versions() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 1 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // v2 contsins a mandatory field "value2" that is not present in v1 -> Error::MissingField
     assert!(result.is_err());
     //println!("{:?}", result);
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -1912,12 +1910,11 @@ fn check_v2_to_v1_scenario_2_using_compatible_versions() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, value2: 2 };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
     //println!("{:?}", result);
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::IncompatibleVersion(2))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::IncompatibleVersion(2)))
     );
 }
 
@@ -1928,14 +1925,12 @@ fn check_v1_to_v2_scenario_3_not_using_compatible_versions() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 1 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // v2 contsins a mandatory field "value2" that is not present in v1 -> Error::MissingField
     assert!(result.is_err());
     //println!("{:?}", result);
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -1945,7 +1940,7 @@ fn check_v2_to_v1_scenario_3_not_using_compatible_versions() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, value2: 2 };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());    
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -1958,7 +1953,7 @@ fn check_v1_to_v2_scenario_4_not_using_compatible_versions_with_mandatory_false(
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 1 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.value, 1);
@@ -1970,7 +1965,7 @@ fn check_v2_to_v1_scenario_4_not_using_compatible_versions_with_mandatory_false(
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, value2: 2 };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());    
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -1983,7 +1978,7 @@ fn check_v2_to_v1_scenario_5_not_using_compatible_versions_with_option_field_wit
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, value2: Some(2) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -1996,7 +1991,7 @@ fn check_v1_to_v2_scenario_5_not_using_compatible_versions_with_option_field_wit
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 1 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // By default, Option<T> is marked with mandatory = false, so it will be defaulted to None if it is not present
     // so the deserialization should be successful
     assert!(result.is_ok());
@@ -2012,7 +2007,7 @@ fn check_v2_to_v1_scenario_6_not_using_compatible_versions_with_option_field_wit
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, value2: Some(2) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2024,7 +2019,7 @@ fn check_v1_to_v2_scenario_6_not_using_compatible_versions_with_option_field_wit
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 1 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.value, 1);
@@ -2038,7 +2033,7 @@ fn check_v2_to_v1_scenario_7_not_using_compatible_versions_with_a_mandatory_opti
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, value2: Some(2) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2051,12 +2046,10 @@ fn check_v1_to_v2_scenario_7_not_using_compatible_versions_with_a_mandatory_opti
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 1 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2066,7 +2059,7 @@ fn check_v1_to_v2_scenario_1_enum() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 1, color: v1::Color::Green };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.value, 1);
@@ -2080,7 +2073,7 @@ fn check_v2_to_v1_scenario_1_enum_without_yellow() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, color: v2::Color::Green };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2094,12 +2087,10 @@ fn check_v2_to_v1_scenario_1_enum_with_yellow() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, color: v2::Color::Yellow };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2110,7 +2101,7 @@ fn check_v1_to_v2_scenario_2_enum() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 1, color: Some(v1::Color::Green) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.value, 1);
@@ -2125,7 +2116,7 @@ fn check_v2_to_v1_scenario_2_enum_without_yellow() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, color: Some(v2::Color::Green) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2140,12 +2131,10 @@ fn check_v2_to_v1_scenario_2_enum_with_yellow() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, color: Some(v2::Color::Yellow) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2155,7 +2144,7 @@ fn check_v2_to_v1_scenario_3_enum_with_yellow() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, color: v2::Color::Yellow };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let d_v1 = v1::TestStruct::deserialize_from(&mut storage).unwrap();
+    let d_v1 = v1::TestStruct::deserialize_from(&storage).unwrap();
     assert_eq!(d_v1.value, 1);
     assert_eq!(d_v1.color, v1::Color::Red); // Red is the default color
 }
@@ -2167,7 +2156,7 @@ fn check_v2_to_v1_scenario_4_enum_with_yellow() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, color: Some(v2::Color::Yellow) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let d_v1 = v1::TestStruct::deserialize_from(&mut storage).unwrap();
+    let d_v1 = v1::TestStruct::deserialize_from(&storage).unwrap();
     assert_eq!(d_v1.value, 1);
     assert_eq!(d_v1.color, None); // None is the default for Option<T>
 }
@@ -2179,7 +2168,7 @@ fn check_v2_to_v1_scenario_1_flags_without_c() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, flags: v2::Flags::A | v2::Flags::B };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2193,12 +2182,10 @@ fn check_v2_to_v1_scenario_1_flags_with_c() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, flags: v2::Flags::C };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2208,7 +2195,7 @@ fn check_v2_to_v1_scenario_2_flags_with_c() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, flags: Some(v2::Flags::C  | v2::Flags::B) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2222,7 +2209,7 @@ fn check_v2_to_v1_scenario_3_flags_with_c() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, flags: v2::Flags::C  | v2::Flags::B };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2236,12 +2223,10 @@ fn check_v2_to_v1_scenario_4_flags_with_c() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, flags: Some(v2::Flags::C  | v2::Flags::B) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2251,7 +2236,7 @@ fn check_v2_to_v1_scenario_1_variant_without_new_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, variant: v2::MyVariant::Byte(42) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2265,12 +2250,10 @@ fn check_v2_to_v1_scenario_1_variant_with_new_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, variant: v2::MyVariant::DWord(12345) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2280,7 +2263,7 @@ fn check_v2_to_v1_scenario_2_variant_with_new_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, variant: Some(v2::MyVariant::DWord(12345)) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2294,7 +2277,7 @@ fn check_v2_to_v1_scenario_3_variant_with_new_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, variant: v2::MyVariant::DWord(12345) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.value, 1);
@@ -2309,12 +2292,10 @@ fn check_v2_to_v1_scenario_4_variant_with_new_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 1, variant: Some(v2::MyVariant::DWord(12345)) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 // Test methods for type change scenarios
@@ -2326,14 +2307,12 @@ fn check_v1_to_v2_scenario_1_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { value: 255 }; // Max u8 value
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     
     // Type changes cause the field to be treated as missing because the field identifier includes type info
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2344,12 +2323,10 @@ fn check_v2_to_v1_scenario_1_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { value: 300 }; // Value that doesn't fit in u8
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2360,12 +2337,10 @@ fn check_v1_to_v2_scenario_2_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { text: "Hello, World!".to_string() };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2376,12 +2351,10 @@ fn check_v2_to_v1_scenario_2_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { text: 42 };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2392,12 +2365,10 @@ fn check_v1_to_v2_scenario_3_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, value: 255 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2408,12 +2379,10 @@ fn check_v2_to_v1_scenario_3_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, value: 300 };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2425,13 +2394,11 @@ fn check_v1_to_v2_scenario_4_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, value: 255 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // Should fail because mandatory field with correct type is missing
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2443,13 +2410,11 @@ fn check_v2_to_v1_scenario_4_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, value: 300 };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     // Should fail because mandatory field with correct type is missing
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2461,7 +2426,7 @@ fn check_v1_to_v2_scenario_5_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, value: 100 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // Should succeed with default value since mandatory = false
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
@@ -2478,7 +2443,7 @@ fn check_v2_to_v1_scenario_5_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, value: 500 };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     // Should succeed with default value since mandatory = false
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
@@ -2494,7 +2459,7 @@ fn check_v1_to_v2_scenario_6_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, value: 255 };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // Should succeed with fallback to default value (42)
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
@@ -2510,7 +2475,7 @@ fn check_v2_to_v1_scenario_6_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, value: 300 };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     // Should succeed with fallback to default value (42)
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
@@ -2527,12 +2492,10 @@ fn check_v1_to_v2_scenario_7_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Green };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2544,12 +2507,10 @@ fn check_v2_to_v1_scenario_7_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::Medium };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2560,13 +2521,11 @@ fn check_v1_to_v2_scenario_7_change_type_with_compatible_values() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Red }; // Red = 1
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // Should fail due to enum type mismatch despite compatible underlying values
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2577,12 +2536,10 @@ fn check_v1_to_v2_scenario_8_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Green };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2593,12 +2550,10 @@ fn check_v2_to_v1_scenario_8_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::Medium };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2610,7 +2565,7 @@ fn check_v1_to_v2_scenario_9_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Blue };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -2626,7 +2581,7 @@ fn check_v2_to_v1_scenario_9_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::VeryDark };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -2642,12 +2597,10 @@ fn check_v1_to_v2_scenario_10_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Green };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2659,12 +2612,10 @@ fn check_v2_to_v1_scenario_10_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::Dark };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2676,7 +2627,7 @@ fn check_v1_to_v2_scenario_11_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Blue };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -2692,7 +2643,7 @@ fn check_v2_to_v1_scenario_11_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::VeryDark };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -2709,12 +2660,10 @@ fn check_v1_to_v2_scenario_12_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Green };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2726,12 +2675,10 @@ fn check_v2_to_v1_scenario_12_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::Medium };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2743,12 +2690,10 @@ fn check_v1_to_v2_scenario_13_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Blue };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2760,12 +2705,10 @@ fn check_v2_to_v1_scenario_13_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::VeryDark };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
-    );
+        assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))));
 }
 
 #[test]
@@ -2777,7 +2720,7 @@ fn check_v1_to_v2_scenario_14_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Green };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -2793,7 +2736,7 @@ fn check_v2_to_v1_scenario_14_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::Dark };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -2809,7 +2752,7 @@ fn check_v1_to_v2_scenario_15_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, col: v1::Color::Blue };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -2825,7 +2768,7 @@ fn check_v2_to_v1_scenario_15_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, col: v2::Nuances::VeryDark };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -2842,12 +2785,10 @@ fn check_v1_to_v2_scenario_16_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::A | v1::Permissions::B };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2859,12 +2800,10 @@ fn check_v2_to_v1_scenario_16_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2876,7 +2815,7 @@ fn check_v1_to_v2_scenario_18_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::B | v1::Permissions::C };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -2892,7 +2831,7 @@ fn check_v2_to_v1_scenario_18_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::WRITE | v2::Rights::EXECUTE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -2908,7 +2847,7 @@ fn check_v1_to_v2_scenario_20_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::B | v1::Permissions::C };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -2924,7 +2863,7 @@ fn check_v2_to_v1_scenario_20_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::WRITE | v2::Rights::EXECUTE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -2942,12 +2881,10 @@ fn check_v1_to_v2_scenario_19_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::A | v1::Permissions::B };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2960,12 +2897,10 @@ fn check_v2_to_v1_scenario_19_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2978,12 +2913,10 @@ fn check_v1_to_v2_scenario_19_change_type_with_all_flags() {
         flags: v1::Permissions::A | v1::Permissions::B | v1::Permissions::C 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -2996,12 +2929,10 @@ fn check_v2_to_v1_scenario_19_change_type_with_all_flags() {
         flags: v2::Rights::READ | v2::Rights::WRITE | v2::Rights::EXECUTE 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3015,12 +2946,10 @@ fn check_v1_to_v2_scenario_19_change_type_with_empty_flags() {
         flags: v1::Permissions::default() // Empty flags
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3034,12 +2963,10 @@ fn check_v2_to_v1_scenario_19_change_type_with_empty_flags() {
         flags: v2::Rights::default() // Empty flags
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3050,12 +2977,10 @@ fn check_v1_to_v2_scenario_19_change_type_single_flag() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 5, flags: v1::Permissions::A }; // A = 1
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3066,12 +2991,10 @@ fn check_v2_to_v1_scenario_19_change_type_single_flag() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 5, flags: v2::Rights::READ }; // READ = 1
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3085,12 +3008,10 @@ fn check_v1_to_v2_scenario_19_change_type_with_max_id() {
         flags: v1::Permissions::B | v1::Permissions::C 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3104,12 +3025,10 @@ fn check_v2_to_v1_scenario_19_change_type_with_max_id() {
         flags: v2::Rights::WRITE | v2::Rights::EXECUTE 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3123,13 +3042,11 @@ fn check_v1_to_v2_scenario_19_change_type_validate_strict_behavior() {
         flags: v1::Permissions::C // C = 4
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // Should fail because validate = strict doesn't allow type conversion fallback
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3143,13 +3060,11 @@ fn check_v2_to_v1_scenario_19_change_type_validate_strict_behavior() {
         flags: v2::Rights::EXECUTE // EXECUTE = 4
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     // Should fail because validate = strict doesn't allow type conversion fallback
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 // Test methods for flag type changes with different representations (u8 vs u16)
@@ -3162,7 +3077,7 @@ fn check_v2_to_v1_scenario_24_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -3179,7 +3094,7 @@ fn check_v1_to_v2_scenario_29_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Cancelled };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -3195,7 +3110,7 @@ fn check_v2_to_v1_scenario_29_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Stopped };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -3212,12 +3127,10 @@ fn check_v1_to_v2_scenario_17_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::A | v1::Permissions::B };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3229,12 +3142,10 @@ fn check_v2_to_v1_scenario_17_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3247,12 +3158,10 @@ fn check_v1_to_v2_scenario_17_change_type_with_all_flags() {
         flags: v1::Permissions::A | v1::Permissions::B | v1::Permissions::C 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3265,12 +3174,10 @@ fn check_v2_to_v1_scenario_17_change_type_with_all_flags() {
         flags: v2::Rights::READ | v2::Rights::WRITE | v2::Rights::EXECUTE 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3283,12 +3190,10 @@ fn check_v1_to_v2_scenario_17_change_type_with_empty_flags() {
         flags: v1::Permissions::default() // Empty flags
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3301,12 +3206,10 @@ fn check_v2_to_v1_scenario_17_change_type_with_empty_flags() {
         flags: v2::Rights::default() // Empty flags
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3317,12 +3220,10 @@ fn check_v1_to_v2_scenario_17_change_type_single_flag() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 5, flags: v1::Permissions::A }; // A = 1
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3333,12 +3234,10 @@ fn check_v2_to_v1_scenario_17_change_type_single_flag() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 5, flags: v2::Rights::READ }; // READ = 1
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3351,12 +3250,10 @@ fn check_v1_to_v2_scenario_17_change_type_with_max_id() {
         flags: v1::Permissions::B | v1::Permissions::C 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3369,12 +3266,10 @@ fn check_v2_to_v1_scenario_17_change_type_with_max_id() {
         flags: v2::Rights::WRITE | v2::Rights::EXECUTE 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 // Test methods for scenario_21_change_type - Flag type changes with different representations (u8 vs u16), mandatory = true, validate = strict
@@ -3387,11 +3282,10 @@ fn check_v1_to_v2_scenario_21_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::A | v1::Permissions::B };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -3404,11 +3298,10 @@ fn check_v2_to_v1_scenario_21_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -3422,11 +3315,10 @@ fn check_v1_to_v2_scenario_21_change_type_with_all_flags() {
         flags: v1::Permissions::A | v1::Permissions::B | v1::Permissions::C 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -3440,11 +3332,10 @@ fn check_v2_to_v1_scenario_21_change_type_with_all_flags() {
         flags: v2::Rights::READ | v2::Rights::WRITE | v2::Rights::EXECUTE 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -3458,11 +3349,10 @@ fn check_v1_to_v2_scenario_22_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::B | v1::Permissions::C };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -3475,11 +3365,10 @@ fn check_v2_to_v1_scenario_22_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::WRITE | v2::Rights::EXECUTE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -3493,11 +3382,10 @@ fn check_v1_to_v2_scenario_22_change_type_with_empty_flags() {
         flags: v1::Permissions::default() // Empty flags
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -3511,11 +3399,10 @@ fn check_v2_to_v1_scenario_22_change_type_with_empty_flags() {
         flags: v2::Rights::default() // Empty flags
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -3529,7 +3416,7 @@ fn check_v1_to_v2_scenario_23_change_type_comprehensive() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::B | v1::Permissions::C };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -3545,7 +3432,7 @@ fn check_v2_to_v1_scenario_23_change_type_comprehensive() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -3562,7 +3449,7 @@ fn check_v1_to_v2_scenario_23_change_type_with_max_id() {
         flags: v1::Permissions::A | v1::Permissions::C 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 255);
@@ -3579,7 +3466,7 @@ fn check_v2_to_v1_scenario_23_change_type_with_max_id() {
         flags: v2::Rights::READ | v2::Rights::EXECUTE 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 255);
@@ -3596,12 +3483,10 @@ fn check_v1_to_v2_scenario_25_change_type_comprehensive() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3613,12 +3498,10 @@ fn check_v2_to_v1_scenario_25_change_type_comprehensive() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(42) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3628,12 +3511,10 @@ fn check_v1_to_v2_scenario_25_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 10, state: v1::Status::Pending("test data".to_string()) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3643,12 +3524,10 @@ fn check_v2_to_v1_scenario_25_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 10, state: v2::Mode::Waiting("waiting for input".to_string()) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3658,12 +3537,10 @@ fn check_v1_to_v2_scenario_25_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 20, state: v1::Status::Cancelled };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3673,12 +3550,10 @@ fn check_v2_to_v1_scenario_25_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 20, state: v2::Mode::Stopped };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3691,12 +3566,10 @@ fn check_v1_to_v2_scenario_25_change_type_with_max_id() {
         state: v1::Status::Active(100) 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3709,12 +3582,10 @@ fn check_v2_to_v1_scenario_25_change_type_with_max_id() {
         state: v2::Mode::Running(200) 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 // Test methods for scenario_26_change_type - Variant type changes with same representation (u8), mandatory = true, validate = strict
@@ -3727,12 +3598,10 @@ fn check_v1_to_v2_scenario_26_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3744,12 +3613,10 @@ fn check_v2_to_v1_scenario_26_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(42) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3759,12 +3626,10 @@ fn check_v1_to_v2_scenario_26_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 10, state: v1::Status::Pending("processing".to_string()) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))));
 }
 
 #[test]
@@ -3774,11 +3639,10 @@ fn check_v2_to_v1_scenario_26_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 10, state: v2::Mode::Waiting("user input".to_string()) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -3789,11 +3653,10 @@ fn check_v1_to_v2_scenario_26_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 20, state: v1::Status::Cancelled };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -3804,11 +3667,10 @@ fn check_v2_to_v1_scenario_26_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 20, state: v2::Mode::Stopped };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -3822,7 +3684,7 @@ fn check_v1_to_v2_scenario_27_change_type_comprehensive() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Pending("test data".to_string()) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -3838,7 +3700,7 @@ fn check_v2_to_v1_scenario_27_change_type_comprehensive() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Waiting("test data".to_string()) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
@@ -3852,7 +3714,7 @@ fn check_v1_to_v2_scenario_27_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 15, state: v1::Status::Cancelled };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 15);
@@ -3866,7 +3728,7 @@ fn check_v2_to_v1_scenario_27_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 15, state: v2::Mode::Stopped };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 15);
@@ -3883,7 +3745,7 @@ fn check_v1_to_v2_scenario_27_change_type_with_max_id() {
         state: v1::Status::Active(100) 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 255);
@@ -3900,7 +3762,7 @@ fn check_v2_to_v1_scenario_27_change_type_with_max_id() {
         state: v2::Mode::Running(200) 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 255);
@@ -3917,11 +3779,10 @@ fn check_v1_to_v2_scenario_28_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -3934,11 +3795,10 @@ fn check_v2_to_v1_scenario_28_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(42) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -3949,11 +3809,10 @@ fn check_v1_to_v2_scenario_28_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 5, state: v1::Status::Pending("data".to_string()) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -3964,11 +3823,10 @@ fn check_v2_to_v1_scenario_28_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 5, state: v2::Mode::Waiting("input".to_string()) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -3980,12 +3838,11 @@ fn check_v1_to_v2_scenario_28_change_type_validate_strict_behavior() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 30, state: v1::Status::Cancelled };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // Should fail because validate = strict doesn't allow type conversion fallback
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -3997,12 +3854,11 @@ fn check_v2_to_v1_scenario_28_change_type_validate_strict_behavior() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 30, state: v2::Mode::Stopped };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     // Should fail because validate = strict doesn't allow type conversion fallback
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_)))
     );
 }
 
@@ -4016,11 +3872,10 @@ fn check_v1_to_v2_scenario_31_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4033,11 +3888,10 @@ fn check_v2_to_v1_scenario_31_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(vec![1, 2, 3]) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4048,11 +3902,10 @@ fn check_v1_to_v2_scenario_31_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 10, state: v1::Status::Pending("processing".to_string()) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4063,11 +3916,10 @@ fn check_v2_to_v1_scenario_31_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 10, state: v2::Mode::Waiting("input".to_string()) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4078,11 +3930,10 @@ fn check_v1_to_v2_scenario_31_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 20, state: v1::Status::Cancelled };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4093,11 +3944,10 @@ fn check_v2_to_v1_scenario_31_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 20, state: v2::Mode::Stopped };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4111,11 +3961,10 @@ fn check_v1_to_v2_scenario_31_change_type_with_max_id() {
         state: v1::Status::Active(100) 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4129,11 +3978,10 @@ fn check_v2_to_v1_scenario_31_change_type_with_max_id() {
         state: v2::Mode::Running(vec![100, 200, 300]) 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4147,11 +3995,10 @@ fn check_v1_to_v2_scenario_30_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4164,11 +4011,10 @@ fn check_v2_to_v1_scenario_30_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(vec![1, 2, 3]) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4179,11 +4025,10 @@ fn check_v1_to_v2_scenario_30_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 10, state: v1::Status::Pending("processing".to_string()) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4194,11 +4039,10 @@ fn check_v2_to_v1_scenario_30_change_type_with_string_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 10, state: v2::Mode::Waiting("input".to_string()) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4209,11 +4053,10 @@ fn check_v1_to_v2_scenario_30_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 20, state: v1::Status::Cancelled };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4224,11 +4067,10 @@ fn check_v2_to_v1_scenario_30_change_type_with_unit_variant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 20, state: v2::Mode::Stopped };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4242,11 +4084,10 @@ fn check_v1_to_v2_scenario_30_change_type_with_max_id() {
         state: v1::Status::Active(100) 
     };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4260,11 +4101,10 @@ fn check_v2_to_v1_scenario_30_change_type_with_max_id() {
         state: v2::Mode::Running(vec![100, 200, 300]) 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4276,12 +4116,11 @@ fn check_v1_to_v2_scenario_30_change_type_validate_irrelevant() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 50, state: v1::Status::Active(75) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     // Should fail with FieldIsMissing, not FailToDeserialize, proving validate is irrelevant
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4293,12 +4132,11 @@ fn check_v2_to_v1_scenario_30_change_type_validate_irrelevant() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 50, state: v2::Mode::Running(vec![75, 150]) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     // Should fail with FieldIsMissing, not FailToDeserialize, proving validate is irrelevant
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4309,11 +4147,10 @@ fn check_v1_to_v2_scenario_30_change_type_empty_vector() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 5, state: v1::Status::Cancelled };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4327,11 +4164,10 @@ fn check_v2_to_v1_scenario_30_change_type_large_vector() {
         state: v2::Mode::Running(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) 
     };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
-        true
+    assert!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_)))
     );
 }
 
@@ -4345,7 +4181,7 @@ fn check_v1_to_v2_scenario_32_change_type() {
     let mut storage = Storage::default();
     let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
+    let result = v2::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v2 = result.unwrap();
     assert_eq!(d_v2.id, 1);
@@ -4361,7 +4197,7 @@ fn check_v2_to_v1_scenario_33_change_type() {
     let mut storage = Storage::default();
     let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(vec![1, 2, 3]) };
     d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
+    let result = v1::TestStruct::deserialize_from(&storage);
     assert!(result.is_ok());
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
