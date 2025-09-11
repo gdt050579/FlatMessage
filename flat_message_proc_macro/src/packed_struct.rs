@@ -69,9 +69,7 @@ impl<'a> PackedStruct<'a> {
             let serde_trait = field.data_type.serde_trait();
             let inner_var = format_ident!("__internal__{index}_{}__", field.name);
             v.push(quote! {
-                let Some(#inner_var) = flat_message::#serde_trait::from_buffer(buf,pos) else {
-                    return None;
-                };
+                let #inner_var = flat_message::#serde_trait::from_buffer(buf,pos)?;
                 pos += ::flat_message::#serde_trait::size(&#inner_var);
             });
             first_field = false;
