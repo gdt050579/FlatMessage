@@ -771,7 +771,7 @@ fn check_serde_into_different_struct() {
     let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestSmallerStruct::deserialize_from(&output);
-    assert_eq!(b.is_err(), true);
+    assert!(b.is_err());
 }
 
 #[test]
@@ -807,5 +807,5 @@ fn check_serde_into_different_type() {
     let mut output = Storage::default();
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestStruct2::deserialize_from(&output);
-    assert_eq!(b.is_err(), true);
+    assert!(b.is_err());
 }

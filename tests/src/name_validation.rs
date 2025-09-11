@@ -31,7 +31,7 @@ fn check_serde_name_validation() {
 
     // from TestStruct2 to TestStruct1 (validation name required -> should not be possible)
     let b = TestStruct1::deserialize_from(&output_2);
-    assert_eq!(b.is_err(), true);
+    assert!(b.is_err());
     assert_eq!(b.err(), Some(flat_message::Error::UnmatchedName));
 
     // from TestStruct2 to TestStruct2
@@ -111,7 +111,7 @@ fn check_interchangeability_ignoring_name_3() {
     let mut s = Storage::default();
     ts1.serialize_to(&mut s, Config::default()).unwrap();
     let b = TestStruct2::deserialize_from(&s);
-    assert_eq!(b.is_err(), true);
+    assert!(b.is_err());
     assert_eq!(b.err(), Some(flat_message::Error::UnmatchedName));
 }
 
@@ -136,7 +136,7 @@ fn check_interchangeability_ignoring_name_4() {
     let mut s = Storage::default();
     ts1.serialize_to(&mut s, Config::default()).unwrap();
     let b = TestStruct2::deserialize_from(&s);
-    assert_eq!(b.is_err(), true);
+    assert!(b.is_err());
     assert_eq!(b.err(), Some(flat_message::Error::NameNotStored));
 }
 
