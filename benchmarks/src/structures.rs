@@ -11,3 +11,4 @@ pub(crate) mod process_create;
 pub(crate) mod small_enum_lists;
 pub(crate) mod string_lists;
 pub(crate) mod vectors;
+pub(crate) mod option_fields;
