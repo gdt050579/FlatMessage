@@ -336,7 +336,7 @@ fn check_task_example() {
 
         tags: Vec<String>,
     }
-
+ 
     let task = Task {
         title: "Learn FlatMessage".to_string(),
         description: Some("Read the documentation".to_string()),

@@ -2931,23 +2931,228 @@ fn check_v2_to_v1_scenario_20_change_type() {
     assert!(d_v1.flags.is_empty()); // Falls back to default (empty) flag value
 }
 
-// Test methods for flag type changes with different representations (u8 vs u16)
+// Test methods for scenario_19_change_type - Flag type changes with same representation (u8), mandatory = false, validate = strict
 #[test]
-fn check_v1_to_v2_scenario_23_change_type() {
-    use scenario_23_change_type::*;
-    // v1 to v2 for scenario 23 - Flag representation change from u8 to u16 with mandatory = false, validate = strict
-    // Different representations mean the field is not found, but mandatory = false allows default value
-    // validate = strict is irrelevant since field identification fails
+fn check_v1_to_v2_scenario_19_change_type() {
+    use scenario_19_change_type::*;
+    // v1 to v2 for scenario 19 - Flag type change from Permissions to Rights
+    // Since both flags use same representation (u8) and same field name (flags), the field is found
+    // However, flag type validation fails because Permissions != Rights with validate = strict
+    // Even though mandatory = false, validate = strict means validation failure causes error
     let mut storage = Storage::default();
-    let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::B | v1::Permissions::C };
+    let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::A | v1::Permissions::B };
     d_v1.serialize_to(&mut storage, Config::default()).unwrap();
     let result = v2::TestStruct::deserialize_from(&mut storage);
-    assert!(result.is_ok());
-    let d_v2 = result.unwrap();
-    assert_eq!(d_v2.id, 1);
-    assert!(d_v2.flags.is_empty()); // Default (empty) flag value since mandatory = false
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
 }
 
+#[test]
+fn check_v2_to_v1_scenario_19_change_type() {
+    use scenario_19_change_type::*;
+    // v2 to v1 for scenario 19 - Flag type change from Rights to Permissions
+    // Since both flags use same representation (u8) and same field name (flags), the field is found
+    // However, flag type validation fails because Rights != Permissions with validate = strict
+    // Even though mandatory = false, validate = strict means validation failure causes error
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_19_change_type_with_all_flags() {
+    use scenario_19_change_type::*;
+    // Test with all flags set in v1 - should still fail due to type mismatch with validate = strict
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 42, 
+        flags: v1::Permissions::A | v1::Permissions::B | v1::Permissions::C 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_19_change_type_with_all_flags() {
+    use scenario_19_change_type::*;
+    // Test with all flags set in v2 - should still fail due to type mismatch with validate = strict
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 42, 
+        flags: v2::Rights::READ | v2::Rights::WRITE | v2::Rights::EXECUTE 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_19_change_type_with_empty_flags() {
+    use scenario_19_change_type::*;
+    // Test with empty flags - should still fail due to type mismatch with validate = strict
+    // Even empty flags have type information that must match
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 100, 
+        flags: v1::Permissions::default() // Empty flags
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_19_change_type_with_empty_flags() {
+    use scenario_19_change_type::*;
+    // Test with empty flags - should still fail due to type mismatch with validate = strict
+    // Even empty flags have type information that must match
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 100, 
+        flags: v2::Rights::default() // Empty flags
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_19_change_type_single_flag() {
+    use scenario_19_change_type::*;
+    // Test with single flag set - A in v1 (value 1) vs READ in v2 (value 1)
+    // Even though they have the same underlying bit value, type validation should fail with validate = strict
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 5, flags: v1::Permissions::A }; // A = 1
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_19_change_type_single_flag() {
+    use scenario_19_change_type::*;
+    // Test with single flag set - READ in v2 (value 1) vs A in v1 (value 1)
+    // Even though they have the same underlying bit value, type validation should fail with validate = strict
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 5, flags: v2::Rights::READ }; // READ = 1
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_19_change_type_with_max_id() {
+    use scenario_19_change_type::*;
+    // Test with maximum u8 id value to ensure id field doesn't interfere
+    // Should still fail due to validate = strict regardless of mandatory = false
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 255, // Max u8 value
+        flags: v1::Permissions::B | v1::Permissions::C 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_19_change_type_with_max_id() {
+    use scenario_19_change_type::*;
+    // Test with maximum u8 id value to ensure id field doesn't interfere
+    // Should still fail due to validate = strict regardless of mandatory = false
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 255, // Max u8 value
+        flags: v2::Rights::WRITE | v2::Rights::EXECUTE 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_19_change_type_validate_strict_behavior() {
+    use scenario_19_change_type::*;
+    // Test to demonstrate that validate = strict overrides mandatory = false
+    // When field is found but type validation fails, strict validation causes error
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 10, 
+        flags: v1::Permissions::C // C = 4
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    // Should fail because validate = strict doesn't allow type conversion fallback
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_19_change_type_validate_strict_behavior() {
+    use scenario_19_change_type::*;
+    // Test to demonstrate that validate = strict overrides mandatory = false
+    // When field is found but type validation fails, strict validation causes error
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 10, 
+        flags: v2::Rights::EXECUTE // EXECUTE = 4
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    // Should fail because validate = strict doesn't allow type conversion fallback
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+// Test methods for flag type changes with different representations (u8 vs u16)
 #[test]
 fn check_v2_to_v1_scenario_24_change_type() {
     use scenario_24_change_type::*;
@@ -2964,72 +3169,6 @@ fn check_v2_to_v1_scenario_24_change_type() {
     assert!(d_v1.flags.is_empty()); // Default (empty) flag value since mandatory = false
 }
 
-// Test methods for variant type changes with same representation (u8 vs u8)
-#[test]
-fn check_v1_to_v2_scenario_25_change_type() {
-    use scenario_25_change_type::*;
-    // v1 to v2 for scenario 25 - Variant type change from Status to Mode
-    // Since both variants use same representation (u8) and same field name (state), the field is found
-    // However, variant type validation fails because Status != Mode (default: validate = strict)
-    let mut storage = Storage::default();
-    let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
-    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
-    assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
-}
-
-#[test]
-fn check_v2_to_v1_scenario_25_change_type() {
-    use scenario_25_change_type::*;
-    // v2 to v1 for scenario 25 - Variant type change from Mode to Status
-    // Since both variants use same representation (u8) and same field name (state), the field is found
-    // However, variant type validation fails because Mode != Status (default: validate = strict)
-    let mut storage = Storage::default();
-    let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(42) };
-    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
-    assert!(result.is_err());
-    assert_eq!(
-        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
-        true
-    );
-}
-
-#[test]
-fn check_v1_to_v2_scenario_27_change_type() {
-    use scenario_27_change_type::*;
-    // v1 to v2 for scenario 27 - Variant type change with mandatory = true, validate = fallback
-    // Field is found (same name, same representation), validation fails but fallback is allowed
-    // Should succeed with default variant value since validate = fallback
-    let mut storage = Storage::default();
-    let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Pending("test".to_string()) };
-    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v2::TestStruct::deserialize_from(&mut storage);
-    assert!(result.is_ok());
-    let d_v2 = result.unwrap();
-    assert_eq!(d_v2.id, 1);
-    assert_eq!(d_v2.state, v2::Mode::Stopped); // Falls back to default variant value
-}
-
-#[test]
-fn check_v2_to_v1_scenario_27_change_type() {
-    use scenario_27_change_type::*;
-    // v2 to v1 for scenario 27 - Variant type change with mandatory = true, validate = fallback
-    // Field is found (same name, same representation), validation fails but fallback is allowed
-    // Should succeed with default variant value since validate = fallback
-    let mut storage = Storage::default();
-    let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Waiting("test".to_string()) };
-    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
-    let result = v1::TestStruct::deserialize_from(&mut storage);
-    assert!(result.is_ok());
-    let d_v1 = result.unwrap();
-    assert_eq!(d_v1.id, 1);
-    assert_eq!(d_v1.state, v1::Status::Cancelled); // Falls back to default variant value
-}
 
 #[test]
 fn check_v1_to_v2_scenario_29_change_type() {
@@ -3061,6 +3200,1139 @@ fn check_v2_to_v1_scenario_29_change_type() {
     let d_v1 = result.unwrap();
     assert_eq!(d_v1.id, 1);
     assert_eq!(d_v1.state, v1::Status::Cancelled); // Falls back to default variant value
+}
+
+// Test methods for scenario_17_change_type - Flag type changes with same representation (u8), mandatory = true, validate = strict
+#[test]
+fn check_v1_to_v2_scenario_17_change_type() {
+    use scenario_17_change_type::*;
+    // v1 to v2 for scenario 17 - Flag type change from Permissions to Rights
+    // Since both flags use same representation (u8) and same field name (flags), the field is found
+    // However, flag type validation fails because Permissions != Rights with validate = strict
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::A | v1::Permissions::B };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_17_change_type() {
+    use scenario_17_change_type::*;
+    // v2 to v1 for scenario 17 - Flag type change from Rights to Permissions
+    // Since both flags use same representation (u8) and same field name (flags), the field is found
+    // However, flag type validation fails because Rights != Permissions with validate = strict
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_17_change_type_with_all_flags() {
+    use scenario_17_change_type::*;
+    // Test with all flags set in v1 - should still fail due to type mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 42, 
+        flags: v1::Permissions::A | v1::Permissions::B | v1::Permissions::C 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_17_change_type_with_all_flags() {
+    use scenario_17_change_type::*;
+    // Test with all flags set in v2 - should still fail due to type mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 42, 
+        flags: v2::Rights::READ | v2::Rights::WRITE | v2::Rights::EXECUTE 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_17_change_type_with_empty_flags() {
+    use scenario_17_change_type::*;
+    // Test with empty flags - should still fail due to type mismatch even with no flags set
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 100, 
+        flags: v1::Permissions::default() // Empty flags
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_17_change_type_with_empty_flags() {
+    use scenario_17_change_type::*;
+    // Test with empty flags - should still fail due to type mismatch even with no flags set
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 100, 
+        flags: v2::Rights::default() // Empty flags
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_17_change_type_single_flag() {
+    use scenario_17_change_type::*;
+    // Test with single flag set - A in v1 (value 1) vs READ in v2 (value 1)
+    // Even though they have the same underlying bit value, type validation should fail
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 5, flags: v1::Permissions::A }; // A = 1
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_17_change_type_single_flag() {
+    use scenario_17_change_type::*;
+    // Test with single flag set - READ in v2 (value 1) vs A in v1 (value 1)
+    // Even though they have the same underlying bit value, type validation should fail
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 5, flags: v2::Rights::READ }; // READ = 1
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_17_change_type_with_max_id() {
+    use scenario_17_change_type::*;
+    // Test with maximum u8 id value to ensure id field doesn't interfere
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 255, // Max u8 value
+        flags: v1::Permissions::B | v1::Permissions::C 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_17_change_type_with_max_id() {
+    use scenario_17_change_type::*;
+    // Test with maximum u8 id value to ensure id field doesn't interfere
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 255, // Max u8 value
+        flags: v2::Rights::WRITE | v2::Rights::EXECUTE 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+// Test methods for scenario_21_change_type - Flag type changes with different representations (u8 vs u16), mandatory = true, validate = strict
+#[test]
+fn check_v1_to_v2_scenario_21_change_type() {
+    use scenario_21_change_type::*;
+    // v1 to v2 for scenario 21 - Flag representation change from u8 to u16 with mandatory = true, validate = strict
+    // Different representations (u8 vs u16) mean the field is not found, so mandatory = true causes failure
+    // validate setting is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::A | v1::Permissions::B };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_21_change_type() {
+    use scenario_21_change_type::*;
+    // v2 to v1 for scenario 21 - Flag representation change from u16 to u8 with mandatory = true, validate = strict
+    // Different representations (u16 vs u8) mean the field is not found, so mandatory = true causes failure
+    // validate setting is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_21_change_type_with_all_flags() {
+    use scenario_21_change_type::*;
+    // Test with all flags set - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 42, 
+        flags: v1::Permissions::A | v1::Permissions::B | v1::Permissions::C 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_21_change_type_with_all_flags() {
+    use scenario_21_change_type::*;
+    // Test with all flags set - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 42, 
+        flags: v2::Rights::READ | v2::Rights::WRITE | v2::Rights::EXECUTE 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+// Test methods for scenario_22_change_type - Flag type changes with different representations (u8 vs u16), mandatory = true, validate = fallback
+#[test]
+fn check_v1_to_v2_scenario_22_change_type() {
+    use scenario_22_change_type::*;
+    // v1 to v2 for scenario 22 - Flag representation change from u8 to u16 with mandatory = true, validate = fallback
+    // Different representations mean the field is not found, so mandatory = true causes failure
+    // validate = fallback is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::B | v1::Permissions::C };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_22_change_type() {
+    use scenario_22_change_type::*;
+    // v2 to v1 for scenario 22 - Flag representation change from u16 to u8 with mandatory = true, validate = fallback
+    // Different representations mean the field is not found, so mandatory = true causes failure
+    // validate = fallback is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::WRITE | v2::Rights::EXECUTE };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_22_change_type_with_empty_flags() {
+    use scenario_22_change_type::*;
+    // Test with empty flags - should still fail due to representation mismatch and mandatory = true
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 100, 
+        flags: v1::Permissions::default() // Empty flags
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_22_change_type_with_empty_flags() {
+    use scenario_22_change_type::*;
+    // Test with empty flags - should still fail due to representation mismatch and mandatory = true
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 100, 
+        flags: v2::Rights::default() // Empty flags
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+// Test methods for scenario_23_change_type - Flag type changes with different representations (u8 vs u16), mandatory = false, validate = strict
+#[test]
+fn check_v1_to_v2_scenario_23_change_type_comprehensive() {
+    use scenario_23_change_type::*;
+    // v1 to v2 for scenario 23 - Flag representation change from u8 to u16 with mandatory = false, validate = strict
+    // Different representations mean the field is not found, but mandatory = false allows default value
+    // validate = strict is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, flags: v1::Permissions::B | v1::Permissions::C };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v2 = result.unwrap();
+    assert_eq!(d_v2.id, 1);
+    assert!(d_v2.flags.is_empty()); // Default (empty) flag value since mandatory = false
+}
+
+#[test]
+fn check_v2_to_v1_scenario_23_change_type_comprehensive() {
+    use scenario_23_change_type::*;
+    // v2 to v1 for scenario 23 - Flag representation change from u16 to u8 with mandatory = false, validate = strict
+    // Different representations mean the field is not found, but mandatory = false allows default value
+    // validate = strict is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, flags: v2::Rights::READ | v2::Rights::WRITE };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v1 = result.unwrap();
+    assert_eq!(d_v1.id, 1);
+    assert!(d_v1.flags.is_empty()); // Default (empty) flag value since mandatory = false
+}
+
+#[test]
+fn check_v1_to_v2_scenario_23_change_type_with_max_id() {
+    use scenario_23_change_type::*;
+    // Test with maximum u8 id value - should succeed with default flags since mandatory = false
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 255, // Max u8 value
+        flags: v1::Permissions::A | v1::Permissions::C 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v2 = result.unwrap();
+    assert_eq!(d_v2.id, 255);
+    assert!(d_v2.flags.is_empty()); // Default flag value since mandatory = false
+}
+
+#[test]
+fn check_v2_to_v1_scenario_23_change_type_with_max_id() {
+    use scenario_23_change_type::*;
+    // Test with maximum u8 id value - should succeed with default flags since mandatory = false
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 255, // Max u8 value
+        flags: v2::Rights::READ | v2::Rights::EXECUTE 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v1 = result.unwrap();
+    assert_eq!(d_v1.id, 255);
+    assert!(d_v1.flags.is_empty()); // Default flag value since mandatory = false
+}
+
+// Test methods for scenario_25_change_type - Variant type changes with same representation (u8), default attributes (mandatory=true, validate=strict)
+#[test]
+fn check_v1_to_v2_scenario_25_change_type_comprehensive() {
+    use scenario_25_change_type::*;
+    // v1 to v2 for scenario 25 - Variant type change from Status to Mode
+    // Since both variants use same representation (u8) and same field name (state), the field is found
+    // However, variant type validation fails because Status != Mode (default: validate = strict)
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_25_change_type_comprehensive() {
+    use scenario_25_change_type::*;
+    // v2 to v1 for scenario 25 - Variant type change from Mode to Status
+    // Since both variants use same representation (u8) and same field name (state), the field is found
+    // However, variant type validation fails because Mode != Status (default: validate = strict)
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(42) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_25_change_type_with_string_variant() {
+    use scenario_25_change_type::*;
+    // Test with string variant - should still fail due to type mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 10, state: v1::Status::Pending("test data".to_string()) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_25_change_type_with_string_variant() {
+    use scenario_25_change_type::*;
+    // Test with string variant - should still fail due to type mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 10, state: v2::Mode::Waiting("waiting for input".to_string()) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_25_change_type_with_unit_variant() {
+    use scenario_25_change_type::*;
+    // Test with unit variant (Cancelled/Stopped) - should still fail due to type mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 20, state: v1::Status::Cancelled };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_25_change_type_with_unit_variant() {
+    use scenario_25_change_type::*;
+    // Test with unit variant (Stopped/Cancelled) - should still fail due to type mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 20, state: v2::Mode::Stopped };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_25_change_type_with_max_id() {
+    use scenario_25_change_type::*;
+    // Test with maximum u8 id value to ensure id field doesn't interfere
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 255, // Max u8 value
+        state: v1::Status::Active(100) 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_25_change_type_with_max_id() {
+    use scenario_25_change_type::*;
+    // Test with maximum u8 id value to ensure id field doesn't interfere
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 255, // Max u8 value
+        state: v2::Mode::Running(200) 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+// Test methods for scenario_26_change_type - Variant type changes with same representation (u8), mandatory = true, validate = strict
+#[test]
+fn check_v1_to_v2_scenario_26_change_type() {
+    use scenario_26_change_type::*;
+    // v1 to v2 for scenario 26 - Variant type change from Status to Mode
+    // Since both variants use same representation (u8) and same field name (state), the field is found
+    // However, variant type validation fails because Status != Mode with validate = strict
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_26_change_type() {
+    use scenario_26_change_type::*;
+    // v2 to v1 for scenario 26 - Variant type change from Mode to Status
+    // Since both variants use same representation (u8) and same field name (state), the field is found
+    // However, variant type validation fails because Mode != Status with validate = strict
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(42) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_26_change_type_with_string_variant() {
+    use scenario_26_change_type::*;
+    // Test with string variant - should still fail due to type mismatch with validate = strict
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 10, state: v1::Status::Pending("processing".to_string()) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_26_change_type_with_string_variant() {
+    use scenario_26_change_type::*;
+    // Test with string variant - should still fail due to type mismatch with validate = strict
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 10, state: v2::Mode::Waiting("user input".to_string()) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_26_change_type_with_unit_variant() {
+    use scenario_26_change_type::*;
+    // Test with unit variant - should still fail due to type mismatch with validate = strict
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 20, state: v1::Status::Cancelled };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_26_change_type_with_unit_variant() {
+    use scenario_26_change_type::*;
+    // Test with unit variant - should still fail due to type mismatch with validate = strict
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 20, state: v2::Mode::Stopped };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+// Test methods for scenario_27_change_type - Variant type changes with same representation (u8), mandatory = true, validate = fallback
+#[test]
+fn check_v1_to_v2_scenario_27_change_type_comprehensive() {
+    use scenario_27_change_type::*;
+    // v1 to v2 for scenario 27 - Variant type change with mandatory = true, validate = fallback
+    // Field is found (same name, same representation), validation fails but fallback is allowed
+    // Should succeed with default variant value since validate = fallback
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Pending("test data".to_string()) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v2 = result.unwrap();
+    assert_eq!(d_v2.id, 1);
+    assert_eq!(d_v2.state, v2::Mode::Stopped); // Falls back to default variant value
+}
+
+#[test]
+fn check_v2_to_v1_scenario_27_change_type_comprehensive() {
+    use scenario_27_change_type::*;
+    // v2 to v1 for scenario 27 - Variant type change with mandatory = true, validate = fallback
+    // Field is found (same name, same representation), validation fails but fallback is allowed
+    // Should succeed with default variant value since validate = fallback
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Waiting("test data".to_string()) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v1 = result.unwrap();
+    assert_eq!(d_v1.id, 1);
+    assert_eq!(d_v1.state, v1::Status::Cancelled); // Falls back to default variant value
+}
+
+#[test]
+fn check_v1_to_v2_scenario_27_change_type_with_unit_variant() {
+    use scenario_27_change_type::*;
+    // Test with unit variant - should succeed with fallback to default
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 15, state: v1::Status::Cancelled };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v2 = result.unwrap();
+    assert_eq!(d_v2.id, 15);
+    assert_eq!(d_v2.state, v2::Mode::Stopped); // Falls back to default variant value
+}
+
+#[test]
+fn check_v2_to_v1_scenario_27_change_type_with_unit_variant() {
+    use scenario_27_change_type::*;
+    // Test with unit variant - should succeed with fallback to default
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 15, state: v2::Mode::Stopped };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v1 = result.unwrap();
+    assert_eq!(d_v1.id, 15);
+    assert_eq!(d_v1.state, v1::Status::Cancelled); // Falls back to default variant value
+}
+
+#[test]
+fn check_v1_to_v2_scenario_27_change_type_with_max_id() {
+    use scenario_27_change_type::*;
+    // Test with maximum u8 id value - should succeed with fallback
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 255, // Max u8 value
+        state: v1::Status::Active(100) 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v2 = result.unwrap();
+    assert_eq!(d_v2.id, 255);
+    assert_eq!(d_v2.state, v2::Mode::Stopped); // Falls back to default variant value
+}
+
+#[test]
+fn check_v2_to_v1_scenario_27_change_type_with_max_id() {
+    use scenario_27_change_type::*;
+    // Test with maximum u8 id value - should succeed with fallback
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 255, // Max u8 value
+        state: v2::Mode::Running(200) 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_ok());
+    let d_v1 = result.unwrap();
+    assert_eq!(d_v1.id, 255);
+    assert_eq!(d_v1.state, v1::Status::Cancelled); // Falls back to default variant value
+}
+
+// Test methods for scenario_28_change_type - Variant type changes with same representation (u8), mandatory = false, validate = strict
+#[test]
+fn check_v1_to_v2_scenario_28_change_type() {
+    use scenario_28_change_type::*;
+    // v1 to v2 for scenario 28 - Variant type change with mandatory = false, validate = strict
+    // Field is found (same name, same representation), but variant type validation fails with strict validation
+    // Since validation is strict, should fail regardless of mandatory setting
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_28_change_type() {
+    use scenario_28_change_type::*;
+    // v2 to v1 for scenario 28 - Variant type change with mandatory = false, validate = strict
+    // Field is found (same name, same representation), but variant type validation fails with strict validation
+    // Since validation is strict, should fail regardless of mandatory setting
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(42) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_28_change_type_with_string_variant() {
+    use scenario_28_change_type::*;
+    // Test with string variant - should still fail due to validate = strict
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 5, state: v1::Status::Pending("data".to_string()) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_28_change_type_with_string_variant() {
+    use scenario_28_change_type::*;
+    // Test with string variant - should still fail due to validate = strict
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 5, state: v2::Mode::Waiting("input".to_string()) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_28_change_type_validate_strict_behavior() {
+    use scenario_28_change_type::*;
+    // Test to demonstrate that validate = strict takes precedence over mandatory = false
+    // When field is found but type validation fails, strict validation causes error
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 30, state: v1::Status::Cancelled };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    // Should fail because validate = strict doesn't allow type conversion fallback
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_28_change_type_validate_strict_behavior() {
+    use scenario_28_change_type::*;
+    // Test to demonstrate that validate = strict takes precedence over mandatory = false
+    // When field is found but type validation fails, strict validation causes error
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 30, state: v2::Mode::Stopped };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    // Should fail because validate = strict doesn't allow type conversion fallback
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FailToDeserialize(_))),
+        true
+    );
+}
+
+// Test methods for scenario_31_change_type - Variant type changes with different representations (u8 vs u16), mandatory = true, validate = fallback
+#[test]
+fn check_v1_to_v2_scenario_31_change_type() {
+    use scenario_31_change_type::*;
+    // v1 to v2 for scenario 31 - Variant representation change from u8 to u16 with mandatory = true, validate = fallback
+    // Different representations mean the field is not found, so mandatory = true causes failure
+    // validate = fallback is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_31_change_type() {
+    use scenario_31_change_type::*;
+    // v2 to v1 for scenario 31 - Variant representation change from u16 to u8 with mandatory = true, validate = fallback
+    // Different representations mean the field is not found, so mandatory = true causes failure
+    // validate = fallback is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(vec![1, 2, 3]) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_31_change_type_with_string_variant() {
+    use scenario_31_change_type::*;
+    // Test with string variant - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 10, state: v1::Status::Pending("processing".to_string()) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_31_change_type_with_string_variant() {
+    use scenario_31_change_type::*;
+    // Test with string variant - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 10, state: v2::Mode::Waiting("input".to_string()) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_31_change_type_with_unit_variant() {
+    use scenario_31_change_type::*;
+    // Test with unit variant - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 20, state: v1::Status::Cancelled };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_31_change_type_with_unit_variant() {
+    use scenario_31_change_type::*;
+    // Test with unit variant - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 20, state: v2::Mode::Stopped };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_31_change_type_with_max_id() {
+    use scenario_31_change_type::*;
+    // Test with maximum u8 id value - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 255, // Max u8 value
+        state: v1::Status::Active(100) 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_31_change_type_with_max_id() {
+    use scenario_31_change_type::*;
+    // Test with maximum u8 id value - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 255, // Max u8 value
+        state: v2::Mode::Running(vec![100, 200, 300]) 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+// Test methods for scenario_30_change_type - Variant type changes with different representations (u8 vs u16), mandatory = true, validate = strict
+#[test]
+fn check_v1_to_v2_scenario_30_change_type() {
+    use scenario_30_change_type::*;
+    // v1 to v2 for scenario 30 - Variant representation change from u8 to u16 with mandatory = true, validate = strict
+    // Different representations (u8 vs u16) mean the field is not found, so mandatory = true causes failure
+    // validate setting is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 1, state: v1::Status::Active(42) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_30_change_type() {
+    use scenario_30_change_type::*;
+    // v2 to v1 for scenario 30 - Variant representation change from u16 to u8 with mandatory = true, validate = strict
+    // Different representations (u16 vs u8) mean the field is not found, so mandatory = true causes failure
+    // validate setting is irrelevant since field identification fails
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 1, state: v2::Mode::Running(vec![1, 2, 3]) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_30_change_type_with_string_variant() {
+    use scenario_30_change_type::*;
+    // Test with string variant - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 10, state: v1::Status::Pending("processing".to_string()) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_30_change_type_with_string_variant() {
+    use scenario_30_change_type::*;
+    // Test with string variant - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 10, state: v2::Mode::Waiting("input".to_string()) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_30_change_type_with_unit_variant() {
+    use scenario_30_change_type::*;
+    // Test with unit variant - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 20, state: v1::Status::Cancelled };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_30_change_type_with_unit_variant() {
+    use scenario_30_change_type::*;
+    // Test with unit variant - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 20, state: v2::Mode::Stopped };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_30_change_type_with_max_id() {
+    use scenario_30_change_type::*;
+    // Test with maximum u8 id value - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { 
+        id: 255, // Max u8 value
+        state: v1::Status::Active(100) 
+    };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_30_change_type_with_max_id() {
+    use scenario_30_change_type::*;
+    // Test with maximum u8 id value - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 255, // Max u8 value
+        state: v2::Mode::Running(vec![100, 200, 300]) 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_30_change_type_validate_irrelevant() {
+    use scenario_30_change_type::*;
+    // Test to demonstrate that validate = strict is irrelevant when field identification fails
+    // Different representations mean field not found, so validate setting doesn't matter
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 50, state: v1::Status::Active(75) };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    // Should fail with FieldIsMissing, not FailToDeserialize, proving validate is irrelevant
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_30_change_type_validate_irrelevant() {
+    use scenario_30_change_type::*;
+    // Test to demonstrate that validate = strict is irrelevant when field identification fails
+    // Different representations mean field not found, so validate setting doesn't matter
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { id: 50, state: v2::Mode::Running(vec![75, 150]) };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    // Should fail with FieldIsMissing, not FailToDeserialize, proving validate is irrelevant
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v1_to_v2_scenario_30_change_type_empty_vector() {
+    use scenario_30_change_type::*;
+    // Test v2 with empty vector - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v1 = v1::TestStruct { id: 5, state: v1::Status::Cancelled };
+    d_v1.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v2::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
+}
+
+#[test]
+fn check_v2_to_v1_scenario_30_change_type_large_vector() {
+    use scenario_30_change_type::*;
+    // Test v2 with large vector - should still fail due to representation mismatch
+    let mut storage = Storage::default();
+    let d_v2 = v2::TestStruct { 
+        id: 5, 
+        state: v2::Mode::Running(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) 
+    };
+    d_v2.serialize_to(&mut storage, Config::default()).unwrap();
+    let result = v1::TestStruct::deserialize_from(&mut storage);
+    assert!(result.is_err());
+    assert_eq!(
+        matches!(result.err(), Some(flat_message::Error::FieldIsMissing(_))),
+        true
+    );
 }
 
 // Test methods for variant type changes with different representations (u8 vs u16)
