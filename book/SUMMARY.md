@@ -40,6 +40,7 @@
     - [Large Vectors](chapter-5/results/large_vectors.md)
     - [Enum Fields](chapter-5/results/enum_fields.md)
     - [Option Fields](chapter-5/results/option_fields.md)
+    - [Variant Fields](chapter-5/results/variant_fields.md)
 <!--
   - [Versioning](chapter-3/versioning.md)
   - [Metadata and Introspection](chapter-3/metadata_and_introspection.md)

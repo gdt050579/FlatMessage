@@ -825,7 +825,8 @@ tests! {
     ("small_enum_lists", SmallEnumLists),
     ("strings_lists", StringLists),
     ("one_bool", OneBool),
-    ("option_fields", OptionFields)
+    ("option_fields", OptionFields),
+    ("variant_fields", VariantFields)
 }
 
 tests! {
@@ -992,6 +993,10 @@ fn run_tests(args: Args, test_name: &str) {
             let s = structures::option_fields::generate();
             run!(OptionFields, &s, i);
         }
+        {
+            let s = structures::variant_fields::generate();
+            run!(VariantFields, &s, i);
+        }
         println!(" done in {:.2}ms", start.elapsed().as_secs_f64() * 1000.0);
     }
 
@@ -1021,6 +1026,7 @@ fn run_mdbook_tests(test_filter: &str) {
     run_one_mdbook_test("large_vectors", test_filter, 100); 
     run_one_mdbook_test("enum_fields", test_filter, 500_000);
     run_one_mdbook_test("option_fields", test_filter, 100_000);
+    run_one_mdbook_test("variant_fields", test_filter, 50_000);
 }
 
 fn main() {
