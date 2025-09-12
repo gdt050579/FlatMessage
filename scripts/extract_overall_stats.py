@@ -47,7 +47,33 @@ def process_file(file_path):
                 global_speed[exec_name][des_name] = []
             global_speed[exec_name][des_name] += [speed]
 
-for name in os.listdir("./results"):
-    process_file(os.path.join("./results", name))
+for name in os.listdir("../book/chapter-5/results"):
+    process_file(os.path.join("../book/chapter-5/results", name))
 
-print(global_speed)
+# build
+d = {}
+l = []
+for exec_name in global_speed:
+    for des_name in global_speed[exec_name]:
+        if des_name == "protobuf":
+            continue
+        if not des_name in d:
+            d[des_name] = len(l)
+            l += [{"name": des_name, "win": 0, "mac": 0, "linux": 0}]
+        s = 0
+        for speed in global_speed[exec_name][des_name]:
+            s += float(speed)
+        s = s / len(global_speed[exec_name][des_name])
+        if exec_name == "win":
+            l[d[des_name]]["win"] = s
+        elif exec_name == "mac":
+            l[d[des_name]]["mac"] = s
+        elif exec_name == "linux":
+            l[d[des_name]]["linux"] = s
+
+l.sort(key=lambda x: x["win"], reverse=True)
+
+print("| Algorithm | Win (MB/sec)| Mac (MB/sec)| Linux (MB/sec)|")
+print("| ------ | -------: | -------: | -------: |")
+for i in l:
+    print(f"| {i['name']} | {i['win']:.2f} | {i['mac']:.2f} | {i['linux']:.2f} |")

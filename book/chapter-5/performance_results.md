@@ -11,18 +11,18 @@ The following crates were tested:
 
 | Crate / method   | Version | Schema Type | Observation                                                                                                                                                                                   |
 | ---------------- | ------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| flat_message      | 0.1.0   | Schema-less | For deserialization the deserialize(...) method is beng used                                                                                                                                  |
-| flat_message (⚠️) | 0.1.0   | Schema-less | `(Unchecked)` For deserialization the deserialize_unchecked(...) method is beng used (meaning that no validation is done)                                                                                   |
-| bincode           | 2.0.1   | with Schema | also use bincode_derive (2.0.1)                                                                                                                                                               |
-| bson              | 3.0.0   | Schema-less |                                                                                                                                                                                               |
-| flexbuffers       | 25.2.10 | Schema-less |                                                                                                                                                                                               |
-| postcard          | 1.1.3   | with Schema |                                                                                                                                                                                               |
-| serde_json        | 1.0.143 | Schema-less |                                                                                                                                                                                               |
-| simd_json         | 0.15.1  | Schema-less |                                                                                                                                                                                               |
-| ciborium          | 0.2.2   | Schema-less |                                                                                                                                                                                               |
-| rmp               | 0.8.14  | both        | also included rmp-serde for MessagePack (v1.3.0)                                                                                                                                              |
-| toml              | 0.9.5   | Schema-less | TOML does not have a direct method to write into a buffer, so we write into a string and then copy that string into a buffer. This ads aditional cost for the algorithm.                      |
-| protobuf (prost)  | 0.14.1  | with Schema | Protobuf via [prost](https://crates.io/crates/prost) crate. Not all tests are supported by protobuf (e.g. test that use u8, i8 or other unsuported types will be marked as N/A for protobuf). |
+| flat_message     | 0.1.0   | Schema-less | For deserialization the deserialize(...) method is beng used                                                                                                                                  |
+| flat_message (⚠️) | 0.1.0   | Schema-less | `(Unchecked)` For deserialization the deserialize_unchecked(...) method is beng used (meaning that no validation is done)                                                                     |
+| bincode          | 2.0.1   | with Schema | also use bincode_derive (2.0.1)                                                                                                                                                               |
+| bson             | 3.0.0   | Schema-less |                                                                                                                                                                                               |
+| flexbuffers      | 25.2.10 | Schema-less |                                                                                                                                                                                               |
+| postcard         | 1.1.3   | with Schema |                                                                                                                                                                                               |
+| serde_json       | 1.0.143 | Schema-less |                                                                                                                                                                                               |
+| simd_json        | 0.15.1  | Schema-less |                                                                                                                                                                                               |
+| ciborium         | 0.2.2   | Schema-less |                                                                                                                                                                                               |
+| rmp              | 0.8.14  | both        | also included rmp-serde for MessagePack (v1.3.0)                                                                                                                                              |
+| toml             | 0.9.5   | Schema-less | TOML does not have a direct method to write into a buffer, so we write into a string and then copy that string into a buffer. This ads aditional cost for the algorithm.                      |
+| protobuf (prost) | 0.14.1  | with Schema | Protobuf via [prost](https://crates.io/crates/prost) crate. Not all tests are supported by protobuf (e.g. test that use u8, i8 or other unsuported types will be marked as N/A for protobuf). |
 
 
 ## Methodology
@@ -62,5 +62,29 @@ The tests were performed on the following OSes:
 1. **Windows** - Windows 11, 64 bit,11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz (2.80 GHz), RAM 32.0 GB 
 2. **MacOS** - MacOS 15.6.1 24G90 arm64, Apple M1 Pro, RAM 32.0 GB
 3. **Linux** - Kubuntu 24.04.3 LTS x86_64, kernel: 6.8.0-71-generic, 11th Gen Intel(R) Core(TM) i7-11850H (16) @ 4.80GHz , RAM 64.0 GB
+
+## Overall Speed
+
+All of the above results are averaged over all the tested structures in the following way:
+- for each tested structure, we compute the speed (MB/sec) as the data size (bytes) * n (number of repetitions) / time (ms)
+- this is done for each OS and then the results are averaged over all the OSes
+
+**Remarks**: There are a lot of variation in the results - and while we did try to use a large variaty of structures, it is best to evaluate the results/structure as well and find the ones that are most appropiate to your use case.
+
+| Algorithm                                                                                     | Win (MB/sec) | Mac (MB/sec) | Linux (MB/sec) |
+| --------------------------------------------------------------------------------------------- | -----------: | -----------: | -------------: |
+| FlatMessage (&#9888;&#65039;)                                                                 |      5707.79 |      6185.85 |        7636.94 |
+| FlatMessage                                                                                   |      4783.24 |      4982.06 |        4850.25 |
+| *protobuf* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span> |      3461.69 |      3419.25 |        5472.14 |
+| *postcard* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span> |      2668.80 |      3215.98 |        4655.40 |
+| *bincode* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>  |      2414.24 |      2854.97 |        3632.56 |
+| *rmp* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>      |      2171.97 |      2459.35 |        4298.11 |
+| rmp                                                                                           |      1775.72 |      2044.14 |        3155.96 |
+| bson                                                                                          |      1034.95 |      1319.15 |        2288.36 |
+| cbor                                                                                          |       915.32 |      1032.93 |        1664.21 |
+| flexbuffers                                                                                   |       498.89 |       703.33 |         892.69 |
+| simd_json                                                                                     |       442.63 |       578.56 |         684.59 |
+| json                                                                                          |       392.82 |       538.99 |         539.65 |
+| toml                                                                                          |        70.09 |        73.79 |          98.40 |
 
 
