@@ -69,7 +69,9 @@ All of the above results are averaged over all the tested structures in the foll
 - for each tested structure, we compute the speed (MB/sec) as the data size (bytes) * n (number of repetitions) / time (ms)
 - this is done for each OS and then the results are averaged over all the OSes
 
-**Remarks**: There are a lot of variation in the results - and while we did try to use a large variaty of structures, it is best to evaluate the results/structure as well and find the ones that are most appropiate to your use case.
+**Remarks**: 
+* There are a lot of variation in the results - and while we did try to use a large variaty of structures, it is best to evaluate the results/structure as well and find the ones that are most appropiate to your use case.
+* **Protobuf** results are inconclusive as they were not aveaged on the entire set of structures.
 
 | Algorithm                                                                                     | Win (MB/sec) | Mac (MB/sec) | Linux (MB/sec) |
 | --------------------------------------------------------------------------------------------- | -----------: | -----------: | -------------: |
