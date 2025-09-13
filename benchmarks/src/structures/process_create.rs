@@ -22,18 +22,24 @@ pub struct ProcessCreated {
     timestamp: u32,
     #[prost(uint32, tag = "9")]
     unique_id: u32,
+    #[prost(uint64, tag = "10")]
+    memory_usage: u64,
+    #[prost(bool, tag = "11")]
+    protected_process: bool,
 }
 
 
 pub fn generate() -> ProcessCreated {
     ProcessCreated {
-        name: s(String::from("C:\\Windows\\System32\\example.exe")),
+        name: s(String::from("C:\\Windows\\System32\\Drivers\\User\\MyPath\\example.exe")),
         pid: 1234,
-        parent_pid: 1,
+        parent_pid: 1024,
         parent: s(String::from("C:\\Windows\\System32\\explorer.exe")),
-        user: s(String::from("Administrator")),
-        command_line: s(String::from("-help -verbose -debug -output C:\\output.txt")),
+        user: s(String::from("Administrator/Group")),
+        command_line: s(String::from("-help -verbose -debug -output C:\\output.txt --read C:\\Windows\\System32\\Drivers\\User\\MyPath\\example.exe")),
         timestamp: 0xFEFEFEFE_u32,
         unique_id: 0xABABABAB_u32,
+        memory_usage: 0x0000AABB_00112233u64,
+        protected_process: true,
     }
 }

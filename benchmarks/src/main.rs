@@ -1027,6 +1027,7 @@ fn run_mdbook_tests(test_filter: &str) {
     run_one_mdbook_test("enum_fields", test_filter, 500_000);
     run_one_mdbook_test("option_fields", test_filter, 100_000);
     run_one_mdbook_test("variant_fields", test_filter, 50_000);
+    run_one_mdbook_test("process_create", test_filter, 100_000);
 }
 
 fn main() {
