@@ -1,11 +1,30 @@
 # Nested Structures
 
 This benchmarks compares the performance of the different algorithms to serialize and deserialize a nested structure.
+
 ```rust
-pub struct Point {
-    x: i32,
-    y: i32,
+pub struct LevelOne {
+    s1: String,
+    s2: String,
+    v1: u32,
+    v2: u64,
+    arr: Vec<u32>,
 }
+
+pub struct DepthTwo {
+    name: String,
+    arr: Vec<String>,
+    level_1: Option<LevelOne>,    
+}
+
+pub struct NestedStrucs {
+    name: String,
+    protected_process: bool,
+    protected_process: bool,
+    level_1: Option<LevelOne>,
+    level_2: Option<DepthTwo>,
+}
+
 ```
 
 ## Test specs
@@ -18,6 +37,22 @@ pub struct Point {
 ## Results
 
 ### 1. Windows Execution
+
+| Algorithm | Size (b) | Ser. (ms) | Deser. (ms) | Ser+Deser.(ms) |
+| ------ | -------: | ----------------------: | ------------------------: | --------------: |
+| FlatMessage (&#9888;&#65039;) | 492 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +19%]</span> |   5.20 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[  4.88 -   5.45]</span> |  72.86 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 70.06 -  75.31]</span> | **79.79** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 76.33 -  82.42]</span> |
+| FlatMessage | 492 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +19%]</span> |   5.44 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[  5.12 -   6.01]</span> |  77.29 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 74.28 -  78.73]</span> | **83.24** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 79.34 -  84.23]</span> |
+| *postcard* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>| 363 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ -13%]</span> |  12.65 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 11.78 -  13.56]</span> |  78.92 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 74.58 -  87.94]</span> | **92.35** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 87.00 -  97.69]</span> |
+| *bincode* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>| 367 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ -12%]</span> |  10.33 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[  9.64 -  10.96]</span> |  81.51 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 76.76 -  83.54]</span> | **92.47** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 88.25 -  95.42]</span> |
+| *rmp* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>| 374 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ -10%]</span> |  10.91 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 10.37 -  11.46]</span> |  93.90 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 89.82 -  97.09]</span> | **114.19** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[106.86 - 119.30]</span> |
+| *protobuf* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>| 382 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[  -8%]</span> |  16.35 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 15.90 -  18.39]</span> | 115.21 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[109.60 - 118.23]</span> | **136.54** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[130.97 - 150.26]</span> |
+| rmp | 462 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +11%]</span> |  13.39 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 12.67 -  13.72]</span> | 114.01 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[108.96 - 117.29]</span> | **136.85** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[129.60 - 140.75]</span> |
+| json | 550 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +33%]</span> |  42.16 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 40.85 -  44.91]</span> | 183.08 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[175.98 - 201.92]</span> | **232.73** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[225.25 - 252.79]</span> |
+| cbor | 463 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +12%]</span> |  34.32 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 32.90 -  35.54]</span> | 214.70 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[204.56 - 223.01]</span> | **254.37** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[246.49 - 262.38]</span> |
+| simd_json | 550 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +33%]</span> |  37.78 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 36.30 -  68.77]</span> | 208.22 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[197.99 - 212.99]</span> | **260.11** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[248.91 - 262.04]</span> |
+| bson | 701 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +69%]</span> |  67.60 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 64.28 -  70.99]</span> | 207.89 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[195.47 - 214.32]</span> | **293.14** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[284.69 - 301.15]</span> |
+| flexbuffers | 561 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +35%]</span> | 236.30 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[220.19 - 248.87]</span> | 188.59 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[182.44 - 194.91]</span> | **442.59** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[421.71 - 458.80]</span> |
+| toml | 568 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +37%]</span> | 443.99 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[428.89 - 507.61]</span> | 790.28 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[761.49 - 813.41]</span> | **1284.78** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[1249.50 - 1332.13]</span> |
 
 
 ### 2. MacOs Execution
