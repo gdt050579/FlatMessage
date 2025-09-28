@@ -13,3 +13,4 @@ pub(crate) mod string_lists;
 pub(crate) mod vectors;
 pub(crate) mod option_fields;
 pub(crate) mod variant_fields;
+pub(crate) mod nested;

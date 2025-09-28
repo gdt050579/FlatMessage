@@ -826,7 +826,8 @@ tests! {
     ("strings_lists", StringLists),
     ("one_bool", OneBool),
     ("option_fields", OptionFields),
-    ("variant_fields", VariantFields)
+    ("variant_fields", VariantFields),
+    ("nested", Nested)
 }
 
 tests! {
@@ -997,6 +998,10 @@ fn run_tests(args: Args, test_name: &str) {
             let s = structures::variant_fields::generate();
             run!(VariantFields, &s, i);
         }
+        {
+            let s = structures::nested::generate();
+            run_protobuf!(Nested, &s);
+        }
         println!(" done in {:.2}ms", start.elapsed().as_secs_f64() * 1000.0);
     }
 
@@ -1028,6 +1033,7 @@ fn run_mdbook_tests(test_filter: &str) {
     run_one_mdbook_test("option_fields", test_filter, 100_000);
     run_one_mdbook_test("variant_fields", test_filter, 50_000);
     run_one_mdbook_test("process_create", test_filter, 100_000);
+    run_one_mdbook_test("nested", test_filter, 100_000);
 }
 
 fn main() {
