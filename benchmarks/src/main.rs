@@ -587,33 +587,67 @@ fn print_results_mdbook(r: &[[&dyn Display; 7]], _columns: &[(&str, Align)], fil
     );
     output = output.replace("]", r#"]</span>"#);
     output = output.replace("N/A", "-");
-    // let mut mdbook_output = String::with_capacity(output.len());
-    // let mut inside_sb = false;
-    // for ch in output.chars() {
-    //     match ch {
-    //         '[' => {
-    //             inside_sb = true;
-    //             mdbook_output.push(ch);
-    //         }
-    //         ' ' => {
-    //             if !inside_sb {
-    //                 mdbook_output.push(ch);
-    //             } else {
-    //                 mdbook_output.push_str("&nbsp;");
-    //             }
-    //         }
-    //         ']' => {
-    //             inside_sb = false;
-    //             mdbook_output.push(ch);
-    //         }
-    //         _ => {
-    //             mdbook_output.push(ch);
-    //         }
-    //     }
-    // }
 
     fs::write(file_name, output).unwrap();
 }
+
+
+fn print_results_mdbook_packed_vs_struct(r: &[[&dyn Display; 7]], _columns: &[(&str, Align)], file_name: &str) {
+    let mut output = String::with_capacity(4096);
+
+    //writeln!(output, "| Algorithm | Size (b) | Serialization Time (ms) | Deserialization Time (ms) | Total Time (ms) |").unwrap();
+    writeln!(
+        output,
+        "| Algorithm | Size (b) | Ser. (ms) | Deser. (ms) | Ser+Deser.(ms) |"
+    )
+    .unwrap();
+    writeln!(output, "| ------ | -------: | ----------------------: | ------------------------: | --------------: |").unwrap();
+
+    for row in r {
+        if row[0].to_string() != "nested_packed" && row[0].to_string() != "nested_struct" {
+            continue;
+        }
+        // name
+        let unsafe_symbol = if row[2].to_string() == "flat_message_unchecked" {
+            "(&#9888;&#65039;)"
+        } else {
+            ""
+        };
+        let mut name = if row[0].to_string() == "nested_packed" {
+            "FlatMessagePacked ".to_string()
+        } else {
+            "FlatMessageStruct ".to_string()
+        };
+        name.push_str(unsafe_symbol);
+        write!(output, "| {} ", name).unwrap();
+        // size
+        write!(output, "| {} ", row[3]).unwrap();
+        // se time
+        write!(output, "| {} ", row[4]).unwrap();
+        // de time
+        write!(output, "| {} ", row[5]).unwrap();
+        // total time
+        let tmp = row[6].to_string();
+        if tmp.contains("[") {
+            let pos = tmp.chars().position(|c| c == '[').unwrap();
+            let total_time = format!("**{}** {}", &tmp[..pos].trim(), &tmp[pos..]);
+            write!(output, "| {} ", total_time).unwrap();
+        } else {
+            write!(output, "| {} ", tmp).unwrap();
+        }
+        writeln!(output, "|").unwrap();
+    }
+    output = output.replace(
+        "[",
+        r#"<span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>["#,
+    );
+    output = output.replace("]", r#"]</span>"#);
+    output = output.replace("N/A", "-");
+
+    fs::write(file_name, output).unwrap();
+}
+
+
 
 fn print_results(
     results: &mut Vec<Result>,
@@ -706,6 +740,9 @@ fn print_results(
         }
         OutputType::Mdbook => {
             print_results_mdbook(&r, &colums, file_name);
+        }
+        OutputType::MdbookPackedVsStruct => {
+            print_results_mdbook_packed_vs_struct(&r, &colums, file_name);
         }
     }
 }
@@ -881,6 +918,7 @@ enum OutputType {
     Ascii,
     Markdown,
     Mdbook,
+    MdbookPackedVsStruct,
 }
 
 #[derive(clap::Parser)]
@@ -1053,9 +1091,9 @@ fn run_packed_vs_struct() {
     let a = Args {
         tests: "nested_packed,nested_struct".to_string(),
         algos: "flat_message,flat_message_unchecked".to_string(),
-        times: 100_000,
+        times: 1_000_000,
         iterations: 10,
-        output: OutputType::Mdbook,
+        output: OutputType::MdbookPackedVsStruct,
         names: false,
         command: Commands::PackedVsStruct,
         file_name: format!("packed_vs_struct.md"),
