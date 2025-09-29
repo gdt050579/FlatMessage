@@ -61,4 +61,11 @@ with the following settings (which will be used in the benchmarks):
 
 ### 2. MacOS Execution
 
+| Algorithm | Size (b) | Ser. (ms) | Deser. (ms) | Ser+Deser.(ms) |
+| ------ | -------: | ----------------------: | ------------------------: | --------------: |
+| FlatMessagePacked (&#9888;&#65039;) | 185 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +14%]</span> |  15.75 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 15.34 -  17.77]</span> |  68.92 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 68.41 -  71.38]</span> | **86.73** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 86.27 -  88.73]</span> |
+| FlatMessagePacked  | 185 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +14%]</span> |  15.85 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 15.31 -  28.30]</span> |  87.32 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 86.91 -  87.82]</span> | **104.72** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[104.06 - 105.26]</span> |
+| FlatMessageStruct (&#9888;&#65039;) | 217 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +34%]</span> |  20.39 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 19.97 -  20.45]</span> |  95.73 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 95.34 -  96.00]</span> | **116.05** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[113.32 - 116.77]</span> |
+| FlatMessageStruct  | 217 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ +34%]</span> |  20.34 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 20.07 -  20.40]</span> |  95.30 <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[ 94.87 -  95.82]</span> | **116.12** <span style="font-family:monospace; opacity:0.5; font-size:0.5em"><br>[113.39 - 116.94]</span> |
+
 ### 3. Linux Execution
