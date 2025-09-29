@@ -43,16 +43,4 @@
     - [Variant Fields](chapter-5/results/variant_fields.md)
     - [Process Create Event](chapter-5/results/process_create.md)
     - [Nested Structures](chapter-5/results/nested_structs.md)
-<!--
-  - [Versioning](chapter-3/versioning.md)
-  - [Metadata and Introspection](chapter-3/metadata_and_introspection.md)
-  - [Sealed vs Non-Sealed Enums](chapter-3/sealed_vs_non_sealed_enums.md)
-  - [Field Attributes](chapter-3/field_attributes.md)
-- [Practical Usage](chapter-4/performance_optimization.md)
-  - [Performance Optimization](chapter-4/performance_optimization.md)
-  - [Real-World Patterns](chapter-4/real_world_patterns.md)
-  - [Migration Strategies](chapter-4/migration_strategies.md)
-  - [Troubleshooting](chapter-4/troubleshooting.md)
-
-  - [Performance Comparison](chapter-5/performance_comparison.md)
-  - [Memory Usage](chapter-5/memory_usage.md) -->
+  - [Packed vs Struct](chapter-5/packed_vs_struct.md)

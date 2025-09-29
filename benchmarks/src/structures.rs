@@ -14,3 +14,5 @@ pub(crate) mod vectors;
 pub(crate) mod option_fields;
 pub(crate) mod variant_fields;
 pub(crate) mod nested;
+pub(crate) mod nested_packed;
+pub(crate) mod nested_struct;

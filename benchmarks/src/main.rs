@@ -428,7 +428,9 @@ fn add_benches<
     b!(Toml, x, se_test_toml, de_test_toml, false);
     // check to see if protobuf is present
     if iteration_id == 0 {
-        results.push(Result::not_available(AlgoKind::Protobuf, top_test_name));
+        if all_algos || algos.contains(&AlgoKind::Protobuf) {
+            results.push(Result::not_available(AlgoKind::Protobuf, top_test_name));
+        }
     }
 }
 
@@ -827,7 +829,9 @@ tests! {
     ("one_bool", OneBool),
     ("option_fields", OptionFields),
     ("variant_fields", VariantFields),
-    ("nested", Nested)
+    ("nested", Nested),
+    ("nested_packed", NestedPacked),
+    ("nested_struct", NestedStruct)
 }
 
 tests! {
@@ -868,6 +872,7 @@ enum Commands {
     ListAlgos,
     ListTests,
     MDBookTests,
+    PackedVsStruct,
 }
 
 #[derive(Debug, Default, Copy, Clone, ValueEnum)]
@@ -1002,6 +1007,14 @@ fn run_tests(args: Args, test_name: &str) {
             let s = structures::nested::generate();
             run_protobuf!(Nested, &s);
         }
+        {
+            let s = structures::nested_packed::generate();
+            run!(NestedPacked, &s, i);
+        } 
+        {
+            let s = structures::nested_struct::generate();
+            run!(NestedStruct, &s, i);
+        }
         println!(" done in {:.2}ms", start.elapsed().as_secs_f64() * 1000.0);
     }
 
@@ -1036,6 +1049,20 @@ fn run_mdbook_tests(test_filter: &str) {
     run_one_mdbook_test("nested", test_filter, 100_000);
 }
 
+fn run_packed_vs_struct() {
+    let a = Args {
+        tests: "nested_packed,nested_struct".to_string(),
+        algos: "flat_message,flat_message_unchecked".to_string(),
+        times: 100_000,
+        iterations: 10,
+        output: OutputType::Mdbook,
+        names: false,
+        command: Commands::PackedVsStruct,
+        file_name: format!("packed_vs_struct.md"),
+    };
+    run_tests(a, "packed_vs_struct");
+}
+
 fn main() {
     let args = Args::parse();
     match args.command {
@@ -1052,5 +1079,6 @@ fn main() {
             println!("available tests: {}", TestKind::all().join(", "));
         }
         Commands::MDBookTests => run_mdbook_tests(&args.tests),
+        Commands::PackedVsStruct => run_packed_vs_struct(),
     }
 }
