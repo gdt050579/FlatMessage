@@ -75,18 +75,16 @@ All of the above results are averaged over all the tested structures in the foll
 
 | Algorithm                                                                                     | Win (MB/sec) | Mac (MB/sec) | Linux (MB/sec) |
 | --------------------------------------------------------------------------------------------- | -----------: | -----------: | -------------: |
-| FlatMessage (&#9888;&#65039;)                                                                 |      5707.79 |      6185.85 |        7636.94 |
-| FlatMessage                                                                                   |      4783.24 |      4982.06 |        4850.25 |
-| *protobuf* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span> |      3461.69 |      3419.25 |        5472.14 |
-| *postcard* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span> |      2668.80 |      3215.98 |        4655.40 |
-| *bincode* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>  |      2414.24 |      2854.97 |        3632.56 |
-| *rmp* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>      |      2171.97 |      2459.35 |        4298.11 |
-| rmp                                                                                           |      1775.72 |      2044.14 |        3155.96 |
-| bson                                                                                          |      1034.95 |      1319.15 |        2288.36 |
-| cbor                                                                                          |       915.32 |      1032.93 |        1664.21 |
-| flexbuffers                                                                                   |       498.89 |       703.33 |         892.69 |
-| simd_json                                                                                     |       442.63 |       578.56 |         684.59 |
-| json                                                                                          |       392.82 |       538.99 |         539.65 |
-| toml                                                                                          |        70.09 |        73.79 |          98.40 |
-
-
+| FlatMessage (&#9888;&#65039;)                                                                 |      4624.31 |      5143.91 |        6705.44 |
+| FlatMessage                                                                                   |      3888.78 |      4157.94 |        5072.87 |
+| *protobuf* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span> |      2261.02 |      2357.24 |        2798.58 |
+| *postcard* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span> |      2212.56 |      2726.47 |        2959.57 |
+| *bincode* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>  |      2024.51 |      2478.93 |        2323.05 |
+| *rmp* <span style="font-family:monospace; opacity:0.5; font-size:0.75em">(schema)</span>      |      1814.16 |      2110.85 |        2345.71 |
+| rmp                                                                                           |      1468.29 |      1721.22 |        1796.20 |
+| bson                                                                                          |       850.00 |      1089.00 |        1025.31 |
+| cbor                                                                                          |       756.17 |       860.30 |         853.52 |
+| flexbuffers                                                                                   |       410.41 |       582.94 |         494.43 |
+| simd_json                                                                                     |       377.15 |       498.02 |         464.32 |
+| json                                                                                          |       341.76 |       479.47 |         391.95 |
+| toml                                                                                          |        63.20 |        70.70 |          73.96 |
