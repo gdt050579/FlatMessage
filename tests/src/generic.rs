@@ -177,8 +177,6 @@ use std::fmt::Debug;
 // //     assert_eq!(a.metadata().unique_id(), b.metadata().unique_id());
 // // }
 
-
-
 // #[test]
 // fn check_serde_full_unchecked() {
 //     #[derive(Debug, PartialEq, FlatMessage)]
@@ -240,9 +238,6 @@ use std::fmt::Debug;
 //     assert_eq!(si.name(), Some(name!("TestStruct")));
 // }
 
-
-
-
 // #[test]
 // fn check_clone() {
 //     #[derive(Clone, Debug, Eq, PartialEq, FlatMessage)]
@@ -265,8 +260,6 @@ use std::fmt::Debug;
 //     let v3 = TestStruct::deserialize_from(&storage).unwrap();
 //     assert_eq!(v1, v3);
 // }
-
-
 
 #[test]
 fn check_max_size_for_serialization() {
@@ -336,7 +329,7 @@ fn check_task_example() {
 
         tags: Vec<String>,
     }
- 
+
     let task = Task {
         title: "Learn FlatMessage".to_string(),
         description: Some("Read the documentation".to_string()),
@@ -808,4 +801,64 @@ fn check_serde_into_different_type() {
     a.serialize_to(&mut output, Config::default()).unwrap();
     let b = TestStruct2::deserialize_from(&output);
     assert!(b.is_err());
+}
+
+#[test]
+fn check_readme_example_1() {
+    #[derive(FlatMessage, Debug, PartialEq)]
+    struct Person {
+        name: String,
+        age: u32,
+        email: String,
+    }
+    let person = Person {
+        name: "Alice".to_string(),
+        age: 30,
+        email: "alice@example.com".to_string(),
+    };
+
+    let mut storage = Storage::default();
+    person.serialize_to(&mut storage, Config::default()).unwrap();
+
+    // Deserialize
+    let restored = Person::deserialize_from(&storage).unwrap();
+    assert_eq!(person, restored);
+
+    println!("Serialized {} bytes", storage.len());
+}
+
+#[test]
+fn check_readme_example_2() {
+    #[derive(FlatMessage)]
+    struct Message<'a> {
+        title: &'a str,        // Zero-copy string reference
+        tags: &'a [u32],       // Zero-copy slice reference
+        metadata: &'a [u8],    // Zero-copy byte slice
+    }
+    #[derive(FlatMessage)]
+    struct MessageOwned {
+        title: String,
+        tags: Vec<u32>,
+        metadata: Vec<u8>,
+    }
+    let owned_data = MessageOwned {
+        title: "Hello World".to_string(),
+        tags: vec![1, 2, 3, 4, 5],
+        metadata: vec![0xFF, 0xFE, 0xFD],
+    };
+
+    let mut storage = Storage::default();
+    owned_data.serialize_to(&mut storage, Config::default()).unwrap();
+
+    // Deserialize with zero-copy references
+    let message = Message::deserialize_from(&storage).unwrap();
+    
+    // No data copying - direct buffer access!
+    println!("Title: {}", message.title);      // Points into storage
+    println!("Tags: {:?}", message.tags);      // Points into storage
+    println!("Metadata: {:?}", message.metadata); // Points into storage
+
+    assert_eq!(message.title, "Hello World");
+    assert_eq!(message.tags, &[1, 2, 3, 4, 5]);
+    assert_eq!(message.metadata, &[0xFF, 0xFE, 0xFD]);
 }

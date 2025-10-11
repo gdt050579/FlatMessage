@@ -11,7 +11,7 @@
 
 ## 🚀 Key Features
 
-- **🏆 Performance Leader**: Up to **6.7 GB/sec** throughput - fastest schema-less serialization
+- **🏆 Extremely Fast**: Up to **6.7 GB/sec** throughput (serialization and deserialization) - fastest schema-less serialization
 - **🔄 Zero-Copy Deserialization**: Direct buffer access for `&str`, `&[T]`, and `&[u8; N]` types
 - **📋 Schema-Less**: No schema definition required - all type information embedded in data
 - **🔧 Type Interchangeability**: Serialize as `Vec<T>`, deserialize as `&[T]` (and vice versa)
@@ -23,17 +23,18 @@
 
 FlatMessage consistently outperforms other serialization libraries across different data structures:
 
-| Library | Type | Throughput (MB/sec) | Notes |
-|---------|------|---------------------|-------|
-| **FlatMessage** ⚡ | Schema-less | **4,624 - 6,705** | Unchecked deserialization |
-| **FlatMessage** | Schema-less | **3,889 - 5,073** | With validation |
-| protobuf | Schema-based | 2,261 - 2,799 | |
-| postcard | Schema-based | 2,213 - 2,960 | |
-| bincode | Schema-based | 2,025 - 2,323 | |
-| flexbuffers | Schema-less | 410 - 582 | |
-| JSON | Schema-less | 342 - 479 | |
+| Library           | Type         | Throughput (MB/sec) | Notes                           |
+| ----------------- | ------------ | ------------------- | ------------------------------- |
+| **FlatMessage** ⚡ | Schema-less  | **4,624 - 6,705**   | (⚡) = Unchecked deserialization |
+| **FlatMessage**   | Schema-less  | **3,889 - 5,073**   | With validation                 |
+| protobuf          | Schema-based | 2,261 - 2,799       |                                 |
+| postcard          | Schema-based | 2,213 - 2,960       |                                 |
+| bincode           | Schema-based | 2,025 - 2,323       |                                 |
+| flexbuffers       | Schema-less  | 410 - 582           |                                 |
+| JSON              | Schema-less  | 342 - 479           |                                 |
 
 *Averaged across Windows, macOS, and Linux on multiple test structures*
+More details in the [performance benchmarks](book/chapter-5/performance_results.md).
 
 ## 🚀 Quick Start
 
@@ -41,7 +42,7 @@ Add FlatMessage to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-flat_message = "1.0"
+flat_message = "*"
 ```
 
 ### Basic Usage
@@ -86,6 +87,13 @@ struct Message<'a> {
     title: &'a str,        // Zero-copy string reference
     tags: &'a [u32],       // Zero-copy slice reference
     metadata: &'a [u8],    // Zero-copy byte slice
+}
+
+    #[derive(FlatMessage)]
+struct MessageOwned {
+    title: String,
+    tags: Vec<u32>,
+    metadata: Vec<u8>,
 }
 
 fn zero_copy_example() -> Result<(), Error> {
@@ -206,27 +214,27 @@ FlatMessage excels in scenarios requiring:
 ## 📈 Detailed Performance Results
 
 ### Point Structure (8 bytes data)
-| Library | Size | Ser+Deser Time | Performance |
-|---------|------|----------------|-------------|
-| **FlatMessage** ⚡ | 26b (+225%) | **3.76ms** | 🥇 Fastest |
-| **FlatMessage** | 26b (+225%) | **4.49ms** | 🥈 |
-| postcard (schema) | 3b (-63%) | 6.95ms | |
-| bincode (schema) | 2b (-75%) | 7.07ms | |
+| Library           | Size        | Ser+Deser Time | Performance |
+| ----------------- | ----------- | -------------- | ----------- |
+| **FlatMessage** ⚡ | 26b (+225%) | **3.76ms**     | 🥇 Fastest   |
+| **FlatMessage**   | 26b (+225%) | **4.49ms**     | 🥈           |
+| postcard (schema) | 3b (-63%)   | 6.95ms         |             |
+| bincode (schema)  | 2b (-75%)   | 7.07ms         |             |
 
 ### Multiple Fields (210 bytes data)
-| Library | Size | Ser+Deser Time | Performance |
-|---------|------|----------------|-------------|
-| **FlatMessage** ⚡ | 355b (+69%) | **23.54ms** | 🥇 Fastest |
-| **FlatMessage** | 355b (+69%) | **27.36ms** | 🥈 |
-| bincode (schema) | 172b (-19%) | 39.87ms | |
-| postcard (schema) | 154b (-27%) | 42.47ms | |
+| Library           | Size        | Ser+Deser Time | Performance |
+| ----------------- | ----------- | -------------- | ----------- |
+| **FlatMessage** ⚡ | 355b (+69%) | **23.54ms**    | 🥇 Fastest   |
+| **FlatMessage**   | 355b (+69%) | **27.36ms**    | 🥈           |
+| bincode (schema)  | 172b (-19%) | 39.87ms        |             |
+| postcard (schema) | 154b (-27%) | 42.47ms        |             |
 
 ### Long Strings (3.9KB data)
-| Library | Size | Ser+Deser Time | Performance |
-|---------|------|----------------|-------------|
-| **FlatMessage** ⚡ | 3968b (+1%) | **28.22ms** | 🥇 Fastest |
-| postcard (schema) | 3915b (-1%) | 39.55ms | |
-| **FlatMessage** | 3968b (+1%) | **40.63ms** | 🥈 |
+| Library           | Size        | Ser+Deser Time | Performance |
+| ----------------- | ----------- | -------------- | ----------- |
+| **FlatMessage** ⚡ | 3968b (+1%) | **28.22ms**    | 🥇 Fastest   |
+| postcard (schema) | 3915b (-1%) | 39.55ms        |             |
+| **FlatMessage**   | 3968b (+1%) | **40.63ms**    | 🥈           |
 
 *Results from Windows benchmarks. See [full performance results](book/chapter-5/performance_results.md) for all platforms.*
 
@@ -267,14 +275,14 @@ match data.serialize_to(&mut storage, config) {
 
 ## 🔄 Zero-Copy vs Allocation
 
-| Type | Zero-Copy | Memory Usage | Performance |
-|------|-----------|--------------|-------------|
-| `&str` | ✅ Yes | Low | Fastest |
-| `&[T]` | ✅ Yes | Low | Fastest |
-| `&[u8; N]` | ✅ Yes | Low | Fastest |
-| `String` | ❌ No | High | Slower (allocation) |
-| `Vec<T>` | ❌ No | High | Slower (allocation) |
-| `Option<&str>` | ✅ Yes (when Some) | Low | Fast |
+| Type           | Zero-Copy         | Memory Usage | Performance         |
+| -------------- | ----------------- | ------------ | ------------------- |
+| `&str`         | ✅ Yes             | Low          | Fastest             |
+| `&[T]`         | ✅ Yes             | Low          | Fastest             |
+| `&[u8; N]`     | ✅ Yes             | Low          | Fastest             |
+| `String`       | ❌ No              | High         | Slower (allocation) |
+| `Vec<T>`       | ❌ No              | High         | Slower (allocation) |
+| `Option<&str>` | ✅ Yes (when Some) | Low          | Fast                |
 
 ## 🏗️ Requirements
 
