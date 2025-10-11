@@ -9,7 +9,7 @@ repository = "https://github.com/gdt050579/FlatMessage"
 readme = "../README.md"
 documentation = "https://docs.rs/flat_message"
 keywords = ["serialization", "deserialize", "serialize", "zero-copy", "schema-less"]
-categories = ["development-tools::serialization"]
+categories = ["encoding"]
 
 [dependencies]
 # flat_message_proc_macro = { path = "../flat_message_proc_macro" }
