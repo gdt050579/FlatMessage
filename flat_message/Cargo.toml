@@ -12,7 +12,8 @@ keywords = ["serialization", "deserialize", "serialize", "zero-copy", "schema-le
 categories = ["development-tools::serialization"]
 
 [dependencies]
-flat_message_proc_macro = { path = "../flat_message_proc_macro" }
+# flat_message_proc_macro = { path = "../flat_message_proc_macro" }
+flat_message_proc_macro = "0.1.0"
 serde = { version = "1", optional = true }
 crc32fast = "1"
 
