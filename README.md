@@ -268,32 +268,6 @@ FlatMessage excels in scenarios requiring:
 
 *Results from Windows benchmarks. See [full performance results](book/chapter-5/performance_results.md) for all platforms.*
 
-## 🔧 Configuration & Validation
-
-```rust
-use flat_message::*;
-
-// Custom configuration
-let config = ConfigBuilder::new()
-    .max_size(1024 * 1024)  // 1MB limit
-    .build();
-
-// Checksum validation
-#[derive(FlatMessage)]
-#[flat_message_options(checksum = true)]
-struct SecureData {
-    sensitive_info: String,
-}
-
-// Size limits and validation
-match data.serialize_to(&mut storage, config) {
-    Ok(()) => println!("Serialization successful"),
-    Err(Error::ExceedMaxSize((actual, max))) => {
-        println!("Data too large: {} bytes (max: {})", actual, max);
-    }
-    Err(e) => println!("Other error: {}", e),
-}
-```
 
 ## 📚 Documentation
 
