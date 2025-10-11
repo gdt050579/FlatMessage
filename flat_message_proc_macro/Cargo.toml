@@ -7,7 +7,7 @@ description = "Procedural macros for the FlatMessage serialization library."
 license = "MIT"
 repository = "https://github.com/gdt050579/FlatMessage"
 readme = "../README.md"
-keywords = ["serialization", "deserialize", "serialize", "zero-copy", "schema-less", "proc-macro"]
+keywords = ["serialization", "deserialize", "serialize", "zero-copy", "schema-less"]
 categories = ["development-tools::procedural-macro-helpers"]
 documentation = "https://docs.rs/flat_message_proc_macro"
 
