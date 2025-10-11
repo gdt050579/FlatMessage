@@ -1,5 +1,5 @@
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "benchmarks", derive(serde::Serialize, serde::Deserialize))]
 pub struct Timestamp {
     value: u64,
 }

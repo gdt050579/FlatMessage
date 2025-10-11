@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicU64;
 static GLOBAL_ID: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "benchmarks", derive(serde::Serialize, serde::Deserialize))]
 pub struct UniqueID {
     value: u64,
 }

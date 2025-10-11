@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-flat_message = { version = "1.0.0", path = "../flat_message", features = ["serde"] }
+flat_message = { path = "../flat_message", features = ["benchmarks"] }
 flexbuffers = "25"
 serde = "1"
 serde_derive = "1"
@@ -23,7 +23,6 @@ toml = "0.9.5"
 prost = "0.14.1"
 
 [dev-dependencies]
-common = {path = "../common"}
 criterion = "0.5.1"
 crc = "3"
 crc32fast = "1"
@@ -37,9 +36,9 @@ harness = false
 name = "serialization"
 harness = false
 
-[[bench]]
-name = "hashes"
-harness = false
+# [[bench]]
+# name = "hashes"
+# harness = false
 
 [lints]
 workspace = true
