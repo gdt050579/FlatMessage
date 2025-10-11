@@ -10,17 +10,17 @@
 
 **FlatMessage** is a **zero-copy**, **schema-less** serialization library built for Rust, offering efficient and flexible data serialization with exceptional performance and rich type support.
 
-## 🚀 Key Features
+## Key Features
 
-- **🏆 Extremely Fast**: Up to **6.7 GB/sec** throughput (serialization and deserialization) - fastest schema-less serialization
-- **🔄 Zero-Copy Deserialization**: Direct buffer access for `&str`, `&[T]`, and `&[u8; N]` types
-- **📋 Schema-Less**: No schema definition required - all type information embedded in data
-- **🔧 Type Interchangeability**: Serialize as `Vec<T>`, deserialize as `&[T]` (and vice versa)
-- **📦 Rich Type System**: Comprehensive support for basic types, enums, variants, structs, and more
-- **🔄 Version Compatibility**: Forward/backward compatibility with flexible version ranges
-- **✅ Production Ready**: Checksum validation, size limits, comprehensive error handling
+- **Extremely Fast**: Up to **6.7 GB/sec** throughput (serialization and deserialization) - fastest schema-less serialization
+- **Zero-Copy Deserialization**: Direct buffer access for `&str`, `&[T]`, and `&[u8; N]` types
+- **Schema-Less**: No schema definition required - all type information embedded in data
+- **Type Interchangeability**: Serialize as `Vec<T>`, deserialize as `&[T]` (and vice versa)
+- **Rich Type System**: Comprehensive support for basic types, enums, variants, structs, and more
+- **Version Compatibility**: Forward/backward compatibility with flexible version ranges
+- **Production Ready**: Checksum validation, size limits, comprehensive error handling
 
-## 📊 Performance Comparison
+## Performance Comparison
 
 FlatMessage consistently outperforms other serialization libraries across different data structures:
 
@@ -37,7 +37,7 @@ FlatMessage consistently outperforms other serialization libraries across differ
 *Averaged across Windows, macOS, and Linux on multiple test structures*
 More details in the [performance benchmarks](https://gdt050579.github.io/FlatMessage/chapter-5/performance_results.html).
 
-## 🚀 Quick Start
+## Quick Start
 
 Add FlatMessage to your `Cargo.toml`:
 
@@ -120,7 +120,7 @@ fn zero_copy_example() -> Result<(), Error> {
 }
 ```
 
-## 🔄 Advanced Features
+## Advanced Features
 
 ### Type Interchangeability
 
@@ -230,7 +230,7 @@ struct Metadata {
 
 *More details in the [Supported Data Types](https://gdt050579.github.io/FlatMessage/chapter-2/supported_data_types.html) chapter.*
 
-## 🎯 Use Cases
+## Use Cases
 
 FlatMessage excels in scenarios requiring:
 
@@ -242,7 +242,7 @@ FlatMessage excels in scenarios requiring:
 - **Game Development**: Fast serialization for game state and networking
 - **Embedded Systems**: Memory-efficient serialization with minimal overhead
 
-## 📈 Detailed Performance Results
+## Detailed Performance Results
 
 ### Point Structure (8 bytes data)
 | Library           | Size        | Ser+Deser Time | Performance |
@@ -270,7 +270,7 @@ FlatMessage excels in scenarios requiring:
 *Results from Windows benchmarks. See [full performance results](https://gdt050579.github.io/FlatMessage/chapter-5/performance_results.html) for all platforms.*
 
 
-## 📚 Documentation
+## Documentation
 
 - **[Complete Guide](https://gdt050579.github.io/FlatMessage/chapter-1/getting_started.html)**: Comprehensive documentation with examples
 - **[API Documentation](https://docs.rs/flat_message)**: Full API reference
@@ -278,7 +278,7 @@ FlatMessage excels in scenarios requiring:
 - **[Type System](https://gdt050579.github.io/FlatMessage/chapter-2/supported_data_types.html)**: All supported data types
 - **[Version Management](https://gdt050579.github.io/FlatMessage/chapter-3/versioning.html)**: Compatibility and migration guide
 
-## 🔄 Zero-Copy vs Allocation
+## Zero-Copy vs Allocation
 
 | Type           | Zero-Copy         | Memory Usage | Performance         |
 | -------------- | ----------------- | ------------ | ------------------- |
@@ -289,20 +289,20 @@ FlatMessage excels in scenarios requiring:
 | `Vec<T>`       | ❌ No              | High         | Slower (allocation) |
 | `Option<&str>` | ✅ Yes (when Some) | Low          | Fast                |
 
-## 🏗️ Requirements
+## Requirements
 
 - **Rust**: Version 1.70 or later (2021 edition)
 - **Platforms**: Windows, macOS, Linux (32-bit and 64-bit)
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Built with performance and developer experience in mind
 - Inspired by the need for efficient, schema-less serialization in Rust
@@ -310,4 +310,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Ready to supercharge your serialization?** Add FlatMessage to your project today and experience the performance difference! 🚀
+**Ready to supercharge your serialization?** Add FlatMessage to your project today and experience the performance difference!
