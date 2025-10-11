@@ -35,7 +35,7 @@ FlatMessage consistently outperforms other serialization libraries across differ
 | JSON              | Schema-less  | 342 - 479           |                                 |
 
 *Averaged across Windows, macOS, and Linux on multiple test structures*
-More details in the [performance benchmarks](book/chapter-5/performance_results.md).
+More details in the [performance benchmarks](https://gdt050579.github.io/FlatMessage/chapter-5/performance_results.html).
 
 ## 🚀 Quick Start
 
@@ -228,7 +228,7 @@ struct Metadata {
 ```
 **Remarks:** `UniqueID` and `Timestamp` are metadata fields and can be used only once for each struct.
 
-*More details in the [Rich Type System](book/chapter-2/supported_data_types.md) chapter.*
+*More details in the [Supported Data Types](https://gdt050579.github.io/FlatMessage/chapter-2/supported_data_types.html) chapter.*
 
 ## 🎯 Use Cases
 
@@ -267,16 +267,16 @@ FlatMessage excels in scenarios requiring:
 | postcard (schema) | 3915b (-1%) | 39.55ms        |             |
 | **FlatMessage**   | 3968b (+1%) | **40.63ms**    | 🥈           |
 
-*Results from Windows benchmarks. See [full performance results](book/chapter-5/performance_results.md) for all platforms.*
+*Results from Windows benchmarks. See [full performance results](https://gdt050579.github.io/FlatMessage/chapter-5/performance_results.html) for all platforms.*
 
 
 ## 📚 Documentation
 
-- **[Complete Guide](book/SUMMARY.md)**: Comprehensive documentation with examples
+- **[Complete Guide](https://gdt050579.github.io/FlatMessage/chapter-1/getting_started.html)**: Comprehensive documentation with examples
 - **[API Documentation](https://docs.rs/flat_message)**: Full API reference
-- **[Performance Benchmarks](book/chapter-5/benchmarks.md)**: Detailed performance analysis
-- **[Type System](book/chapter-2/supported_data_types.md)**: All supported data types
-- **[Version Management](book/chapter-3/versioning.md)**: Compatibility and migration guide
+- **[Performance Benchmarks](https://gdt050579.github.io/FlatMessage/chapter-5/benchmarks.html)**: Detailed performance analysis
+- **[Type System](https://gdt050579.github.io/FlatMessage/chapter-2/supported_data_types.html)**: All supported data types
+- **[Version Management](https://gdt050579.github.io/FlatMessage/chapter-3/versioning.html)**: Compatibility and migration guide
 
 ## 🔄 Zero-Copy vs Allocation
 
