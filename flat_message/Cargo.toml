@@ -2,7 +2,7 @@
 name = "flat_message"
 version = "0.1.0"
 edition = "2021"
-authors = ["Gavrilut Dragos <gavrilut.dragos@gmail.com>"]
+authors = ["Gavrilut Dragos <gavrilut.dragos@gmail.com>", "Andrei Damian <andreidaamian@gmail.com>"]
 description = "Zero-copy, schema-less serialization and deserialization fast library for Rust."
 license = "MIT"
 repository = "https://github.com/gdt050579/FlatMessage"

@@ -160,30 +160,50 @@ struct UserProfile {
 
 ### Rich Type System
 
+FlatMessage supports a rich type system, including:
+- [x] Basic types (bool, integers, floats, strings)
+- [x] Slices
+- [x] Vectors
+- [x] Options
+- [x] Enums
+- [x] Variants
+- [x] Nested Structs
+- [x] Timestamp
+- [x] UniqueID
+- [x] Versioning
+
 ```rust
-#[derive(FlatMessage)]
+#[derive(FlatMessage, Debug, Eq, PartialEq)]
 struct ComplexData<'a> {
     // Basic types
-    id: u64,
     active: bool,
-    score: f64,
+    score: u32,
     
-    // Strings and slices
+    // unique message id
+    id: UniqueID,
+
+    // message timestamp
+    timestamp: Timestamp,
+
+    // Strings and vectors
     name: &'a str,
-    tags: &'a [String],
+    tags: Vec<String>,
     
     // Optional fields
     description: Option<String>,
     
     // Enums and variants
+    #[flat_message_item(repr = u8, kind = enum)]
     status: Status,
+    #[flat_message_item(align = 1, kind = variant)]
     data: DataVariant,
     
     // Nested structures
+    #[flat_message_item(align = 4, kind = struct)]
     metadata: Metadata,
 }
 
-#[derive(FlatMessageEnum)]
+#[derive(FlatMessageEnum, Copy, Clone, Debug, Eq, PartialEq)]
 #[repr(u8)]
 enum Status {
     Active = 1,
@@ -191,13 +211,23 @@ enum Status {
     Pending = 3,
 }
 
-#[derive(FlatMessageVariant)]
+#[derive(FlatMessageVariant, Debug, Eq, PartialEq)]
 enum DataVariant {
     Text(String),
     Number(i64),
     Binary(Vec<u8>),
+}  
+
+#[derive(FlatMessageStruct, Debug, Eq, PartialEq)]
+struct Metadata {
+    author: String,
+    country: String,
 }
+
 ```
+**Remarks:** `UniqueID` and `Timestamp` are metadata fields and can be used only once for each struct.
+
+*More details in the [Rich Type System](book/chapter-2/supported_data_types.md) chapter.*
 
 ## 🎯 Use Cases
 

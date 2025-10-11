@@ -862,3 +862,80 @@ fn check_readme_example_2() {
     assert_eq!(message.tags, &[1, 2, 3, 4, 5]);
     assert_eq!(message.metadata, &[0xFF, 0xFE, 0xFD]);
 }
+
+#[test]
+fn check_readme_example_3() {
+    #[derive(FlatMessage, Debug, Eq, PartialEq)]
+    struct ComplexData<'a> {
+        // Basic types
+        active: bool,
+        score: u32,
+        
+        // unique message id
+        id: UniqueID,
+
+        // message timestamp
+        timestamp: Timestamp,
+
+        // Strings and vectors
+        name: &'a str,
+        tags: Vec<String>,
+        
+        // Optional fields
+        description: Option<String>,
+        
+        // Enums and variants
+        #[flat_message_item(repr = u8, kind = enum)]
+        status: Status,
+        #[flat_message_item(align = 1, kind = variant)]
+        data: DataVariant,
+        
+        // Nested structures
+        #[flat_message_item(align = 4, kind = struct)]
+        metadata: Metadata,
+    }
+    
+    #[derive(FlatMessageEnum, Copy, Clone, Debug, Eq, PartialEq)]
+    #[repr(u8)]
+    enum Status {
+        Active = 1,
+        Inactive = 2,
+        Pending = 3,
+    }
+    
+    #[derive(FlatMessageVariant, Debug, Eq, PartialEq)]
+    enum DataVariant {
+        Text(String),
+        Number(i64),
+        Binary(Vec<u8>),
+    }  
+
+    #[derive(FlatMessageStruct, Debug, Eq, PartialEq)]
+    struct Metadata {
+        author: String,
+        country: String,
+    }
+
+    let data = ComplexData {
+        id: UniqueID::with_value(1),
+        active: true,
+        score: 100,
+        timestamp: Timestamp::with_value(123),
+        name: "John",
+        tags: vec!["tag1".to_string(), "tag2".to_string()],
+        description: Some("description".to_string()),
+        status: Status::Active,
+        data: DataVariant::Text("text".to_string()),
+        metadata: Metadata {
+            author: "John".to_string(),
+            country: "USA".to_string(),
+        },
+    };
+
+    let mut storage = Storage::default();
+    data.serialize_to(&mut storage, Config::default()).unwrap();
+
+    let restored = ComplexData::deserialize_from(&storage).unwrap();
+    assert_eq!(data, restored);
+
+}

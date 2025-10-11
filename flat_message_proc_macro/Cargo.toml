@@ -2,7 +2,7 @@
 name = "flat_message_proc_macro"
 version = "0.1.0"
 edition = "2021"
-authors = ["Gavrilut Dragos <gavrilut.dragos@gmail.com>"]
+authors = ["Gavrilut Dragos <gavrilut.dragos@gmail.com>", "Andrei Damian <andreidaamian@gmail.com>"]
 description = "Procedural macros for the FlatMessage serialization library."
 license = "MIT"
 repository = "https://github.com/gdt050579/FlatMessage"
