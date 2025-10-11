@@ -1,5 +1,5 @@
 use super::SerDe;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 use std::ptr;
 
 macro_rules! IMPLEMENT_SERDE_FOR_BASIC_TYPE {

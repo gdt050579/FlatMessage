@@ -1,5 +1,5 @@
 use super::SerDe;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ptr;
 

@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::data_type::FieldType;
 use crate::field_info::FieldInfo;
-use common::constants;
-use common::hashes;
+use crate::common::constants;
+use crate::common::hashes;
 use quote::format_ident;
 use quote::quote;
 use super::ConstAssertions;

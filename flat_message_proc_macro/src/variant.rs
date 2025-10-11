@@ -1,6 +1,6 @@
 use super::ConstAssertions;
 use crate::data_type::DataType;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Fields};
@@ -35,10 +35,10 @@ impl Variant {
                 name.push_str(variant_name);
                 name.push(',');
             }
-            common::hashes::crc32(name.as_bytes())
+            crate::common::hashes::crc32(name.as_bytes())
         } else {
             let name = self.name.to_string();
-            common::hashes::crc32(name.as_bytes())
+            crate::common::hashes::crc32(name.as_bytes())
         }
     }
     fn generate_const_assertion_functions(&self) -> Vec<proc_macro2::TokenStream> {
@@ -304,7 +304,7 @@ impl TryFrom<syn::DeriveInput> for Variant {
         for v in &data_enum.variants {
             let name = v.ident.clone();
             let name_str = name.to_string();
-            let mut hash = common::hashes::crc32(name_str.as_bytes());
+            let mut hash = crate::common::hashes::crc32(name_str.as_bytes());
             match &v.fields {
                 Fields::Unit => {
                     hash = (hash & 0xFFFFFF00) | 0xFF;

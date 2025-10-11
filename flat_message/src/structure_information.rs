@@ -1,5 +1,5 @@
 use crate::{buffer, headers, Error, Name, Storage};
-use common::constants;
+use crate::common::constants;
 use std::mem::size_of;
 use std::num::{NonZeroU32, NonZeroU64, NonZeroU8};
 

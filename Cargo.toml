@@ -2,7 +2,6 @@
 resolver = "2"
 
 members = [
-  "common",
   "flat_message",
   "flat_message_proc_macro",
   "examples",

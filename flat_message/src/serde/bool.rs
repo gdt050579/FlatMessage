@@ -2,7 +2,7 @@ use super::SerDe;
 use super::SerDeSlice;
 use super::SerDeVec;
 use crate::size;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 use std::ptr;
 
 unsafe impl SerDe<'_> for bool {

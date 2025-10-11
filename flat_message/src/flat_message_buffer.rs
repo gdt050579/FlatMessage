@@ -5,8 +5,8 @@ use crate::Storage;
 use super::Error;
 use super::Name;
 use super::SerDe;
-use common::constants;
-use common::hashes;
+use crate::common::constants;
+use crate::common::hashes;
 use std::num::NonZeroU64;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]

@@ -14,6 +14,8 @@ mod structure_information;
 mod flags_support;
 //mod builder;
 
+pub mod common;
+
 pub use self::config::Config;
 pub use self::config::ConfigBuilder;
 pub use self::error::Error;
@@ -28,8 +30,8 @@ pub use self::structure_information::StructureInformation;
 
 pub use flat_message_proc_macro::*;
 
-pub use common::data_format::DataFormat;
-pub use common::hashes::crc32;
+pub use crate::common::data_format::DataFormat;
+pub use crate::common::hashes::crc32;
 pub use unique_id::UniqueID;
 pub use timestamp::Timestamp;
 pub use flags_support::FlagsSupport;

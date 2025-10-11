@@ -1,6 +1,6 @@
 use crate::data_type::FieldType;
 use crate::field_info::FieldInfo;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 use quote::{format_ident, quote};
 use std::fmt::Write;
 use proc_macro2::TokenStream;
@@ -274,7 +274,7 @@ impl<'a> PackedStruct<'a> {
             Ok(PackedStruct {
                 fields: data_members,
                 name: &input.ident,
-                hash: common::hashes::fnv_32(&structure_hash),
+                hash: crate::common::hashes::fnv_32(&structure_hash),
                 ignored_fields,
                 data_format,
                 generics: input.generics.clone(),

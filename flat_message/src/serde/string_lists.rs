@@ -2,7 +2,7 @@ use std::mem;
 
 use super::SerDeVec;
 use crate::size;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 
 const SIZE_FORMAT: size::Format = size::Format::U8withExtension;
 

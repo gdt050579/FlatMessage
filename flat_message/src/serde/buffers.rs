@@ -1,7 +1,7 @@
 use super::SerDeSlice;
 use super::SerDeVec;
 use crate::size;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 
 macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
     ($t:ty, $data_format:ident, $align_method:ident) => {

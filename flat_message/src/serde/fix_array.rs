@@ -1,6 +1,6 @@
 use super::{SerDe, SerDeSlice, SerDeVec};
 use crate::size;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 
 unsafe impl<'a, const N: usize> SerDe<'a> for [u8; N] {
     const DATA_FORMAT: DataFormat = DataFormat::FixArray;

@@ -1,4 +1,4 @@
-use common::hashes;
+use crate::common::hashes;
 use quote::{quote, ToTokens};
 use syn::Field;
 
@@ -26,7 +26,7 @@ impl FieldInfo {
             data_type.parse_attr(attr, &name)?;
         }
         // if the data format is unknown, we need to check if the field is a unique id or a timestamp
-        if data_type.data_format == common::data_format::DataFormat::Unknwon
+        if data_type.data_format == crate::common::data_format::DataFormat::Unknwon
             && !data_type.unique_id
             && !data_type.timestamp
             && !data_type.ignore_field

@@ -15,6 +15,8 @@ mod validate_checksum;
 mod variant;
 mod version_validator_parser;
 
+mod common;
+
 use config::Config;
 use const_assetions::ConstAssertions;
 use packed_struct::PackedStruct;
@@ -157,7 +159,7 @@ pub fn flat_message_variant(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn name(input: TokenStream) -> TokenStream {
     let value = utils::validate_one_string_parameter(input, "name");
-    let hash = common::hashes::fnv_32(&value);
+    let hash = crate::common::hashes::fnv_32(&value);
     TokenStream::from_str(format!("Name {{ value: {} }}", hash).as_str())
         .expect("Fail to convert name! to stream")
 }

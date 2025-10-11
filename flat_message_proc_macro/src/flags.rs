@@ -16,9 +16,9 @@ impl Flags {
                 name.push_str(flag);
                 name.push(',');
             }
-            common::hashes::crc32(name.as_bytes())
+            crate::common::hashes::crc32(name.as_bytes())
         } else {
-            common::hashes::crc32(self.name.to_string().as_bytes())
+            crate::common::hashes::crc32(self.name.to_string().as_bytes())
         }
     }
     fn data_format(&self) -> proc_macro2::TokenStream {

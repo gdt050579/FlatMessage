@@ -1,6 +1,6 @@
 use super::SerDe;
 use crate::size;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 
 /// Implementation for &str
 unsafe impl<'a> SerDe<'a> for &'a str {

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{attribute_parser, attribute_value::AttributeValue};
 
 use super::utils;
-use common::data_format::DataFormat;
+use crate::common::data_format::DataFormat;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::parse_str;

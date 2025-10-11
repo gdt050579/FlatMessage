@@ -21,10 +21,10 @@ impl EnumInfo {
                 name.push_str(variant_name.as_str());
                 name.push_str(value.to_string().as_str());
             }
-            common::hashes::crc32(name.as_bytes())
+            crate::common::hashes::crc32(name.as_bytes())
         } else {
             let name = self.name.to_string();
-            common::hashes::crc32(name.as_bytes())
+            crate::common::hashes::crc32(name.as_bytes())
         }
     }
     fn generate_variant_validation_match(&self, generate_value: bool) -> TokenStream {
