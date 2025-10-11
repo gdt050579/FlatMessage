@@ -2,6 +2,7 @@
 
 <img src="book/chapter-1/img/logo.png" width="1000" />
 
+![Build Status](https://github.com/gdt050579/FlatMessage/actions/workflows/rust.yml/badge.svg)
 [![Crates.io](https://img.shields.io/crates/v/flat_message.svg)](https://crates.io/crates/flat_message)
 [![Documentation](https://docs.rs/flat_message/badge.svg)](https://docs.rs/flat_message)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
