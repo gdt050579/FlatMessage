@@ -2,11 +2,16 @@
 name = "flat_message_proc_macro"
 version = "0.1.0"
 edition = "2021"
-authors = ["gavrilut.dragos@gmail.com"]
-description = "..."
+authors = ["Gavrilut Dragos <gavrilut.dragos@gmail.com>"]
+description = "Procedural macros for the FlatMessage serialization library."
 license = "MIT"
-#repository = ""
-#readme = "README.md"
+repository = "https://github.com/gdt050579/FlatMessage"
+readme = "../README.md"
+keywords = ["serialization", "deserialize", "serialize", "zero-copy", "schema-less", "proc-macro"]
+categories = ["development-tools::procedural-macro-helpers"]
+documentation = "https://docs.rs/flat_message_proc_macro"
+
+
 
 [lib]
 proc-macro = true
