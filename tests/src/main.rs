@@ -1,4 +1,6 @@
 #[cfg(test)]
+mod common_sync_tests;
+#[cfg(test)]
 mod enums;
 #[cfg(test)]
 mod generic;
