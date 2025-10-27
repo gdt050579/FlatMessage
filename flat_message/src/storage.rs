@@ -1,6 +1,6 @@
 use std::{fmt::Debug, slice};
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Storage {
     vec: Vec<u128>,
     size: usize,
