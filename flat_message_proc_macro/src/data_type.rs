@@ -16,7 +16,10 @@ pub(crate) enum FieldType {
 }
 
 impl FieldType {
-    pub(crate) fn serde_trait(&self, expected_type_no_option: &syn::Type) -> proc_macro2::TokenStream {
+    pub(crate) fn serde_trait(
+        &self,
+        expected_type_no_option: &syn::Type,
+    ) -> proc_macro2::TokenStream {
         match self {
             FieldType::Object => quote! { SerDe },
             FieldType::Slice => quote! { SerDeSlice },
@@ -90,7 +93,10 @@ impl DataType {
 
     fn extract_field_type(def: String) -> (FieldType, String) {
         if def.starts_with("Vec<") && def.ends_with(">") {
-            return (FieldType::Vector, def["Vec<".len()..def.len() - 1].to_string());
+            return (
+                FieldType::Vector,
+                def["Vec<".len()..def.len() - 1].to_string(),
+            );
         };
 
         if def.starts_with("&[") && def.ends_with("]") {
@@ -106,17 +112,23 @@ impl DataType {
         {
             if def.starts_with("SmallVec<[") && def.ends_with("]>") {
                 let inner_type = def["SmallVec<[".len()..def.len() - 2].to_string();
-                let inner_type = inner_type.split_once(';').expect("Expected ; in inner type").0;
+                let inner_type = inner_type
+                    .split_once(';')
+                    .expect("Expected ; in inner type")
+                    .0;
 
                 return (FieldType::Vector, inner_type.to_string());
             } else if def.starts_with("smallvec :: SmallVec<[") && def.ends_with("]>") {
                 let inner_type = def["smallvec :: SmallVec<[".len()..def.len() - 2].to_string();
-                let inner_type = inner_type.split_once(';').expect("Expected ; in inner type").0;
+                let inner_type = inner_type
+                    .split_once(';')
+                    .expect("Expected ; in inner type")
+                    .0;
 
                 return (FieldType::Vector, inner_type.to_string());
             }
         }
-        
+
         (FieldType::Object, def)
     }
 
@@ -383,8 +395,16 @@ impl DataType {
             panic!("Invalid type for removing option, not a type path");
         };
         let type_path = type_path.path;
-        let last_segment = type_path.segments.into_iter().last().expect("Expected at least one segment");
-        assert!(last_segment.ident.to_string().contains("Option"), "Expected Option<..> type, got {}", last_segment.ident.to_string());
+        let last_segment = type_path
+            .segments
+            .into_iter()
+            .last()
+            .expect("Expected at least one segment");
+        assert!(
+            last_segment.ident.to_string().contains("Option"),
+            "Expected Option<..> type, got {}",
+            last_segment.ident.to_string()
+        );
         let bracketed = match last_segment.arguments {
             syn::PathArguments::AngleBracketed(bracketed) => bracketed,
             _ => panic!("Expected angular brackets after Option"),
