@@ -1,6 +1,7 @@
 use super::SerDe;
 use super::SerDeSlice;
 use super::SerDeVec;
+use super::SerDeVecType;
 use crate::Storage;
 use crate::headers;
 use std::num::{NonZeroU32, NonZeroU8};
@@ -121,9 +122,9 @@ impl ReusableBuilder {
         });
         true
     }
-    pub fn add_vec<'a, T: SerDeVec<'a>>(&mut self, name: &str, value: &Vec<T>) -> bool {
+    pub fn add_vec<'a,  T: SerDe<'a>, TVecType: SerDeVecType<T>>(&mut self, name: &str, value: &TVecType) -> bool {
         let hash = (common::hashes::fnv_32(name) & 0xFFFFFF00) | T::DATA_FORMAT as u32 | 0x80;
-        let size = SerDeVec::size(value);
+        let size = SerDeVec<TVecType>::size(value);
         if size >= u32::MAX as usize {
             return false;
         }
@@ -135,7 +136,7 @@ impl ReusableBuilder {
         self.data.resize(self.data.len() + size, 0);
         unsafe {
             let p = self.data.as_mut_ptr();
-            SerDeVec::write(value, p, offset);
+            SerDeVec<TVecType>::write(value, p, offset);
         }
         self.fields.push(Field {
             hash,

@@ -5,6 +5,10 @@ edition = "2021"
 
 [dependencies]
 flat_message = { path = "../flat_message" }
+smallvec = { version = "1.15.1", optional = true }
 
 [lints]
 workspace = true
+
+[features]
+smallvec = ["dep:smallvec", "flat_message/smallvec"]

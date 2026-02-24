@@ -93,7 +93,11 @@ pub unsafe trait SerDeSlice<'a> {
 /// # Safety
 ///
 /// You should not use this trait directly, instead you should use the #[derive(FlatMessage)] and derivates instead.
-pub unsafe trait SerDeVec<'a> {
+pub unsafe trait SerDeVec<'a, TVecType>
+where 
+    Self: Sized,
+    TVecType: SerDeVecType<Self>
+{
     const DATA_FORMAT: DataFormat;
 
     /// This method creates a vector from a buffer (it assumes that the buffer is valid and that the vector is at the correct position)
@@ -101,7 +105,7 @@ pub unsafe trait SerDeVec<'a> {
     /// # Safety
     ///
     /// This method is unsafe because it does not check the buffer bounds and should not be used directly (it will be called from the deserialize_from_unchecked method)
-    unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> Vec<Self>
+    unsafe fn from_buffer_unchecked(buf: &'a [u8], pos: usize) -> TVecType
     where
         Self: Sized;
 
@@ -111,7 +115,7 @@ pub unsafe trait SerDeVec<'a> {
     ///
     /// This method is safe because it checks the buffer bounds and returns None if the vector is not at the correct position.
     /// This method should not be used directly (it will be called from the deserialize_from method)
-    fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Vec<Self>>
+    fn from_buffer(buf: &'a [u8], pos: usize) -> Option<TVecType>
     where
         Self: Sized;
 
@@ -120,12 +124,107 @@ pub unsafe trait SerDeVec<'a> {
     /// # Safety
     ///
     /// This method is unsafe and should not be used directly (it will be called from the serialize_to method)
-    unsafe fn write(obj: &Vec<Self>, p: *mut u8, pos: usize) -> usize
+    unsafe fn write(obj: &TVecType, p: *mut u8, pos: usize) -> usize
     where
         Self: Sized;
 
     /// Returns the serialized size in bytes needed to store the vector
-    fn size(obj: &Vec<Self>) -> usize
+    fn size(obj: &TVecType) -> usize
     where
         Self: Sized;
+}
+
+pub trait SerDeVecType<T> : std::ops::Deref<Target = [T]> {
+    fn new() -> Self;
+    fn with_capacity(capacity: usize) -> Self;
+    fn push(&mut self, value: T);
+    fn as_slice(&self) -> &[T];
+    fn len(&self) -> usize;
+    fn capacity(&self) -> usize;
+
+    /// # Safety:
+    /// See Vec::set_len for requirements.
+    unsafe fn set_len(&mut self, len: usize);
+
+    fn as_mut_ptr(&mut self) -> *mut T;
+
+    fn from_slice(slice: &[T]) -> Self
+    where
+        T: Clone;
+}
+
+impl<T> SerDeVecType<T> for Vec<T> {
+    fn new() -> Self {
+        Vec::new()
+    }
+    fn with_capacity(capacity: usize) -> Self {
+        Vec::with_capacity(capacity)
+    }
+    fn push(&mut self, value: T) {
+        self.push(value)
+    }
+    fn as_slice(&self) -> &[T] {
+        self.as_slice()
+    }
+    fn len(&self) -> usize {
+        self.len()
+    }
+    fn capacity(&self) -> usize {
+        self.capacity()
+    }
+    unsafe fn set_len(&mut self, len: usize) {
+        unsafe { self.set_len(len) }
+    }
+    fn as_mut_ptr(&mut self) -> *mut T {
+        self.as_mut_ptr()
+    }
+    fn from_slice(slice: &[T]) -> Self
+    where
+        T: Clone,
+    {
+        slice.to_vec()
+    }
+}
+
+#[cfg(feature = "smallvec")]
+impl<T, const N: usize> SerDeVecType<T> for smallvec::SmallVec<[T; N]>
+where
+    [T; N]: smallvec::Array<Item = T>,  // smallvec does not use const generics so this is required to compile
+{
+    fn new() -> Self {
+        smallvec::SmallVec::new()
+    }
+    fn with_capacity(capacity: usize) -> Self {
+        smallvec::SmallVec::with_capacity(capacity)
+    }
+    
+    fn push(&mut self, value: T) {
+        self.push(value);
+    }
+    
+    fn as_slice(&self) -> &[T] {
+        self.as_slice()
+    }
+    
+    fn len(&self) -> usize {
+        self.len()
+    }
+    
+    fn capacity(&self) -> usize {
+        self.capacity()
+    }
+    
+    unsafe fn set_len(&mut self, len: usize) {
+        unsafe { self.set_len(len) }
+    }
+    
+    fn as_mut_ptr(&mut self) -> *mut T {
+        self.as_mut_ptr()
+    }
+    
+    fn from_slice(slice: &[T]) -> Self
+    where
+        T: Clone {
+        smallvec::SmallVec::from(slice)
+    }
 }

@@ -4,7 +4,6 @@ use crate::{attribute_parser, attribute_value::AttributeValue};
 
 use super::utils;
 use crate::common::data_format::DataFormat;
-use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::parse_str;
 use syn::Attribute;
@@ -17,11 +16,11 @@ pub(crate) enum FieldType {
 }
 
 impl FieldType {
-    pub(crate) fn serde_trait(&self) -> &'static str {
+    pub(crate) fn serde_trait(&self, expected_type_no_option: &syn::Type) -> proc_macro2::TokenStream {
         match self {
-            FieldType::Object => "SerDe",
-            FieldType::Slice => "SerDeSlice",
-            FieldType::Vector => "SerDeVec",
+            FieldType::Object => quote! { SerDe },
+            FieldType::Slice => quote! { SerDeSlice },
+            FieldType::Vector => quote! { SerDeVec::<'_, #expected_type_no_option> },
         }
     }
 }
@@ -31,6 +30,7 @@ pub(crate) struct DataType {
     pub(crate) data_format: DataFormat,
     pub(crate) name: String,
     pub(crate) ty: syn::Type,
+    pub(crate) ty_no_option: syn::Type,
     pub(crate) unique_id: bool,
     pub(crate) timestamp: bool,
     pub(crate) ignore_field: bool,
@@ -48,11 +48,8 @@ impl DataType {
         }
     }
     #[inline(always)]
-    pub(crate) fn serde_trait(&self) -> syn::Ident {
-        syn::Ident::new(
-            self.field_type.serde_trait(),
-            proc_macro2::Span::call_site(),
-        )
+    pub(crate) fn serde_trait(&self) -> proc_macro2::TokenStream {
+        self.field_type.serde_trait(&self.ty_no_option)
     }
     pub(crate) fn new(
         ty: syn::Type,
@@ -61,25 +58,14 @@ impl DataType {
     ) -> Self {
         utils::type_name_formatter(&mut def);
         let mut option = false;
+        let mut ty_no_option = ty.clone();
         if def.starts_with("Option<") && def.ends_with(">") {
             def = def["Option<".len()..def.len() - 1].to_string();
             option = true;
+            ty_no_option = Self::remove_option(ty_no_option);
         }
-        let field_type = if def.starts_with("Vec<") && def.ends_with(">") {
-            def = def["Vec<".len()..def.len() - 1].to_string();
-            FieldType::Vector
-        } else if def.starts_with("&[") && def.ends_with("]") {
-            if DataFormat::from(&def[1..def.len()]) == DataFormat::FixArray {
-                // this wil be treated as an object (&[u8; N])
-                def = def[1..def.len()].to_string();
-                FieldType::Object
-            } else {
-                def = def[2..def.len() - 1].to_string();
-                FieldType::Slice
-            }
-        } else {
-            FieldType::Object
-        };
+        let (field_type, def) = Self::extract_field_type(def);
+
         //println!(" -------- DataType: {def} 3");
         let unique_id = matches!(def.as_str(), "UniqueID" | "flat_message :: UniqueID");
         let timestamp = matches!(def.as_str(), "Timestamp" | "flat_message :: Timestamp");
@@ -91,6 +77,7 @@ impl DataType {
             data_format: DataFormat::from(def.as_str()),
             name: def,
             ty,
+            ty_no_option,
             unique_id,
             timestamp,
             ignore_field: zst,
@@ -101,10 +88,42 @@ impl DataType {
         }
     }
 
+    fn extract_field_type(def: String) -> (FieldType, String) {
+        if def.starts_with("Vec<") && def.ends_with(">") {
+            return (FieldType::Vector, def["Vec<".len()..def.len() - 1].to_string());
+        };
+
+        if def.starts_with("&[") && def.ends_with("]") {
+            if DataFormat::from(&def[1..def.len()]) == DataFormat::FixArray {
+                // this wil be treated as an object (&[u8; N])
+                return (FieldType::Object, def[1..def.len()].to_string());
+            } else {
+                return (FieldType::Slice, def[2..def.len() - 1].to_string());
+            }
+        }
+
+        #[cfg(feature = "smallvec")]
+        {
+            if def.starts_with("SmallVec<[") && def.ends_with("]>") {
+                let inner_type = def["SmallVec<[".len()..def.len() - 2].to_string();
+                let inner_type = inner_type.split_once(';').expect("Expected ; in inner type").0;
+
+                return (FieldType::Vector, inner_type.to_string());
+            } else if def.starts_with("smallvec :: SmallVec<[") && def.ends_with("]>") {
+                let inner_type = def["smallvec :: SmallVec<[".len()..def.len() - 2].to_string();
+                let inner_type = inner_type.split_once(';').expect("Expected ; in inner type").0;
+
+                return (FieldType::Vector, inner_type.to_string());
+            }
+        }
+        
+        (FieldType::Object, def)
+    }
+
     pub(crate) fn parse_attr(&mut self, attr: &Attribute, field_name: &str) -> Result<(), String> {
         if attr.path().is_ident("flat_message_item") {
             let all_tokens = attr.meta.clone().into_token_stream();
-            let mut tokens = TokenStream::default();
+            let mut tokens = proc_macro::TokenStream::default();
             let iter = all_tokens.into_iter();
             for token in iter {
                 if let proc_macro2::TokenTree::Group(group) = token {
@@ -349,5 +368,31 @@ impl DataType {
             let ty = self.ty.clone();
             quote! { #ty::default() }
         }
+    }
+
+    // Only guaranteed to work for types in field / tuple item declaration position, or type Option<..>
+    fn remove_option(mut ty: syn::Type) -> syn::Type {
+        let ty = loop {
+            match ty {
+                syn::Type::Paren(paren) => ty = *paren.elem,
+                syn::Type::Group(group) => ty = *group.elem,
+                _ => break ty,
+            }
+        };
+        let syn::Type::Path(type_path) = ty else {
+            panic!("Invalid type for removing option, not a type path");
+        };
+        let type_path = type_path.path;
+        let last_segment = type_path.segments.into_iter().last().expect("Expected at least one segment");
+        assert!(last_segment.ident.to_string().contains("Option"), "Expected Option<..> type, got {}", last_segment.ident.to_string());
+        let bracketed = match last_segment.arguments {
+            syn::PathArguments::AngleBracketed(bracketed) => bracketed,
+            _ => panic!("Expected angular brackets after Option"),
+        };
+        let args = bracketed.args.into_iter().find_map(|arg| match arg {
+            syn::GenericArgument::Type(ty) => Some(ty),
+            _ => None,
+        });
+        args.expect("Expected at least one argument")
     }
 }

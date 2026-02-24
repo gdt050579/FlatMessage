@@ -24,3 +24,6 @@ crc32fast = "1"
 
 [lints]
 workspace = true
+
+[features]
+smallvec = []   # no need to add a dependency here

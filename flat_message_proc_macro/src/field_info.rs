@@ -56,11 +56,8 @@ impl FieldInfo {
         syn::Ident::new(self.name.as_str(), proc_macro2::Span::call_site())
     }
     // #[inline(always)]
-    // pub(crate) fn serialization_trait(&self) -> syn::Ident {
-    //     syn::Ident::new(
-    //         self.data_type.field_type.serde_trait(),
-    //         proc_macro2::Span::call_site(),
-    //     )
+    // pub(crate) fn serialization_trait(&self) -> proc_macro2::TokenStream {
+    //     self.data_type.serde_trait()
     // }
     #[inline(always)]
     pub(crate) fn serialization_alignment(&self) -> usize {

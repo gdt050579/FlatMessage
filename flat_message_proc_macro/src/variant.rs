@@ -10,7 +10,7 @@ struct VariantItem {
     name: String,
     name_ident: syn::Ident,
     data_type: Option<DataType>,
-    serde_trait: syn::Ident,
+    serde_trait: proc_macro2::TokenStream,
     extra_size: usize,
     hash: u32,
 }
@@ -312,7 +312,7 @@ impl TryFrom<syn::DeriveInput> for Variant {
                         name: name.to_string(),
                         name_ident: name,
                         data_type: None,
-                        serde_trait: syn::Ident::new("None", proc_macro2::Span::call_site()),
+                        serde_trait: quote! { None },
                         extra_size: 0,
                         hash,
                     });

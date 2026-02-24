@@ -13,7 +13,7 @@ impl ConstAssertions {
         let const_assert_name = format_ident!("_CONST_ASSERT_{}_{}",structure_name,field_name);        
         let df = format_ident!("{}",datatype.data_format.to_string());
         let field_name = format!("{structure_name}::{field_name}");
-        let serde_ty = format_ident!("{}",datatype.field_type.serde_trait());
+        let serde_ty = datatype.serde_trait();
         quote! {
             #[allow(non_upper_case_globals)]
             const #const_assert_name: () = if <#ty as #serde_ty>::DATA_FORMAT as u8 != flat_message::DataFormat::#df as u8 {
@@ -27,7 +27,7 @@ impl ConstAssertions {
         let const_assert_name = format_ident!("_CONST_ASSERT_STRUCT_{}_{}",structure_name,field_name);        
         let df = format_ident!("{}",datatype.data_format.to_string());
         let field_name = format!("{structure_name}::{field_name}");
-        let serde_ty = format_ident!("{}",datatype.field_type.serde_trait());
+        let serde_ty = datatype.serde_trait();
         quote! {
             #[allow(non_upper_case_globals)]
             const #const_assert_name: () = if <#ty as #serde_ty>::DATA_FORMAT as u8 != flat_message::DataFormat::#df as u8 {
@@ -50,7 +50,7 @@ impl ConstAssertions {
         let const_assert_name = format_ident!("_CONST_ASSERT_VARIANT_{}_{}",structure_name,field_name);        
         let df = format_ident!("{}",datatype.data_format.to_string());
         let field_name = format!("{structure_name}::{field_name}");
-        let serde_ty = format_ident!("{}",datatype.field_type.serde_trait());
+        let serde_ty = datatype.serde_trait();
         quote! {
             #[allow(non_upper_case_globals)]
             const #const_assert_name: () = if <#ty as #serde_ty>::DATA_FORMAT as u8 != flat_message::DataFormat::#df as u8 {
@@ -78,7 +78,7 @@ impl ConstAssertions {
         let const_assert_name = format_ident!("_CONST_ASSERT_PACKED_STRUCT_{}_{}",structure_name,field_name);        
         let df = format_ident!("{}",datatype.data_format.to_string());
         let field_name = format!("{structure_name}::{field_name}");
-        let serde_ty = format_ident!("{}",datatype.field_type.serde_trait());
+        let serde_ty = datatype.serde_trait();
         quote! {
             #[allow(non_upper_case_globals)]
             const #const_assert_name: () = if <#ty as #serde_ty>::DATA_FORMAT as u8 != flat_message::DataFormat::#df as u8 {
