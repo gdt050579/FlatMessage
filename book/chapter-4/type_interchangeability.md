@@ -46,12 +46,13 @@ fn example() -> Result<(), Error> {
 
 ### Performance Implications
 
-| Type     | Serialization        | Deserialization          | Memory Usage        |
-| -------- | -------------------- | ------------------------ | ------------------- |
-| `Vec<T>` | Moderate (iteration) | Slow (allocation + copy) | High (owned data)   |
-| `&[T]`   | Fast (direct copy)   | Fast (zero-copy)         | Low (borrowed data) |
+| Type               | Serialization        | Deserialization                      | Memory Usage        |
+| ------------------ | -------------------- | ------------------------------------ | ------------------- |
+| `Vec<T>`           | Moderate (iteration) | Slow (allocation + copy)             | High (owned data)   |
+| `SmallVec<[T; N]>` | Moderate (iteration) | Moderate (copy, possibly allocation) | High (owned data)   |
+| `&[T]`             | Fast (direct copy)   | Fast (zero-copy)                     | Low (borrowed data) |
 
-**Best Practice**: Use `Vec<T>` for data you own/modify, `&[T]` for read-only access.
+**Best Practice**: Use `Vec<T>` for data you own/modify, `&[T]` for read-only access where zero-copy deserialization is possible, and consider using `SmallVec<[T; N]>` ([smallvec](https://docs.rs/smallvec/latest/smallvec/) crate with the `smallvec` feature) when the number of items is usually small, especially if they contain borrowed data.
 
 ## 2. Option vs Non-Option Interchangeability
 
@@ -167,14 +168,19 @@ fn string_example() -> Result<(), Error> {
 
 ## Compatibility Matrix
 
-| Serialize | Deserialize | Compatible | Performance | Notes                |
-| --------- | ----------- | ---------- | ----------- | -------------------- |
-| `Vec<T>`  | `Vec<T>`    | ✅          | Slow        | Copy required        |
-| `Vec<T>`  | `&[T]`      | ✅          | Fast        | Zero-copy            |
-| `&[T]`    | `Vec<T>`    | ✅          | Slow        | Copy required        |
-| `&[T]`    | `&[T]`      | ✅          | Fast        | Zero-copy            |
-| `Some(T)` | `T`         | ✅          | Same as T   | Direct access        |
-| `None`    | `T`         | ❌          | -           | Error: field missing |
-| `T`       | `Option<T>` | ✅          | Same as T   | Wrapped in Some      |
-| `String`  | `&str`      | ✅          | Fast        | Zero-copy            |
-| `&str`    | `String`    | ✅          | Slow        | Copy required        |
+| Serialize           | Deserialize        | Compatible  | Performance | Notes                    |
+| ---------           | -----------        | ----------- | ----------- | --------------------     |
+| `Vec<T>`            | `Vec<T>`           | ✅          | Slow        | Copy required            |
+| `Vec<T>`            | `&[T]`             | ✅          | Fast        | Zero-copy                |
+| `Vec<T>`            | `SmallVec<[T; N]>` | ✅          | Average     | Zero-allocation possible |
+| `&[T]`              | `Vec<T>`           | ✅          | Slow        | Copy required            |
+| `&[T]`              | `&[T]`             | ✅          | Fast        | Zero-copy                |
+| `&[T]`              | `SmallVec<[T; N]>` | ✅          | Average     | Zero-allocation possible |
+| `SmallVec<[T; N1]>` | `SmallVec<[T; N2]>`| ✅          | Average     | Zero-allocation possible |
+| `SmallVec<[T; N]>`  | `Vec<T>`           | ✅          | Slow        | Copy required            |
+| `SmallVec<[T; N]>`  | `&[T]`             | ✅          | Fast        | Zero-copy                |
+| `Some(T)`           | `T`                | ✅          | Same as T   | Direct access            |
+| `None`              | `T`                | ❌          | -           | Error: field missing     |
+| `T`                 | `Option<T>`        | ✅          | Same as T   | Wrapped in Some          |
+| `String`            | `&str`             | ✅          | Fast        | Zero-copy                |
+| `&str`              | `String`           | ✅          | Slow        | Copy required            |
