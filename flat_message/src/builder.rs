@@ -122,9 +122,9 @@ impl ReusableBuilder {
         });
         true
     }
-    pub fn add_vec<'a,  T: SerDe<'a>, TVecType: SerDeVecType<T>>(&mut self, name: &str, value: &TVecType) -> bool {
+    pub fn add_vec<'a,  T: SerDeVec<'a, TVecType>, TVecType: SerDeVecType<T>>(&mut self, name: &str, value: &TVecType) -> bool {
         let hash = (common::hashes::fnv_32(name) & 0xFFFFFF00) | T::DATA_FORMAT as u32 | 0x80;
-        let size = SerDeVec<TVecType>::size(value);
+        let size = SerDeVec::<'_, TVecType>::size(value);
         if size >= u32::MAX as usize {
             return false;
         }
@@ -136,7 +136,7 @@ impl ReusableBuilder {
         self.data.resize(self.data.len() + size, 0);
         unsafe {
             let p = self.data.as_mut_ptr();
-            SerDeVec<TVecType>::write(value, p, offset);
+            SerDeVec::<'_, TVecType>::write(value, p, offset);
         }
         self.fields.push(Field {
             hash,

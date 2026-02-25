@@ -157,27 +157,35 @@ impl<T> SerDeVecType<T> for Vec<T> {
     fn new() -> Self {
         Vec::new()
     }
+
     fn with_capacity(capacity: usize) -> Self {
         Vec::with_capacity(capacity)
     }
+
     fn push(&mut self, value: T) {
         self.push(value)
     }
+
     fn as_slice(&self) -> &[T] {
         self.as_slice()
     }
+
     fn len(&self) -> usize {
         self.len()
     }
+
     fn capacity(&self) -> usize {
         self.capacity()
     }
+
     unsafe fn set_len(&mut self, len: usize) {
         unsafe { self.set_len(len) }
     }
+
     fn as_mut_ptr(&mut self) -> *mut T {
         self.as_mut_ptr()
     }
+
     fn from_slice(slice: &[T]) -> Self
     where
         T: Clone,
@@ -194,6 +202,7 @@ where
     fn new() -> Self {
         smallvec::SmallVec::new()
     }
+
     fn with_capacity(capacity: usize) -> Self {
         smallvec::SmallVec::with_capacity(capacity)
     }

@@ -41,8 +41,59 @@ fn check_buffer_i8_serde_smallvec() {
 }
 
 #[test]
-fn check_buffer_i8_serde_option() {
-    // TODO
+fn check_option_smallvec() {
+    #[derive(Debug, PartialEq, Eq, FlatMessage)]
+    #[flat_message_options(store_name: false)]
+    struct Test {
+        v1: Option<smallvec::SmallVec<[u32; 2]>>,
+        v2: Option<smallvec::SmallVec<[bool; 2]>>,
+    }
+    let mut v = Storage::default();
+    let s = Test {
+        v1: Some(SmallVec::from_slice(&[1, 2])),
+        v2: None,
+    };
+    s.serialize_to(&mut v, Config::default()).unwrap();
+    let ds = Test::deserialize_from(&v).unwrap();
+    assert_eq!(s.v1, ds.v1);
+    assert_eq!(s.v2, ds.v2);
+    assert_eq!(ds.v1.map(|v| v.spilled()), Some(false));
+    assert_eq!(ds.v2, None);
+}
+
+#[test]
+fn check_option_smallvec_repr() {
+    #[derive(Debug, PartialEq, Eq, FlatMessage)]
+    #[flat_message_options(store_name: false)]
+    struct Test {
+        v1: Option<smallvec::SmallVec<[u8; 2]>>,
+        v2: Option<smallvec::SmallVec<[String; 2]>>,
+        v3: Option<bool>,
+    }
+    let t = Test {
+        v1: Some(SmallVec::from_slice(&[1, 2, 3, 4])),
+        v2: Some(Smallvec::from(&["Hello".to_string(), "xyz".to_string()])),
+        v3: None,
+    };
+    let mut s = Storage::default();
+    t.serialize_to(&mut s, Config::default()).unwrap();
+    assert_eq!(
+        s.as_slice(),
+        &[
+            70, 76, 77, 1, 3, 0, 0, 0, // Header
+            4, // elements in v1 (4)
+            1, 2, 3, 4, // v1 elements
+            2, // elements in v2 (2)
+            5, 72, 101, 108, 108, 111, // v2[0] (size + Hello)
+            3, 120, 121, 122, // v2[1] (size + xyz)
+            129, 70, 74, 148, // hash for v1
+            13, 73, 74, 150, // hash for v3
+            142, 75, 74, 151, // hash for v2
+            8,   // offset of v1
+            0,   // offset of v3 (NOne = 0)
+            13   // offset of v2
+        ]
+    );
 }
 
 #[test]
