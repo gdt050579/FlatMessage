@@ -22,7 +22,8 @@ fn check_buffer_i8_serde_smallvec() {
     assert_eq!(s.value, ds.value);
     assert_eq!(s.b1, ds.b1);
     assert_eq!(s.b2, ds.b2);
-    assert_eq!(s.b2.capacity(), 4);
+    assert_eq!(ds.b2.capacity(), 4);
+    assert_eq!(ds.b2.spilled(), true);
 
     let mut v = Storage::default();
     let s = TestStruct {
@@ -35,7 +36,8 @@ fn check_buffer_i8_serde_smallvec() {
     assert_eq!(s.value, ds.value);
     assert_eq!(s.b1, ds.b1);
     assert_eq!(s.b2, ds.b2);
-    assert_eq!(s.b2.capacity(), 2);
+    assert_eq!(ds.b2.capacity(), 2);
+    assert_eq!(ds.b2.spilled(), false);
 }
 
 #[test]
@@ -91,4 +93,47 @@ fn check_enum_smallvec_u8bits() {
             8, 18
         ]
     );
+}
+
+#[test]
+fn check_smallvec_object() {
+    use smallvec::smallvec;
+    use smallvec::SmallVec;
+
+    #[derive(Debug, PartialEq, Eq, FlatMessage)]
+    #[flat_message_options(store_name: false)]
+    struct Test<'a> {
+        s1: SmallVec<[String; 2]>,
+        s2: SmallVec<[&'a str; 2]>,
+    }
+
+    {
+        let mut v = Storage::default();
+        let t = Test {
+            s1: smallvec!["Hello".to_string(), "World".to_string()],
+            s2: smallvec!["abc", "xyz"],
+        };
+        {
+            t.serialize_to(&mut v, Config::default()).unwrap();
+            let ds = Test::deserialize_from(&v).unwrap();
+            assert_eq!(t, ds);
+            assert_eq!(t.s1.spilled(), false);
+            assert_eq!(t.s2.spilled(), false);
+        }
+    }
+
+    {
+        let mut v = Storage::default();
+        let t = Test {
+            s1: smallvec!["Hello".to_string(), "World".to_string(), "Everyone".to_string()],
+            s2: smallvec!["abc", "xyz", "123"],
+        };
+        {
+            t.serialize_to(&mut v, Config::default()).unwrap();
+            let ds = Test::deserialize_from(&v).unwrap();
+            assert_eq!(t, ds);
+            assert_eq!(t.s1.spilled(), true);
+            assert_eq!(t.s2.spilled(), true);
+        }
+    }
 }
