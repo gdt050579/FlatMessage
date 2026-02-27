@@ -37,6 +37,9 @@ mod name_validation;
 #[cfg(test)]
 mod default_values;
 
+#[cfg(all(feature = "smallvec", test))]
+mod with_smallvec;
+
 #[cfg(test)]
 pub(crate) use flat_message::{Config, FlatMessage, Storage};
 #[cfg(test)]

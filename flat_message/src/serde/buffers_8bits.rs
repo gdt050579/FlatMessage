@@ -1,5 +1,6 @@
 use super::SerDeSlice;
 use super::SerDeVec;
+use super::SerDeVecType;
 use crate::size;
 use crate::common::data_format::DataFormat;
 
@@ -52,24 +53,24 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
 
 macro_rules! IMPLEMENT_SERDE_FOR_VECTOR {
     ($t:ty, $data_format:ident) => {
-        unsafe impl SerDeVec<'_> for $t {
+        unsafe impl<TVecType: SerDeVecType<$t>> SerDeVec<'_, TVecType> for $t {
             const DATA_FORMAT: DataFormat = DataFormat::$data_format;
             #[inline(always)]
-            unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Vec<Self> {
+            unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> TVecType {
                 let res: &[$t] = SerDeSlice::from_buffer_unchecked(buf, pos);
-                res.to_vec()
+                TVecType::from_slice(res)
             }
             #[inline(always)]
-            fn from_buffer(buf: &[u8], pos: usize) -> Option<Vec<Self>> {
+            fn from_buffer(buf: &[u8], pos: usize) -> Option<TVecType> {
                 let res: &[$t] = SerDeSlice::from_buffer(buf, pos)?;
-                Some(res.to_vec())
+                Some(TVecType::from_slice(res))
             }
             #[inline(always)]
-            unsafe fn write(obj: &Vec<Self>, p: *mut u8, pos: usize) -> usize {
+            unsafe fn write(obj: &TVecType, p: *mut u8, pos: usize) -> usize {
                 SerDeSlice::write(obj.as_slice(), p, pos)
             }
             #[inline(always)]
-            fn size(obj: &Vec<Self>) -> usize {
+            fn size(obj: &TVecType) -> usize {
                 size::len(obj.len() as u32, size::Format::U8withExtension) + obj.len()
             }
         }

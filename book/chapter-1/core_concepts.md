@@ -167,8 +167,11 @@ struct Message<'a> {
 | `&[u8; N]`       | ✅ Yes     | Points into original buffer    |
 | `String`         | ❌ No      | Requires allocation and copy   |
 | `Vec<T>`         | ❌ No      | Requires allocation and copy   |
+| `SmallVec<[T; N]>` | 🟨 Partial | Requires copy, but no allocation unless >N items (*) |
 | `Option<&str>`   | ✅ Yes     | When Some, points into buffer  |
 | `Option<String>` | ❌ No      | When Some, requires allocation |
+
+(*): Uses the [smallvec](https://docs.rs/smallvec/latest/smallvec/) crate, and requires the `smallvec` feature. Enables zero-allocation shallow copies, in which items can be zero-copy (e.g. in a `SmallVec<[&'a str, N]>`), useful when the vector itself cannot be.
 
 ### Lifetime Management
 
@@ -256,7 +259,7 @@ So a total of `30 bytes` for the serialized size. The size could be **4 bytes sm
 ## Best Practices
 
 1. **Use Storage for serialization**: Storage is the only supported serialization target, optimized for FlatMessage workloads
-2. **Prefer zero-copy types**: Use `&str` over `String`, `&[T]` over `Vec<T>` when possible
+2. **Prefer zero-copy types**: Use `&str` over `String`, `&[T]` over `Vec<T>` when possible. For lists of zero-copy types, consider using the [smallvec](https://docs.rs/smallvec/latest/smallvec/) crate with the `smallvec` feature.
 3. **Validate when needed**: Use `deserialize_from()` for untrusted data, `deserialize_from_unchecked()` for performance-critical trusted data
 4. **Set appropriate limits**: Use Config to prevent excessive memory usage
 5. **Manage lifetimes carefully**: Ensure buffers live long enough for zero-copy data

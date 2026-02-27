@@ -1,4 +1,4 @@
-use super::{SerDe, SerDeSlice, SerDeVec};
+use super::{SerDe, SerDeSlice, SerDeVec, SerDeVecType};
 use crate::size;
 use crate::common::data_format::DataFormat;
 
@@ -103,24 +103,24 @@ unsafe impl<'a, const N: usize> SerDeSlice<'a> for [u8; N] {
     }
 }
 
-unsafe impl<'a, const N: usize> SerDeVec<'a> for [u8; N] {
+unsafe impl<'a, const N: usize, TVecType: SerDeVecType<[u8; N]>> SerDeVec<'a, TVecType> for [u8; N] {
     const DATA_FORMAT: DataFormat = DataFormat::FixArray;
     #[inline(always)]
-    unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> Vec<Self> {
+    unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> TVecType {
         let res: &[[u8; N]] = SerDeSlice::from_buffer_unchecked(buf, pos);
-        res.to_vec()
+        TVecType::from_slice(res)
     }
     #[inline(always)]
-    fn from_buffer(buf: &[u8], pos: usize) -> Option<Vec<Self>> {
+    fn from_buffer(buf: &[u8], pos: usize) -> Option<TVecType> {
         let res: &[[u8; N]] = SerDeSlice::from_buffer(buf, pos)?;
-        Some(res.to_vec())
+        Some(TVecType::from_slice(res))
     }
     #[inline(always)]
-    unsafe fn write(obj: &Vec<Self>, p: *mut u8, pos: usize) -> usize {
+    unsafe fn write(obj: &TVecType, p: *mut u8, pos: usize) -> usize {
         SerDeSlice::write(obj.as_slice(), p, pos)
     }
     #[inline(always)]
-    fn size(obj: &Vec<Self>) -> usize {
+    fn size(obj: &TVecType) -> usize {
         SerDeSlice::size(obj.as_slice())
     }
 }
