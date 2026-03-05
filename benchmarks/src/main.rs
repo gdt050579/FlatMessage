@@ -341,20 +341,20 @@ impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
         self.0.serialize_to(output, config)
     }
 
-    fn deserialize_from(input: &'a Storage) -> std::result::Result<Self, flat_message::Error>
+    fn deserialize_from_slice(input: &'a [u8]) -> std::result::Result<Self, flat_message::Error>
     where
         Self: Sized,
     {
-        unsafe { Self::deserialize_from_unchecked(input) }
+        unsafe { Self::deserialize_from_slice_unchecked(input) }
     }
 
-    unsafe fn deserialize_from_unchecked(
-        input: &'a Storage,
+    unsafe fn deserialize_from_slice_unchecked(
+        input: &'a [u8],
     ) -> std::result::Result<Self, flat_message::Error>
     where
         Self: Sized,
     {
-        Ok(Wrapper(T::deserialize_from_unchecked(input)?))
+        Ok(Wrapper(T::deserialize_from_slice_unchecked(input)?))
     }
 }
 

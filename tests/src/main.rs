@@ -40,6 +40,9 @@ mod default_values;
 #[cfg(all(feature = "smallvec", test))]
 mod with_smallvec;
 
+#[cfg(all(feature = "stable_deref", test))]
+mod with_stable_deref;
+
 #[cfg(test)]
 pub(crate) use flat_message::{Config, FlatMessage, Storage};
 #[cfg(test)]

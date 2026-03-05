@@ -25,12 +25,11 @@ impl StructureInformation {
     }
 }
 
-impl TryFrom<&Storage> for StructureInformation {
+impl TryFrom<&[u8]> for StructureInformation {
     type Error = Error;
 
-    fn try_from(buf: &Storage) -> Result<Self, Self::Error> {
+    fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
         // validate buf length - minimum 8 bytes
-        let buf = buf.as_slice();
         let len = buf.len();
         if len < size_of::<headers::HeaderV1>() {
             return Err(Error::InvalidHeaderLength(len));
@@ -87,5 +86,13 @@ impl TryFrom<&Storage> for StructureInformation {
             name,
             version: NonZeroU8::new(header.version),
         })
+    }
+}
+
+impl TryFrom<&Storage> for StructureInformation {
+    type Error = Error;
+
+    fn try_from(buf: &Storage) -> Result<Self, Self::Error> {
+        Self::try_from(buf.as_slice())
     }
 }

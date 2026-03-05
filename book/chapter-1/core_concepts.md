@@ -98,14 +98,30 @@ pub trait FlatMessage<'a> {
     fn serialize_to(&self, output: &mut Storage, config: Config) -> Result<(), Error>;
     
     // Deserialize data from a buffer (with validation)
-    fn deserialize_from(input: &'a Storage) -> Result<Self, Error>
+    fn deserialize_from_slice(input: &'a [u8]) -> Result<Self, Error>
     where
         Self: Sized;
     
     // Deserialize without validation (faster, but unsafe)
-    unsafe fn deserialize_from_unchecked(input: &'a Storage) -> Result<Self, Error>
+    unsafe fn deserialize_from_slice_unchecked(input: &'a [u8]) -> Result<Self, Error>
     where
         Self: Sized;
+
+    // Deserialize directly from a Storage instance (provided)
+    fn deserialize_from(input: &'a Storage) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        Self::deserialize_from_slice(input.as_slice())
+    }
+
+    // Deserialize directly from a Storage instance, without validation (provided)
+    unsafe fn deserialize_from_unchecked(input: &'a Storage) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        unsafe { Self::deserialize_from_slice_unchecked(input.as_slice()) }
+    }
 }
 ```
 
@@ -144,6 +160,8 @@ let restored_point = unsafe {
     Point::deserialize_from_unchecked(&storage)?
 };
 ```
+
+You can also use the `deserialize_from_slice` / `deserialize_from_slice_unchecked` APIs depending on your use case.
 
 ## Zero-Copy Deserialization
 

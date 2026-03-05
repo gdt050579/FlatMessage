@@ -92,3 +92,15 @@ impl PartialEq<Storage> for Storage {
         self.as_slice() == other.as_slice()
     }
 }
+
+#[cfg(feature = "stable_deref")]
+impl std::ops::Deref for Storage {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        self.as_slice()
+    }
+}
+
+#[cfg(feature = "stable_deref")]
+unsafe impl stable_deref_trait::StableDeref for Storage {}
