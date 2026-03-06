@@ -1,6 +1,6 @@
 [package]
 name = "flat_message"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Gavrilut Dragos <gavrilut.dragos@gmail.com>", "Andrei Damian <andreidaamian@gmail.com>"]
 description = "Zero-copy, schema-less serialization and deserialization fast library for Rust."
@@ -12,8 +12,8 @@ keywords = ["serialization", "deserialize", "serialize", "zero-copy", "schema-le
 categories = ["encoding"]
 
 [dependencies]
-flat_message_proc_macro = { path = "../flat_message_proc_macro" }
-# flat_message_proc_macro = "0.2.0"
+# flat_message_proc_macro = { path = "../flat_message_proc_macro" }
+flat_message_proc_macro = "0.2.1"
 serde = { version = "1", optional = true }
 crc32fast = "1"
 smallvec = { version = "1.15.1", optional = true }
