@@ -72,7 +72,7 @@ fn check_option_smallvec_repr() {
     }
     let t = Test {
         v1: Some(SmallVec::from_slice(&[1, 2, 3, 4])),
-        v2: Some(Smallvec::from(&["Hello".to_string(), "xyz".to_string()])),
+        v2: Some(SmallVec::from(["Hello".to_string(), "xyz".to_string()])),
         v3: None,
     };
     let mut s = Storage::default();
@@ -176,7 +176,11 @@ fn check_smallvec_object() {
     {
         let mut v = Storage::default();
         let t = Test {
-            s1: smallvec!["Hello".to_string(), "World".to_string(), "Everyone".to_string()],
+            s1: smallvec![
+                "Hello".to_string(),
+                "World".to_string(),
+                "Everyone".to_string()
+            ],
             s2: smallvec!["abc", "xyz", "123"],
         };
         {

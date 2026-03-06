@@ -1,4 +1,4 @@
-use crate::{buffer, headers, Error, Name, Storage};
+use crate::{buffer, headers, Error, Name, Storage, StorageRef};
 use crate::common::constants;
 use std::mem::size_of;
 use std::num::{NonZeroU32, NonZeroU64, NonZeroU8};
@@ -25,10 +25,10 @@ impl StructureInformation {
     }
 }
 
-impl TryFrom<&Storage> for StructureInformation {
+impl TryFrom<&StorageRef> for StructureInformation {
     type Error = Error;
 
-    fn try_from(buf: &Storage) -> Result<Self, Self::Error> {
+    fn try_from(buf: &StorageRef) -> Result<Self, Self::Error> {
         // validate buf length - minimum 8 bytes
         let buf = buf.as_slice();
         let len = buf.len();
@@ -87,5 +87,13 @@ impl TryFrom<&Storage> for StructureInformation {
             name,
             version: NonZeroU8::new(header.version),
         })
+    }
+}
+
+impl TryFrom<&Storage> for StructureInformation {
+    type Error = Error;
+
+    fn try_from(buf: &Storage) -> Result<Self, Self::Error> {
+        Self::try_from(buf.as_ref())
     }
 }

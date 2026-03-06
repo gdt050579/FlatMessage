@@ -12,17 +12,19 @@ keywords = ["serialization", "deserialize", "serialize", "zero-copy", "schema-le
 categories = ["encoding"]
 
 [dependencies]
-# flat_message_proc_macro = { path = "../flat_message_proc_macro" }
-flat_message_proc_macro = "0.2.0"
+flat_message_proc_macro = { path = "../flat_message_proc_macro" }
+# flat_message_proc_macro = "0.2.0"
 serde = { version = "1", optional = true }
 crc32fast = "1"
 smallvec = { version = "1.15.1", optional = true }
+stable_deref_trait = { version = "1.2.1", default-features = false, optional = true }
 
 [features]
 default = []
 check_crc32 = []
 benchmarks = ["dep:serde"]
 smallvec = ["flat_message_proc_macro/smallvec", "dep:smallvec"]
+stable_deref = ["dep:stable_deref_trait"]
 
 [lints]
 workspace = true

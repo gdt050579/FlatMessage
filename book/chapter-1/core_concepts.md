@@ -97,15 +97,31 @@ pub trait FlatMessage<'a> {
     // Serialize data to a Storage buffer
     fn serialize_to(&self, output: &mut Storage, config: Config) -> Result<(), Error>;
     
-    // Deserialize data from a buffer (with validation)
-    fn deserialize_from(input: &'a Storage) -> Result<Self, Error>
+    // Deserialize data from a StorageRef (with validation)
+    fn deserialize_from_ref(input: &'a StorageRef) -> Result<Self, Error>
     where
         Self: Sized;
     
-    // Deserialize without validation (faster, but unsafe)
-    unsafe fn deserialize_from_unchecked(input: &'a Storage) -> Result<Self, Error>
+    // Deserialize from a StorageRef without validation (faster, but unsafe)
+    unsafe fn deserialize_from_ref_unchecked(input: &'a StorageRef) -> Result<Self, Error>
     where
         Self: Sized;
+
+    // Deserialize directly from a Storage instance (provided)
+    fn deserialize_from(input: &'a Storage) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        Self::deserialize_from_ref(input.as_ref())
+    }
+
+    // Deserialize directly from a Storage instance, without validation (provided)
+    unsafe fn deserialize_from_unchecked(input: &'a Storage) -> Result<Self, Error>
+    where
+        Self: Sized,
+    {
+        unsafe { Self::deserialize_from_ref_unchecked(input.as_ref()) }
+    }
 }
 ```
 
@@ -144,6 +160,8 @@ let restored_point = unsafe {
     Point::deserialize_from_unchecked(&storage)?
 };
 ```
+
+The `deserialize_from_ref` / `deserialize_from_ref_unchecked` APIs can be useful when using wrappers like [yoke::Yoke](https://docs.rs/yoke/latest/yoke/struct.Yoke.html). See [Owned Zero-Copy Structures](../chapter-4/owned_zero_copy.md) for an example.
 
 ## Zero-Copy Deserialization
 

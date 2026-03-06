@@ -503,12 +503,12 @@ impl<'a> StructInfo<'a> {
 
         quote! {
                 use ::std::ptr;
-                let input = input.as_slice();
                 enum RefOffsetSize {
                     U8,
                     U16,
                     U32,
                 }
+                let input = input.as_slice();
                 let len = input.len();
                 if len < 8 {
                     return Err(flat_message::Error::InvalidHeaderLength(len));
@@ -875,13 +875,13 @@ impl<'a> StructInfo<'a> {
             }
         } else {
             quote! {
-                Self::deserialize_from(input)
+                Self::deserialize_from_ref(input)
             }
         };
 
 
         quote! {
-            fn deserialize_from(input: & #lifetimes ::flat_message::Storage) -> core::result::Result<Self,flat_message::Error>
+            fn deserialize_from_ref(input: & #lifetimes flat_message::StorageRef) -> core::result::Result<Self,flat_message::Error>
             {
                 #header_deserialization_code
                 #checksum_check_code
@@ -900,7 +900,7 @@ impl<'a> StructInfo<'a> {
                     }
                 }
             }
-            unsafe fn deserialize_from_unchecked(input: & #lifetimes ::flat_message::Storage) -> core::result::Result<Self,flat_message::Error>
+            unsafe fn deserialize_from_ref_unchecked(input: & #lifetimes flat_message::StorageRef) -> core::result::Result<Self,flat_message::Error>
             {
                 #unchecked_code
             }

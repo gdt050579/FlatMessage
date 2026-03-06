@@ -27,6 +27,7 @@ pub use self::serde::SerDeSlice;
 pub use self::serde::SerDeVec;
 pub use self::serde::SerDeVecType;
 pub use self::storage::Storage;
+pub use self::storage::StorageRef;
 pub use self::structure_information::StructureInformation;
 
 pub use flat_message_proc_macro::*;
