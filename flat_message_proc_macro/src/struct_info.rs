@@ -508,6 +508,7 @@ impl<'a> StructInfo<'a> {
                     U16,
                     U32,
                 }
+                let input = input.as_slice();
                 let len = input.len();
                 if len < 8 {
                     return Err(flat_message::Error::InvalidHeaderLength(len));
@@ -874,13 +875,13 @@ impl<'a> StructInfo<'a> {
             }
         } else {
             quote! {
-                Self::deserialize_from_slice(input)
+                Self::deserialize_from_ref(input)
             }
         };
 
 
         quote! {
-            fn deserialize_from_slice(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error>
+            fn deserialize_from_ref(input: & #lifetimes flat_message::StorageRef) -> core::result::Result<Self,flat_message::Error>
             {
                 #header_deserialization_code
                 #checksum_check_code
@@ -899,7 +900,7 @@ impl<'a> StructInfo<'a> {
                     }
                 }
             }
-            unsafe fn deserialize_from_slice_unchecked(input: & #lifetimes [u8]) -> core::result::Result<Self,flat_message::Error>
+            unsafe fn deserialize_from_ref_unchecked(input: & #lifetimes flat_message::StorageRef) -> core::result::Result<Self,flat_message::Error>
             {
                 #unchecked_code
             }

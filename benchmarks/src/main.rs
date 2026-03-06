@@ -6,7 +6,7 @@ use ascii_table::{Align, AsciiTable};
 use clap::Parser;
 use clap::Subcommand;
 use clap::ValueEnum;
-use flat_message::{FlatMessage, FlatMessageOwned, Storage};
+use flat_message::{FlatMessage, FlatMessageOwned, Storage, StorageRef};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -341,20 +341,20 @@ impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
         self.0.serialize_to(output, config)
     }
 
-    fn deserialize_from_slice(input: &'a [u8]) -> std::result::Result<Self, flat_message::Error>
+    fn deserialize_from_ref(input: &'a StorageRef) -> std::result::Result<Self, flat_message::Error>
     where
         Self: Sized,
     {
-        unsafe { Self::deserialize_from_slice_unchecked(input) }
+        unsafe { Self::deserialize_from_ref_unchecked(input) }
     }
 
-    unsafe fn deserialize_from_slice_unchecked(
-        input: &'a [u8],
+    unsafe fn deserialize_from_ref_unchecked(
+        input: &'a StorageRef,
     ) -> std::result::Result<Self, flat_message::Error>
     where
         Self: Sized,
     {
-        Ok(Wrapper(T::deserialize_from_slice_unchecked(input)?))
+        Ok(Wrapper(T::deserialize_from_ref_unchecked(input)?))
     }
 }
 

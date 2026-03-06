@@ -15,8 +15,8 @@ fn minimal_yoked() {
     let mut storage = Storage::default();
     t.serialize_to(&mut storage, Config::default()).unwrap();
 
-    let yoked = Yoke::<Test, Storage>::attach_to_cart(storage, |slice| {
-        Test::deserialize_from_slice(slice).expect("Failed to deserialize")
+    let yoked = Yoke::<Test, Storage>::attach_to_cart(storage, |storage_ref| {
+        Test::deserialize_from_ref(storage_ref).expect("Failed to deserialize")
     });
 
     assert_eq!(&t, yoked.get());
@@ -52,8 +52,8 @@ fn check_simple_serde_yoked() {
     let mut storage = Storage::default();
     t.serialize_to(&mut storage, Config::default()).unwrap();
 
-    let yoked = Yoke::<Test, Storage>::attach_to_cart(storage, |slice| {
-        Test::deserialize_from_slice(slice).expect("Failed to deserialize")
+    let yoked = Yoke::<Test, Storage>::attach_to_cart(storage, |storage_ref| {
+        Test::deserialize_from_ref(storage_ref).expect("Failed to deserialize")
     });
 
     assert_eq!(&t, yoked.get());
@@ -90,8 +90,8 @@ fn check_borrowed_serde_yoked() {
     let mut storage = Storage::default();
     t.serialize_to(&mut storage, Config::default()).unwrap();
 
-    let yoked = Yoke::<Test, Storage>::attach_to_cart(storage, |slice| {
-        Test::deserialize_from_slice(slice).expect("Failed to deserialize")
+    let yoked = Yoke::<Test, Storage>::attach_to_cart(storage, |storage_ref| {
+        Test::deserialize_from_ref(storage_ref).expect("Failed to deserialize")
     });
 
     assert_eq!(&t, yoked.get());
@@ -113,9 +113,9 @@ fn mdbook_example() {
 
     // 2. Attach the deserialized structure to the Storage "cart"
     // The resulting `yoked` object owns the storage and can be moved around!
-    let yoked: Yoke<Message<'static>, Storage> = Yoke::attach_to_cart(storage, |slice| {
-        // Deserialize from the slice provided by yoke
-        Message::deserialize_from_slice(slice).expect("Failed to deserialize")
+    let yoked: Yoke<Message<'static>, Storage> = Yoke::attach_to_cart(storage, |storage_ref| {
+        // Deserialize from the the ref provided by yoke
+        Message::deserialize_from_ref(storage_ref).expect("Failed to deserialize")
     });
 
     // 3. Access the deserialized data using `.get()`

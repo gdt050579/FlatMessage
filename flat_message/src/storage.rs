@@ -79,6 +79,10 @@ impl Storage {
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         unsafe { slice::from_raw_parts_mut(self.vec.as_mut_ptr() as *mut u8, self.size) }
     }
+
+    pub fn as_ref(&self) -> &StorageRef {
+        StorageRef::from_storage(self)
+    }
 }
 
 impl Debug for Storage {
@@ -93,14 +97,34 @@ impl PartialEq<Storage> for Storage {
     }
 }
 
-#[cfg(feature = "stable_deref")]
 impl std::ops::Deref for Storage {
-    type Target = [u8];
+    type Target = StorageRef;
 
     fn deref(&self) -> &Self::Target {
-        self.as_slice()
+        self.as_ref()
     }
 }
 
 #[cfg(feature = "stable_deref")]
 unsafe impl stable_deref_trait::StableDeref for Storage {}
+
+/// Wraps a raw byte slice that is known to be aligned to a 128-bit boundary.
+/// This pattern is simiarily used (but with a different invariant) in CString / CStr.
+/// (CStr itself is a #[repr(transparent)] struct over a raw byte slice, with the invariant that it ends with a nul byte.)
+#[repr(transparent)]
+pub struct StorageRef([u8]);
+
+impl StorageRef {
+    pub fn from_storage(storage: &Storage) -> &Self {
+        // # Safety:
+        // The storage only returns us a slice that is guaranteed to be aligned to a 128-bit boundary.
+        // We can safely transmute the slice to a &StorageRef due to the repr(transparent).
+        // This is the same pattern used to convert from a &CString to a &Cstr,
+        // although with a pointer cast instead of a transmute.
+        unsafe { std::mem::transmute(storage.as_slice()) }
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        &self.0
+    }
+}

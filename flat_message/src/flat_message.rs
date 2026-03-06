@@ -1,12 +1,12 @@
 use crate::error::Error;
-use crate::{Config, Storage};
+use crate::{Config, Storage, StorageRef};
 
 pub trait FlatMessage<'a> {
     fn serialize_to(&self, output: &mut Storage, config: Config) -> Result<(), Error>;
-    fn deserialize_from_slice(input: &'a [u8]) -> Result<Self, Error>
+    fn deserialize_from_ref(input: &'a StorageRef) -> Result<Self, Error>
     where
         Self: Sized;
-    unsafe fn deserialize_from_slice_unchecked(input: &'a [u8]) -> Result<Self, Error>
+    unsafe fn deserialize_from_ref_unchecked(input: &'a StorageRef) -> Result<Self, Error>
     where
         Self: Sized;
 
@@ -14,13 +14,13 @@ pub trait FlatMessage<'a> {
     where
         Self: Sized,
     {
-        Self::deserialize_from_slice(input.as_slice())
+        Self::deserialize_from_ref(input.as_ref())
     }
 
     unsafe fn deserialize_from_unchecked(input: &'a Storage) -> Result<Self, Error>
     where
         Self: Sized,
     {
-        unsafe { Self::deserialize_from_slice_unchecked(input.as_slice()) }
+        unsafe { Self::deserialize_from_ref_unchecked(input.as_ref()) }
     }
 }

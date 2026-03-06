@@ -65,9 +65,9 @@ fn process_data() {
 
     // 2. Attach the deserialized structure to the Storage "cart"
     // The resulting `yoked` object owns the storage and can be moved around!
-    let yoked: Yoke<Message<'static>, Storage> = Yoke::attach_to_cart(storage, |slice| {
-        // Deserialize from the slice provided by yoke
-        Message::deserialize_from_slice(slice).expect("Failed to deserialize")
+    let yoked: Yoke<Message<'static>, Storage> = Yoke::attach_to_cart(storage, |storage_ref| {
+        // Deserialize from the the ref provided by yoke
+        Message::deserialize_from_ref(storage_ref).expect("Failed to deserialize")
     });
 
     // 3. Access the deserialized data using `.get()`
@@ -82,7 +82,7 @@ fn process_data() {
 
 1. We derive `Yokeable` on our `Message<'a>` struct. This tells `yoke` how to handle the lifetimes.
 2. We use `Yoke::attach_to_cart`. We pass it our `Storage` instance (which takes ownership of it) and a closure.
-3. The closure receives a `&[u8]` slice that is guaranteed to live as long as the `Storage` instance. We use FlatMessage's `deserialize_from_slice` to parse the data.
+3. The closure receives a `&StorageRef` object that is guaranteed to live as long as the `Storage` instance. We use FlatMessage's `deserialize_from_ref` to parse the data.
 4. The resulting `Yoke<Message<'static>, Storage>` is a self-contained, owned type. It has no lifetime parameters and can be returned from functions, stored in structs, or sent across threads (if the underlying types are `Send`).
 5. When you need to access the data, you call `.get()`, which returns a reference tied to the lifetime of the `Yoke` object itself.
 
