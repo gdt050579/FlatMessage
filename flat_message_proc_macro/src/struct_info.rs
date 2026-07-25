@@ -1046,7 +1046,7 @@ impl<'a> StructInfo<'a> {
                 let buffer = input.as_ptr();
                 let hash = unsafe { ptr::read_unaligned(buffer as *const u32) };
                 let size_and_flags = unsafe { ptr::read_unaligned(buffer.add(4) as *const u32) };
-                if hash != #hash {                              
+                if hash != #hash {
                     return None;
                 }
                 let fields_count = (size_and_flags & 0xFF) >> 2;
