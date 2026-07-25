@@ -909,38 +909,21 @@ impl<'a> StructInfo<'a> {
             {
                 #header_deserialization_code
                 #checksum_check_code
-                match ref_offset_size {
-                    RefOffsetSize::U8 => Self::deserialize_from_ref_impl::<u8>(
-                        buffer,
-                        ptr_it,
-                        p_end,
-                        ref_table_offset,
-                        hash_table_offset,
-                        data_buffer,
-                        #unique_id_call
-                        #timestamp_call
-                    ),
-                    RefOffsetSize::U16 => Self::deserialize_from_ref_impl::<u16>(
-                        buffer,
-                        ptr_it,
-                        p_end,
-                        ref_table_offset,
-                        hash_table_offset,
-                        data_buffer,
-                        #unique_id_call
-                        #timestamp_call
-                    ),
-                    RefOffsetSize::U32 => Self::deserialize_from_ref_impl::<u32>(
-                        buffer,
-                        ptr_it,
-                        p_end,
-                        ref_table_offset,
-                        hash_table_offset,
-                        data_buffer,
-                        #unique_id_call
-                        #timestamp_call
-                    ),
-                }
+                let f = match ref_offset_size {
+                    RefOffsetSize::U8 => Self::deserialize_from_ref_impl::<u8>,
+                    RefOffsetSize::U16 => Self::deserialize_from_ref_impl::<u16>,
+                    RefOffsetSize::U32 => Self::deserialize_from_ref_impl::<u32>,
+                };
+                f(
+                    buffer,
+                    ptr_it,
+                    p_end,
+                    ref_table_offset,
+                    hash_table_offset,
+                    data_buffer,
+                    #unique_id_call
+                    #timestamp_call
+                )
             }
             unsafe fn deserialize_from_ref_unchecked(input: & #lifetimes flat_message::StorageRef) -> core::result::Result<Self,flat_message::Error>
             {
