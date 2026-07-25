@@ -12,6 +12,7 @@ pub mod size;
 mod storage;
 mod structure_information;
 mod flags_support;
+pub mod codegen;
 //mod builder;
 
 pub mod common;
