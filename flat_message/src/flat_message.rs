@@ -15,14 +15,14 @@ where
         Self: Sized;
 
     fn deserialize_from_ref_impl<T: CastUsize>(
-        buffer: *const u8,
-        ptr_it: *const u32,
-        p_end: *const u32,
-        ref_table_offset: usize,
-        hash_table_offset: usize,
-        data_buffer: &'a [u8],
-        unique_id: u64,
-        timestamp: u64,
+        _buffer: *const u8,
+        _ptr_it: *const u32,
+        _p_end: *const u32,
+        _ref_table_offset: usize,
+        _hash_table_offset: usize,
+        _data_buffer: &'a [u8],
+        _unique_id: u64,
+        _timestamp: u64,
     ) -> core::result::Result<Self, Error> {
         unimplemented!()
     }

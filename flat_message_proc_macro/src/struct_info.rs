@@ -503,11 +503,8 @@ impl<'a> StructInfo<'a> {
 
         quote! {
                 use ::std::ptr;
-                enum RefOffsetSize {
-                    U8,
-                    U16,
-                    U32,
-                }
+                use ::flat_message::codegen::RefOffsetSize;
+
                 let input = input.as_slice();
                 let len = input.len();
                 if len < 8 {
@@ -647,7 +644,7 @@ impl<'a> StructInfo<'a> {
             4 => quote! {
                 let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const u32 };
             },
-            60 => quote! {
+            222 => quote! {
                 let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const T };
             },
             _ => panic!("internal error"),
@@ -784,11 +781,8 @@ impl<'a> StructInfo<'a> {
         quote! {
             fn serialize_to(&self,output: &mut ::flat_message::Storage, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
                 use ::std::ptr;
-                enum RefOffsetSize {
-                    U8,
-                    U16,
-                    U32,
-                }
+                use ::flat_message::codegen::RefOffsetSize;
+
                 // basic header (magic + fields count + flags + version)
                 let mut buf_pos = 8usize;
                 let mut size = 8usize;
@@ -849,19 +843,11 @@ impl<'a> StructInfo<'a> {
     }
     fn generate_deserialize_from_methods(&self) -> proc_macro2::TokenStream {
         let header_deserialization_code = self.generate_header_deserialization_code();
-        let deserializaton_code_u8 = self.generate_fields_deserialize_code(1, false, true);
-        let deserializaton_code_u16 = self.generate_fields_deserialize_code(2, false, true);
-        let deserializaton_code_u32 = self.generate_fields_deserialize_code(4, false, true);
-        let deserializaton_code_u60 = self.generate_fields_deserialize_code(60, false, true);
+        let deserializaton_code = self.generate_fields_deserialize_code(222, false, true);
         let checksum_check_code = self.generate_checksum_check_code();
         let ctor_code = self.generate_struct_construction_code();
         let lifetimes = &self.generics.params;
-        let lifetimes_comma = if self.generics.params.is_empty() {
-            quote! {}
-        } else {
-            quote! { , }
-        };
-
+ 
         let unchecked_code = if self.config.optimized_unchecked_code {
             let deserializaton_code_u8_unchecked = self.generate_fields_deserialize_code(1, true, true);
             let deserializaton_code_u16_unchecked = self.generate_fields_deserialize_code(2, true, true);
@@ -916,7 +902,7 @@ impl<'a> StructInfo<'a> {
                 unique_id: u64,
                 timestamp: u64,
             ) -> core::result::Result<#name, flat_message::Error> {
-                #(#deserializaton_code_u60)*
+                #(#deserializaton_code)*
                 Ok(#ctor_code)
             }
             fn deserialize_from_ref(input: & #lifetimes flat_message::StorageRef) -> core::result::Result<Self,flat_message::Error>
@@ -998,11 +984,8 @@ impl<'a> StructInfo<'a> {
         quote! {
             unsafe fn write(object: &Self, p: *mut u8, pos: usize) -> usize {                
                 use ::std::ptr;
-                enum RefOffsetSize {
-                    U8,
-                    U16,
-                    U32,
-                }
+                use ::flat_message::codegen::RefOffsetSize;
+
                 // basic header (magic + fields count + flags + version)
                 let mut buf_pos = 8usize;
                 let mut size = 8usize;
@@ -1070,12 +1053,9 @@ impl<'a> StructInfo<'a> {
     fn generate_serde_header_read(&self, hash: u32) -> proc_macro2::TokenStream {
         quote! {
                 use ::std::ptr;
+                use ::flat_message::codegen::RefOffsetSize;
+
                 let input = &buf[pos..];
-                enum RefOffsetSize {
-                    U8,
-                    U16,
-                    U32,
-                }
                 let buffer_len = input.len();
                 if buffer_len < 8 {
                     return None;
@@ -1083,7 +1063,7 @@ impl<'a> StructInfo<'a> {
                 let buffer = input.as_ptr();
                 let hash = unsafe { ptr::read_unaligned(buffer as *const u32) };
                 let size_and_flags = unsafe { ptr::read_unaligned(buffer.add(4) as *const u32) };
-                if hash != #hash {
+                if hash != #hash {                              
                     return None;
                 }
                 let fields_count = (size_and_flags & 0xFF) >> 2;
