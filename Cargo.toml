@@ -5,7 +5,7 @@ members = [
   "flat_message",
   "flat_message_proc_macro",
   "benchmarks",
-  "tests",
+  "tests", "tach",
 ]
 
 

@@ -1,0 +1,10 @@
+[package]
+name = "tach"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+flat_message = { path = "../flat_message" }
+
+[lints]
+workspace = true
