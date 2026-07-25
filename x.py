@@ -1,7 +1,7 @@
 output = '''
 use flat_message::FlatMessage;
 '''
-n = 200
+n = 50
 
 for i in range(0, n):
     x = f'''
