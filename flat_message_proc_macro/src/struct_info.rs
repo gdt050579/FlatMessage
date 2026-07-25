@@ -29,7 +29,7 @@ mod gencode {
                     ptr_it = ptr_it.add(1);                
                 }           
             }
-            let offset = unsafe { flat_message::codegen::ptr_read_unaligned_as_usize(p_ofs) };
+            let offset = unsafe { ptr::read_unaligned(p_ofs) as usize};
             unsafe { p_ofs = p_ofs.add(1); }
             #create_field
         }        
@@ -49,7 +49,7 @@ mod gencode {
                 } 
             };   
             let #inner_var = if create_field {
-                let offset = unsafe { flat_message::codegen::ptr_read_unaligned_as_usize(p_ofs) };
+                let offset = unsafe { ptr::read_unaligned(p_ofs) as usize };
                 // move to next
                 unsafe { p_ofs = p_ofs.add(1); }
                 unsafe { ptr_it = ptr_it.add(1); }
@@ -503,8 +503,11 @@ impl<'a> StructInfo<'a> {
 
         quote! {
                 use ::std::ptr;
-                use ::flat_message::codegen::RefOffsetSize;
-
+                enum RefOffsetSize {
+                    U8,
+                    U16,
+                    U32,
+                }
                 let input = input.as_slice();
                 let len = input.len();
                 if len < 8 {
@@ -644,10 +647,7 @@ impl<'a> StructInfo<'a> {
             4 => quote! {
                 let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const u32 };
             },
-            222 => quote! {
-                let mut p_ofs = unsafe { buffer.add(ref_table_offset) as *const T };
-            },
-            _ => panic!("internal error"),
+            _ => quote! {},
         });
         for obj in hashes {
             match (obj.mandatory, obj.strict) {
@@ -725,9 +725,8 @@ impl<'a> StructInfo<'a> {
             quote! {}
         };    
         let ignored_fields = self.generate_default_code_for_ignored_fields(); 
-        let name = self.name;
         quote! {
-            #name {
+            Self {
                 #(#struct_fields)*
                 #unique_id_field
                 #timestamp_field
@@ -781,8 +780,11 @@ impl<'a> StructInfo<'a> {
         quote! {
             fn serialize_to(&self,output: &mut ::flat_message::Storage, config: flat_message::Config) -> core::result::Result<(),flat_message::Error> {
                 use ::std::ptr;
-                use ::flat_message::codegen::RefOffsetSize;
-
+                enum RefOffsetSize {
+                    U8,
+                    U16,
+                    U32,
+                }
                 // basic header (magic + fields count + flags + version)
                 let mut buf_pos = 8usize;
                 let mut size = 8usize;
@@ -843,11 +845,13 @@ impl<'a> StructInfo<'a> {
     }
     fn generate_deserialize_from_methods(&self) -> proc_macro2::TokenStream {
         let header_deserialization_code = self.generate_header_deserialization_code();
-        let deserializaton_code = self.generate_fields_deserialize_code(222, false, true);
+        let deserializaton_code_u8 = self.generate_fields_deserialize_code(1, false, true);
+        let deserializaton_code_u16 = self.generate_fields_deserialize_code(2, false, true);
+        let deserializaton_code_u32 = self.generate_fields_deserialize_code(4, false, true);
         let checksum_check_code = self.generate_checksum_check_code();
         let ctor_code = self.generate_struct_construction_code();
         let lifetimes = &self.generics.params;
- 
+
         let unchecked_code = if self.config.optimized_unchecked_code {
             let deserializaton_code_u8_unchecked = self.generate_fields_deserialize_code(1, true, true);
             let deserializaton_code_u16_unchecked = self.generate_fields_deserialize_code(2, true, true);
@@ -875,55 +879,26 @@ impl<'a> StructInfo<'a> {
             }
         };
 
-        let name = self.name;
 
-        let unique_id_call = if self.unique_id.is_some() {
-            quote! {
-                unique_id,
-            }
-        } else {
-            quote! { 0, }
-        };
-        let timestamp_call = if self.timestamp.is_some() {
-            quote! {
-                timestamp,
-            }
-        } else {
-            quote! { 0, }
-        };
         quote! {
-            fn deserialize_from_ref_impl<T: flat_message::codegen::CastUsize>(
-                buffer: *const u8,
-                mut ptr_it: *const u32,
-                p_end: *const u32,
-                ref_table_offset: usize,
-                hash_table_offset: usize,
-                data_buffer: & #lifetimes [u8],
-                unique_id: u64,
-                timestamp: u64,
-            ) -> core::result::Result<#name, flat_message::Error> {
-                #(#deserializaton_code)*
-                Ok(#ctor_code)
-            }
             fn deserialize_from_ref(input: & #lifetimes flat_message::StorageRef) -> core::result::Result<Self,flat_message::Error>
             {
                 #header_deserialization_code
                 #checksum_check_code
-                let f = match ref_offset_size {
-                    RefOffsetSize::U8 => Self::deserialize_from_ref_impl::<u8>,
-                    RefOffsetSize::U16 => Self::deserialize_from_ref_impl::<u16>,
-                    RefOffsetSize::U32 => Self::deserialize_from_ref_impl::<u32>,
-                };
-                f(
-                    buffer,
-                    ptr_it,
-                    p_end,
-                    ref_table_offset,
-                    hash_table_offset,
-                    data_buffer,
-                    #unique_id_call
-                    #timestamp_call
-                )
+                match ref_offset_size {
+                    RefOffsetSize::U8 => {
+                        #(#deserializaton_code_u8)*
+                        Ok(#ctor_code)
+                    }
+                    RefOffsetSize::U16 => {
+                        #(#deserializaton_code_u16)*
+                        Ok(#ctor_code)
+                    }
+                    RefOffsetSize::U32 => {
+                        #(#deserializaton_code_u32)*
+                        Ok(#ctor_code)
+                    }
+                }
             }
             unsafe fn deserialize_from_ref_unchecked(input: & #lifetimes flat_message::StorageRef) -> core::result::Result<Self,flat_message::Error>
             {
@@ -967,8 +942,11 @@ impl<'a> StructInfo<'a> {
         quote! {
             unsafe fn write(object: &Self, p: *mut u8, pos: usize) -> usize {                
                 use ::std::ptr;
-                use ::flat_message::codegen::RefOffsetSize;
-
+                enum RefOffsetSize {
+                    U8,
+                    U16,
+                    U32,
+                }
                 // basic header (magic + fields count + flags + version)
                 let mut buf_pos = 8usize;
                 let mut size = 8usize;
@@ -1036,9 +1014,12 @@ impl<'a> StructInfo<'a> {
     fn generate_serde_header_read(&self, hash: u32) -> proc_macro2::TokenStream {
         quote! {
                 use ::std::ptr;
-                use ::flat_message::codegen::RefOffsetSize;
-
                 let input = &buf[pos..];
+                enum RefOffsetSize {
+                    U8,
+                    U16,
+                    U32,
+                }
                 let buffer_len = input.len();
                 if buffer_len < 8 {
                     return None;
