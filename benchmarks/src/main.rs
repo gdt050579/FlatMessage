@@ -1048,7 +1048,7 @@ fn run_tests(args: Args, test_name: &str) {
         {
             let s = structures::nested_packed::generate();
             run!(NestedPacked, &s, i);
-        }
+        } 
         {
             let s = structures::nested_struct::generate();
             run!(NestedStruct, &s, i);
@@ -1076,10 +1076,10 @@ fn run_one_mdbook_test(test_name: &str, test_filter: &str, times: u32) {
     run_tests(a, test_name);
 }
 fn run_mdbook_tests(test_filter: &str) {
-    run_one_mdbook_test("multiple_fields", test_filter, 100_000);
+    run_one_mdbook_test("multiple_fields", test_filter,100_000);
     run_one_mdbook_test("point", test_filter, 500_000);
-    run_one_mdbook_test("long_strings", test_filter, 100_000);
-    run_one_mdbook_test("large_vectors", test_filter, 100);
+    run_one_mdbook_test("long_strings", test_filter, 100_000); 
+    run_one_mdbook_test("large_vectors", test_filter, 100); 
     run_one_mdbook_test("enum_fields", test_filter, 500_000);
     run_one_mdbook_test("option_fields", test_filter, 100_000);
     run_one_mdbook_test("variant_fields", test_filter, 50_000);
