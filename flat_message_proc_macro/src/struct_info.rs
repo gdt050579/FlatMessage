@@ -725,9 +725,8 @@ impl<'a> StructInfo<'a> {
             quote! {}
         };    
         let ignored_fields = self.generate_default_code_for_ignored_fields(); 
-        let name = self.name;
         quote! {
-            #name {
+            Self {
                 #(#struct_fields)*
                 #unique_id_field
                 #timestamp_field
