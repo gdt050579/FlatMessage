@@ -591,11 +591,7 @@ fn print_results_mdbook(r: &[[&dyn Display; 7]], _columns: &[(&str, Align)], fil
     fs::write(file_name, output).unwrap();
 }
 
-fn print_results_mdbook_packed_vs_struct(
-    r: &[[&dyn Display; 7]],
-    _columns: &[(&str, Align)],
-    file_name: &str,
-) {
+fn print_results_mdbook_packed_vs_struct(r: &[[&dyn Display; 7]], _columns: &[(&str, Align)], file_name: &str) {
     let mut output = String::with_capacity(4096);
 
     //writeln!(output, "| Algorithm | Size (b) | Serialization Time (ms) | Deserialization Time (ms) | Total Time (ms) |").unwrap();
