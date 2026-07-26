@@ -13,7 +13,6 @@ categories = ["encoding"]
 
 [dependencies]
 flat_message_proc_macro = { version = "0.2.1", path = "../flat_message_proc_macro" }
-# flat_message_proc_macro = "0.2.1"
 serde = { version = "1", optional = true }
 crc32fast = "1"
 smallvec = { version = "1.15.1", optional = true }
