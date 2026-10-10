@@ -152,6 +152,7 @@ impl Flags {
         let repr_type = self.repr_type();
 
         quote! {
+            #[allow(clippy::question_mark)]
             unsafe impl<'a> SerDe<'a> for #name {
                 const DATA_FORMAT: flat_message::DataFormat = #data_format;
                 #[inline(always)]

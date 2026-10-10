@@ -203,6 +203,7 @@ impl EnumInfo {
         let variant_validation = self.generate_variant_validation_match(true);
 
         quote! {
+            #[allow(clippy::question_mark)]
             unsafe impl<'a> SerDe<'a> for #name {
                 const DATA_FORMAT: flat_message::DataFormat = #data_format;
                 #[inline(always)]

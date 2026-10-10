@@ -79,8 +79,11 @@ impl Storage {
     pub fn as_mut_slice(&mut self) -> &mut [u8] {
         unsafe { slice::from_raw_parts_mut(self.vec.as_mut_ptr() as *mut u8, self.size) }
     }
+}
 
-    pub fn as_ref(&self) -> &StorageRef {
+impl AsRef<StorageRef> for Storage {
+    #[inline]
+    fn as_ref(&self) -> &StorageRef {
         StorageRef::from_storage(self)
     }
 }

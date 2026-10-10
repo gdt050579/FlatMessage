@@ -21,6 +21,9 @@ impl CastUsize for u32 {
     }
 }
 
+/// # Safety
+///
+/// This function should be called with a pointer to a valid (even if unaligned) T.
 #[inline(always)]
 pub unsafe fn ptr_read_unaligned_as_usize<T: CastUsize>(x: *const T) -> usize {
     let x = std::ptr::read_unaligned(x);

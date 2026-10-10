@@ -134,6 +134,7 @@ where
         Self: Sized;
 }
 
+#[allow(clippy::len_without_is_empty)]
 pub trait SerDeVecType<T> : std::ops::Deref<Target = [T]> {
     fn new() -> Self;
     fn with_capacity(capacity: usize) -> Self;
@@ -142,7 +143,8 @@ pub trait SerDeVecType<T> : std::ops::Deref<Target = [T]> {
     fn len(&self) -> usize;
     fn capacity(&self) -> usize;
 
-    /// # Safety:
+    /// # Safety
+    ///
     /// See Vec::set_len for requirements.
     unsafe fn set_len(&mut self, len: usize);
 

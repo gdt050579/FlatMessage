@@ -16,6 +16,7 @@ fn generate_definition(generics: &syn::Generics, name: &syn::Ident) -> (TokenStr
     (
         implicit_lifetime,
         quote! {
+            #[allow(clippy::question_mark)]
             unsafe impl #generics flat_message::SerDe<#serde_lifetime> for #name #generics
         },
     )
