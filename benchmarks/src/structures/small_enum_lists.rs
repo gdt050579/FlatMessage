@@ -4,7 +4,18 @@ use serde::{Deserialize, Serialize};
 
 use crate::v;
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, bincode::Encode, bincode::Decode)]
+#[derive(
+    FlatMessageEnum,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 #[repr(u8)]
 enum Color {
     Red = 1,
@@ -17,7 +28,15 @@ enum Color {
 
 crate::t!(Color);
 
-#[derive(Clone, Serialize, Deserialize, FlatMessage, get_size_derive::GetSize, bincode::Encode, bincode::Decode)]
+#[derive(
+    Clone,
+    Serialize,
+    Deserialize,
+    FlatMessage,
+    get_size_derive::GetSize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 #[flat_message_options(store_name = false)]
 pub struct SmallEnumLists {
     #[flat_message_item(repr = u8, kind = enum)]

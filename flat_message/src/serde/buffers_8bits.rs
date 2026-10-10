@@ -1,8 +1,8 @@
 use super::SerDeSlice;
 use super::SerDeVec;
 use super::SerDeVecType;
-use crate::size;
 use crate::common::data_format::DataFormat;
+use crate::size;
 
 macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
     ($t:ty, $data_format:ident) => {
@@ -16,8 +16,9 @@ macro_rules! IMPLEMENT_SERDE_FOR_SLICE {
             }
             #[inline(always)]
             fn from_buffer(buf: &'a [u8], pos: usize) -> Option<&'a [Self]> {
-                let (len, buf_len) =
-                    unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
+                let (len, buf_len) = unsafe {
+                    size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)?
+                };
                 let end = pos + buf_len + len;
                 if end > buf.len() {
                     None

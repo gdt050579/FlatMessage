@@ -29,11 +29,9 @@ impl VersionToken {
                 "-" => Ok(VersionToken::Interval),
                 ":" => Ok(VersionToken::Interval),
                 ".." => Ok(VersionToken::Interval),
-                _ => {
-                    Err(format!(
-                        "Invalid operator '{value}' (accepted operators are '<', '..', '-', ':') !"
-                    ))
-                }
+                _ => Err(format!(
+                    "Invalid operator '{value}' (accepted operators are '<', '..', '-', ':') !"
+                )),
             },
             CharType::Space => Ok(VersionToken::Skip),
             CharType::Separator => Ok(VersionToken::Separator),

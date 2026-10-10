@@ -1,7 +1,6 @@
 use crate::*;
 use flat_message::*;
 
-
 #[test]
 fn check_serde_name_validation() {
     #[derive(Debug, PartialEq, Eq, FlatMessage)]
@@ -48,13 +47,13 @@ fn check_interchangeability_ignoring_name_1() {
     struct TestStruct1 {
         a: u8,
         b: u16,
-        c: u32
+        c: u32,
     }
 
     #[derive(Debug, PartialEq, Eq, FlatMessage)]
     #[flat_message_options(validate_name = false)]
     struct TestStruct2 {
-        c: u32
+        c: u32,
     }
 
     let ts1 = TestStruct1 { a: 1, b: 2, c: 3 };
@@ -73,13 +72,13 @@ fn check_interchangeability_ignoring_name_2() {
     struct TestStruct1 {
         a: u8,
         b: u16,
-        c: u32
+        c: u32,
     }
 
     #[derive(Debug, PartialEq, Eq, FlatMessage)]
     #[flat_message_options(validate_name = false)]
     struct TestStruct2 {
-        c: u32
+        c: u32,
     }
 
     let ts1 = TestStruct1 { a: 1, b: 2, c: 3 };
@@ -98,13 +97,13 @@ fn check_interchangeability_ignoring_name_3() {
     struct TestStruct1 {
         a: u8,
         b: u16,
-        c: u32
+        c: u32,
     }
 
     #[derive(Debug, PartialEq, Eq, FlatMessage)]
     #[flat_message_options(validate_name = true)]
     struct TestStruct2 {
-        c: u32
+        c: u32,
     }
 
     let ts1 = TestStruct1 { a: 1, b: 2, c: 3 };
@@ -123,13 +122,13 @@ fn check_interchangeability_ignoring_name_4() {
     struct TestStruct1 {
         a: u8,
         b: u16,
-        c: u32
+        c: u32,
     }
 
     #[derive(Debug, PartialEq, Eq, FlatMessage)]
     #[flat_message_options(validate_name = true)]
     struct TestStruct2 {
-        c: u32
+        c: u32,
     }
 
     let ts1 = TestStruct1 { a: 1, b: 2, c: 3 };
@@ -139,7 +138,6 @@ fn check_interchangeability_ignoring_name_4() {
     assert!(b.is_err());
     assert_eq!(b.err(), Some(flat_message::Error::NameNotStored));
 }
-
 
 #[test]
 fn check_structure_information_with_match() {

@@ -818,7 +818,9 @@ fn check_readme_example_1() {
     };
 
     let mut storage = Storage::default();
-    person.serialize_to(&mut storage, Config::default()).unwrap();
+    person
+        .serialize_to(&mut storage, Config::default())
+        .unwrap();
 
     // Deserialize
     let restored = Person::deserialize_from(&storage).unwrap();
@@ -831,9 +833,9 @@ fn check_readme_example_1() {
 fn check_readme_example_2() {
     #[derive(FlatMessage)]
     struct Message<'a> {
-        title: &'a str,        // Zero-copy string reference
-        tags: &'a [u32],       // Zero-copy slice reference
-        metadata: &'a [u8],    // Zero-copy byte slice
+        title: &'a str,     // Zero-copy string reference
+        tags: &'a [u32],    // Zero-copy slice reference
+        metadata: &'a [u8], // Zero-copy byte slice
     }
     #[derive(FlatMessage)]
     struct MessageOwned {
@@ -848,14 +850,16 @@ fn check_readme_example_2() {
     };
 
     let mut storage = Storage::default();
-    owned_data.serialize_to(&mut storage, Config::default()).unwrap();
+    owned_data
+        .serialize_to(&mut storage, Config::default())
+        .unwrap();
 
     // Deserialize with zero-copy references
     let message = Message::deserialize_from(&storage).unwrap();
-    
+
     // No data copying - direct buffer access!
-    println!("Title: {}", message.title);      // Points into storage
-    println!("Tags: {:?}", message.tags);      // Points into storage
+    println!("Title: {}", message.title); // Points into storage
+    println!("Tags: {:?}", message.tags); // Points into storage
     println!("Metadata: {:?}", message.metadata); // Points into storage
 
     assert_eq!(message.title, "Hello World");
@@ -870,7 +874,7 @@ fn check_readme_example_3() {
         // Basic types
         active: bool,
         score: u32,
-        
+
         // unique message id
         id: UniqueID,
 
@@ -880,21 +884,21 @@ fn check_readme_example_3() {
         // Strings and vectors
         name: &'a str,
         tags: Vec<String>,
-        
+
         // Optional fields
         description: Option<String>,
-        
+
         // Enums and variants
         #[flat_message_item(repr = u8, kind = enum)]
         status: Status,
         #[flat_message_item(align = 1, kind = variant)]
         data: DataVariant,
-        
+
         // Nested structures
         #[flat_message_item(align = 4, kind = struct)]
         metadata: Metadata,
     }
-    
+
     #[derive(FlatMessageEnum, Copy, Clone, Debug, Eq, PartialEq)]
     #[repr(u8)]
     enum Status {
@@ -902,13 +906,13 @@ fn check_readme_example_3() {
         Inactive = 2,
         Pending = 3,
     }
-    
+
     #[derive(FlatMessageVariant, Debug, Eq, PartialEq)]
     enum DataVariant {
         Text(String),
         Number(i64),
         Binary(Vec<u8>),
-    }  
+    }
 
     #[derive(FlatMessageStruct, Debug, Eq, PartialEq)]
     struct Metadata {
@@ -937,5 +941,4 @@ fn check_readme_example_3() {
 
     let restored = ComplexData::deserialize_from(&storage).unwrap();
     assert_eq!(data, restored);
-
 }

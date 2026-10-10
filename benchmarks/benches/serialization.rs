@@ -1,10 +1,10 @@
 use std::num::NonZeroU8;
 
+use bincode::Encode;
 use criterion::BenchmarkId;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use flat_message::{FlatMessage, Storage};
 use serde::Serialize;
-use bincode::Encode;
 
 #[derive(FlatMessage)]
 #[flat_message_options(version: 1)]
@@ -92,7 +92,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         parent: String::from("C:\\Windows\\System32\\explorer.exe").repeat(repeat),
         user: String::from("Administrator").repeat(repeat),
         command_line: String::from("-help -verbose -debug -output C:\\output.txt").repeat(repeat),
-        unique_id: 0xABABABAB_u32,  
+        unique_id: 0xABABABAB_u32,
         timestamp: 0xFEFEFEFE_u32,
     };
     let process_s = ProcessCreatedS {
@@ -108,7 +108,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         version: NonZeroU8::new(1).unwrap(),
     };
     let mut output = Vec::new();
-    let mut storage = Storage::default();   
+    let mut storage = Storage::default();
 
     let mut group = c.benchmark_group("serialization");
 

@@ -16,20 +16,20 @@ impl AttributeValue {
     }
     // pub(crate) fn is_direct_representation(&self) -> bool {
     //     matches!(self, AttributeValue::Direct(_))
-    // }    
+    // }
 }
 impl From<String> for AttributeValue {
     fn from(mut value: String) -> Self {
         if value.starts_with('"') && value.ends_with('"') && value.len() > 1 {
             //println!("Processing : |{}|",value);
             value.pop();
-            value.remove(0);     
+            value.remove(0);
             if value.contains('\\') {
                 unescape_string(&mut value);
-            }   
+            }
             //println!("       ->    |{}|",value);
             AttributeValue::String(value)
-        } else if value.starts_with("r#\"") && value.ends_with("\"#") && value.len() >4 {
+        } else if value.starts_with("r#\"") && value.ends_with("\"#") && value.len() > 4 {
             //println!("Processing : |{}|",value);
             // remove the last two characters
             value.pop();
@@ -37,7 +37,7 @@ impl From<String> for AttributeValue {
             value.replace_range(0..3, "");
             if value.contains('\\') {
                 unescape_string(&mut value);
-            }         
+            }
             //println!("       ->    |{}|",value);
             AttributeValue::RawString(value)
         } else {

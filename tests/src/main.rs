@@ -1,41 +1,41 @@
 #[cfg(test)]
+mod basic_types;
+#[cfg(test)]
+mod checksum_validation;
+#[cfg(test)]
 mod common_sync_tests;
+#[cfg(test)]
+mod default_values;
 #[cfg(test)]
 mod enums;
 #[cfg(test)]
+mod fix_arrays;
+#[cfg(test)]
+mod flags;
+#[cfg(test)]
 mod generic;
-#[cfg(test)]
-mod ip;
-#[cfg(test)]
-mod version;
-#[cfg(test)]
-mod metadata;
 #[cfg(test)]
 mod ignore_fields;
 #[cfg(test)]
-mod strings;
+mod ip;
 #[cfg(test)]
-mod basic_types;
+mod metadata;
+#[cfg(test)]
+mod name_validation;
 #[cfg(test)]
 mod option;
 #[cfg(test)]
-mod fix_arrays;
-#[cfg(test)]
 mod packed;
 #[cfg(test)]
-mod flags;
+mod strings;
 #[cfg(test)]
 mod structs;
 #[cfg(test)]
 mod variant;
 #[cfg(test)]
+mod version;
+#[cfg(test)]
 mod version_with_structs;
-#[cfg(test)]
-mod checksum_validation;
-#[cfg(test)]
-mod name_validation;
-#[cfg(test)]
-mod default_values;
 
 #[cfg(all(feature = "smallvec", test))]
 mod with_smallvec;

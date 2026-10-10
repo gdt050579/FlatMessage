@@ -489,7 +489,9 @@ fn check_version_conversion_sealed_to_not_sealed() {
         value: 123,
         f: v1_sealed::Flags::A,
     };
-    obj_v1_sealed.serialize_to(&mut s, Config::default()).unwrap();
+    obj_v1_sealed
+        .serialize_to(&mut s, Config::default())
+        .unwrap();
     let result = v1::TestStruct::deserialize_from(&s);
     assert!(result.is_err());
 }
@@ -513,7 +515,9 @@ fn check_version_conversion_sealed_to_sealed() {
         value: 123,
         f: v1_sealed::Flags::A,
     };
-    obj_v1_sealed.serialize_to(&mut s, Config::default()).unwrap();
+    obj_v1_sealed
+        .serialize_to(&mut s, Config::default())
+        .unwrap();
     let ds = v1_sealed::TestStruct::deserialize_from(&s).unwrap();
     assert_eq!(obj_v1_sealed.value, ds.value);
     assert_eq!(obj_v1_sealed.f.to_value(), ds.f.to_value());
@@ -545,7 +549,7 @@ fn check_option_none() {
         &[
             70, 76, 77, 1, 1, 0, 0, 0, // Header
             29, 122, 103, 156, // hash over field flags
-            0, // pffset of field flags (0 = None)
+            0,   // pffset of field flags (0 = None)
         ]
     );
 }
@@ -568,7 +572,9 @@ fn check_option_some() {
         #[flat_message_item(kind = flags, repr = u32, validate = strict)]
         flags: Option<Flags>,
     }
-    let t = Test { flags: Some(Flags::A | Flags::B) };
+    let t = Test {
+        flags: Some(Flags::A | Flags::B),
+    };
     let mut s = Storage::default();
     t.serialize_to(&mut s, Config::default()).unwrap();
     assert_eq!(
@@ -578,7 +584,7 @@ fn check_option_some() {
             190, 110, 196, 202, // hash over Flags type
             3, 0, 0, 0, // value of field flags
             29, 122, 103, 156, // hash over field flags
-            8, // offset of field flags (8 implies Some()
+            8,   // offset of field flags (8 implies Some()
         ]
     );
 }

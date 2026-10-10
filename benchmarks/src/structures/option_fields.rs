@@ -2,14 +2,7 @@ use crate::get_size_min::GetSize;
 use flat_message::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(
-    Clone,
-    Serialize,
-    Deserialize,
-    FlatMessage, 
-    bincode::Encode,
-    bincode::Decode,
-)]
+#[derive(Clone, Serialize, Deserialize, FlatMessage, bincode::Encode, bincode::Decode)]
 #[flat_message_options(store_name = false)]
 pub struct OptionFields {
     opt_one: Option<String>,
@@ -54,22 +47,18 @@ pub fn generate() -> OptionFields {
         opt_one: Some(String::from("Hello, World - this is an option field")),
         opt_two: Some(12345678),
         opt_three: None,
-        opt_four: Some(
-            vec![
-                1, 2, 3, 4, 100, 200, 300, 400, 1000, 2000, 3000, 4000, 10000, 20000, 30000, 40000,
-            ]
-        ),
-        opt_five: Some(
-            vec![
-                String::from("Hello"),
-                String::from("World"),
-                String::from("This"),
-                String::from("is"),
-                String::from("an"),
-                String::from("option"),
-                String::from("field"),
-            ]
-        ),
+        opt_four: Some(vec![
+            1, 2, 3, 4, 100, 200, 300, 400, 1000, 2000, 3000, 4000, 10000, 20000, 30000, 40000,
+        ]),
+        opt_five: Some(vec![
+            String::from("Hello"),
+            String::from("World"),
+            String::from("This"),
+            String::from("is"),
+            String::from("an"),
+            String::from("option"),
+            String::from("field"),
+        ]),
         opt_six: None,
         opt_seven: None,
     }

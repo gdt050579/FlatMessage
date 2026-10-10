@@ -4,7 +4,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::s;
 
-#[derive(Clone, Serialize, Deserialize, FlatMessagePacked, get_size_derive::GetSize, bincode::Encode, bincode::Decode)]
+#[derive(
+    Clone,
+    Serialize,
+    Deserialize,
+    FlatMessagePacked,
+    get_size_derive::GetSize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 pub struct InnerStruct {
     s1: String,
     s2: String,
@@ -13,7 +21,15 @@ pub struct InnerStruct {
     arr: Vec<u32>,
 }
 
-#[derive(Clone, Serialize, Deserialize, FlatMessage, get_size_derive::GetSize, bincode::Encode, bincode::Decode)]
+#[derive(
+    Clone,
+    Serialize,
+    Deserialize,
+    FlatMessage,
+    get_size_derive::GetSize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 pub struct NestedPacked {
     #[flat_message_item(kind = packed, align = 4)]
     field: InnerStruct,
@@ -22,7 +38,9 @@ pub struct NestedPacked {
 pub fn generate() -> NestedPacked {
     NestedPacked {
         field: InnerStruct {
-            s1: s(String::from("The first string from level one in this large structure with nested fields")),
+            s1: s(String::from(
+                "The first string from level one in this large structure with nested fields",
+            )),
             s2: s(String::from("The second string from level one")),
             v1: 1000000,
             v2: 1000000000,

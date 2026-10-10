@@ -107,9 +107,14 @@ fn mdbook_example() {
     }
 
     // Create and serialize some data
-    let original = Message { content: "Hello, World!", id: 42 };
+    let original = Message {
+        content: "Hello, World!",
+        id: 42,
+    };
     let mut storage = Storage::default();
-    original.serialize_to(&mut storage, Config::default()).unwrap();
+    original
+        .serialize_to(&mut storage, Config::default())
+        .unwrap();
 
     // 2. Attach the deserialized structure to the Storage "cart"
     // The resulting `yoked` object owns the storage and can be moved around!
@@ -120,7 +125,7 @@ fn mdbook_example() {
 
     // 3. Access the deserialized data using `.get()`
     let message: &Message<'_> = yoked.get();
-    
+
     assert_eq!(message.content, "Hello, World!");
     assert_eq!(message.id, 42);
 }

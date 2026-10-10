@@ -75,7 +75,6 @@ fn check_skip_with_custom_default() {
     assert_eq!(ds.y, 10); // not 2 -> 10 is the custom default for y
 }
 
-
 #[test]
 fn check_skip_repr() {
     #[derive(FlatMessage)]
@@ -115,7 +114,10 @@ fn check_skip_for_packed_struct_with_default() {
         #[flat_message_item(kind = packed, align = 1)]
         t: TestPacked,
     }
-    let data = Test { x: 1, t: TestPacked { x: 2, y: 3 } };
+    let data = Test {
+        x: 1,
+        t: TestPacked { x: 2, y: 3 },
+    };
     let mut storage = Storage::default();
     data.serialize_to(&mut storage, Config::default()).unwrap(); // y is skipped
     let ds = Test::deserialize_from(&storage).unwrap();
@@ -139,7 +141,10 @@ fn check_skip_for_packed_struct_with_custom_default() {
         #[flat_message_item(kind = packed, align = 1)]
         t: TestPacked,
     }
-    let data = Test { x: 1, t: TestPacked { x: 2, y: 3 } };
+    let data = Test {
+        x: 1,
+        t: TestPacked { x: 2, y: 3 },
+    };
     let mut storage = Storage::default();
     data.serialize_to(&mut storage, Config::default()).unwrap(); // y is skipped
     let ds = Test::deserialize_from(&storage).unwrap();
