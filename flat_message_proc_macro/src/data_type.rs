@@ -398,12 +398,12 @@ impl DataType {
         let last_segment = type_path
             .segments
             .into_iter()
-            .last()
+            .next_back()
             .expect("Expected at least one segment");
         assert!(
             last_segment.ident.to_string().contains("Option"),
             "Expected Option<..> type, got {}",
-            last_segment.ident.to_string()
+            last_segment.ident
         );
         let bracketed = match last_segment.arguments {
             syn::PathArguments::AngleBracketed(bracketed) => bracketed,

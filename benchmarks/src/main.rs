@@ -169,9 +169,10 @@ struct TestTimes {
     max: Duration,
     median: Duration,
 }
-impl TestTimes {
-    fn to_string(&self) -> String {
-        format!(
+impl Display for TestTimes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{:>6.2} [{:>6.2} - {:>6.2}]",
             self.median.as_secs_f64() * 1000.0,
             self.min.as_secs_f64() * 1000.0,
@@ -221,7 +222,7 @@ impl Result {
     }
 }
 
-fn compute_test_times(times: &mut Vec<Duration>) -> TestTimes {
+fn compute_test_times(times: &mut [Duration]) -> TestTimes {
     // sort the times (it is assume that at least one time is present)
     times.sort();
     let min = times[0];
@@ -229,7 +230,7 @@ fn compute_test_times(times: &mut Vec<Duration>) -> TestTimes {
     // for odd number of times, the median is the middle one
     // for even number of times, the median is the average of the two middle ones
     let middle = times.len() / 2;
-    let median = if times.len() % 2 == 0 {
+    let median = if times.len().is_multiple_of(2) {
         (times[middle] + times[middle - 1]) / 2
     } else {
         times[middle]
@@ -246,7 +247,7 @@ fn se_bench<T, FS: Fn(&T, &mut TestData) + Clone>(
     for _ in 0..data.times {
         data.vec.clear();
         data.storage.clear();
-        black_box(serialize(x, data));
+        serialize(x, data);
         black_box(data.vec.len());
         black_box(data.storage.len());
     }
@@ -271,7 +272,7 @@ fn se_de_bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Cl
     for _ in 0..data.times {
         data.vec.clear();
         data.storage.clear();
-        black_box(serialize(x, data));
+        serialize(x, data);
         black_box(data.vec.len());
         black_box(data.storage.len());
         black_box(deserialize(black_box(data)));
@@ -279,6 +280,7 @@ fn se_de_bench<T, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Cl
     start.elapsed()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn bench<T: GetSize, FS: Fn(&T, &mut TestData) + Clone, FD: Fn(&TestData) -> T + Clone>(
     top_test_name: TestKind,
     test_name: AlgoKind,
@@ -359,7 +361,6 @@ impl<'a, T: FlatMessage<'a>> FlatMessage<'a> for Wrapper<T> {
 }
 
 fn add_benches<
-    'a,
     T: FlatMessageOwned
         + Clone
         + Serialize
@@ -427,15 +428,13 @@ fn add_benches<
     b!(Postcard, x, se_test_postcard, de_test_postcard, true);
     b!(Toml, x, se_test_toml, de_test_toml, false);
     // check to see if protobuf is present
-    if iteration_id == 0 {
-        if all_algos || algos.contains(&AlgoKind::Protobuf) {
+    if iteration_id == 0
+        && (all_algos || algos.contains(&AlgoKind::Protobuf)) {
             results.push(Result::not_available(AlgoKind::Protobuf, top_test_name));
         }
-    }
 }
 
 fn add_benches_protobuf<
-    'a,
     T: FlatMessageOwned
         + Clone
         + Serialize
@@ -574,7 +573,7 @@ fn print_results_mdbook(r: &[[&dyn Display; 7]], _columns: &[(&str, Align)], fil
         let tmp = row[6].to_string();
         if tmp.contains("[") {
             let pos = tmp.chars().position(|c| c == '[').unwrap();
-            let total_time = format!("**{}** {}", &tmp[..pos].trim(), &tmp[pos..]);
+            let total_time = format!("**{}** {}", tmp[..pos].trim(), &tmp[pos..]);
             write!(output, "| {} ", total_time).unwrap();
         } else {
             write!(output, "| {} ", tmp).unwrap();
@@ -630,7 +629,7 @@ fn print_results_mdbook_packed_vs_struct(r: &[[&dyn Display; 7]], _columns: &[(&
         let tmp = row[6].to_string();
         if tmp.contains("[") {
             let pos = tmp.chars().position(|c| c == '[').unwrap();
-            let total_time = format!("**{}** {}", &tmp[..pos].trim(), &tmp[pos..]);
+            let total_time = format!("**{}** {}", tmp[..pos].trim(), &tmp[pos..]);
             write!(output, "| {} ", total_time).unwrap();
         } else {
             write!(output, "| {} ", tmp).unwrap();
@@ -648,9 +647,9 @@ fn print_results_mdbook_packed_vs_struct(r: &[[&dyn Display; 7]], _columns: &[(&
 }
 
 
-
+#[allow(clippy::manual_checked_ops)]
 fn print_results(
-    results: &mut Vec<Result>,
+    results: &mut [Result],
     algos: &HashSet<AlgoKind>,
     all_algos: bool,
     output: OutputType,
@@ -748,7 +747,6 @@ fn print_results(
 }
 
 fn do_one<
-    'a,
     T: FlatMessageOwned
         + Clone
         + Serialize
@@ -777,7 +775,6 @@ fn do_one<
 }
 
 fn do_one_protobuf<
-    'a,
     T: FlatMessageOwned
         + Clone
         + Serialize
@@ -876,7 +873,7 @@ tests! {
     ("flat_message", FlatMessage),
     ("flat_message_unchecked", FlatMessageUnchecked),
     ("rmp", RmpSchema),
-    ("rmp", RmpSchemaless),
+    ("rmp_less", RmpSchemaless),
     ("bincode", Bincode),
     ("flexbuffers" , FlexBuffers),
     ("cbor", Cbor),
@@ -1096,7 +1093,7 @@ fn run_packed_vs_struct() {
         output: OutputType::MdbookPackedVsStruct,
         names: false,
         command: Commands::PackedVsStruct,
-        file_name: format!("packed_vs_struct.md"),
+        file_name: "packed_vs_struct.md".to_string(),
     };
     run_tests(a, "packed_vs_struct");
 }

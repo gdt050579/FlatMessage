@@ -889,7 +889,7 @@ impl<'a> StructInfo<'a> {
             quote! { 0, }
         };
         quote! {
-            #[allow(mismatched_lifetime_syntaxes)]
+            #[allow(mismatched_lifetime_syntaxes, clippy::question_mark)]
             fn deserialize_from_ref_impl<T: flat_message::codegen::CastUsize>(
                 buffer: *const u8,
                 mut ptr_it: *const u32,

@@ -47,7 +47,7 @@ impl FieldInfo {
 
     pub(crate) fn inner_var(&self) -> syn::Ident {
         syn::Ident::new(
-            format!("inner_var_{}_{}", &self.name, self.hash).as_str(),
+            format!("inner_var_{}_{}", self.name, self.hash).as_str(),
             proc_macro2::Span::call_site(),
         )
     }

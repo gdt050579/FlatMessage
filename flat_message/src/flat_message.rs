@@ -10,10 +10,12 @@ where
     fn deserialize_from_ref(input: &'a StorageRef) -> Result<Self, Error>
     where
         Self: Sized;
+    #[allow(clippy::missing_safety_doc)]
     unsafe fn deserialize_from_ref_unchecked(input: &'a StorageRef) -> Result<Self, Error>
     where
         Self: Sized;
 
+    #[allow(clippy::too_many_arguments)]
     fn deserialize_from_ref_impl<T: CastUsize>(
         _buffer: *const u8,
         _ptr_it: *const u32,
@@ -34,6 +36,7 @@ where
         Self::deserialize_from_ref(input.as_ref())
     }
 
+    #[allow(clippy::missing_safety_doc)]
     unsafe fn deserialize_from_unchecked(input: &'a Storage) -> Result<Self, Error>
     where
         Self: Sized,
