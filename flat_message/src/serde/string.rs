@@ -1,6 +1,6 @@
 use super::SerDe;
-use crate::size;
 use crate::common::data_format::DataFormat;
+use crate::size;
 
 /// Implementation for &str
 unsafe impl<'a> SerDe<'a> for &'a str {
@@ -14,7 +14,8 @@ unsafe impl<'a> SerDe<'a> for &'a str {
     }
     #[inline(always)]
     fn from_buffer(buf: &'a [u8], pos: usize) -> Option<Self> {
-        let (len, slen) = unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
+        let (len, slen) =
+            unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
         let end = pos + slen + len;
         if end > buf.len() {
             None

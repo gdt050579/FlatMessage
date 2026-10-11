@@ -3,16 +3,16 @@ mod config;
 mod error;
 mod flat_message;
 //mod flat_message_buffer;
+pub mod codegen;
+mod flags_support;
 pub mod headers;
 mod name;
 mod serde;
-mod unique_id;
-mod timestamp;
 pub mod size;
 mod storage;
 mod structure_information;
-mod flags_support;
-pub mod codegen;
+mod timestamp;
+mod unique_id;
 //mod builder;
 
 pub mod common;
@@ -35,9 +35,9 @@ pub use flat_message_proc_macro::*;
 
 pub use crate::common::data_format::DataFormat;
 pub use crate::common::hashes::crc32;
-pub use unique_id::UniqueID;
-pub use timestamp::Timestamp;
 pub use flags_support::FlagsSupport;
+pub use timestamp::Timestamp;
+pub use unique_id::UniqueID;
 
 pub trait FlatMessageOwned: for<'de> FlatMessage<'de> {}
 impl<T> FlatMessageOwned for T where T: for<'de> FlatMessage<'de> {}

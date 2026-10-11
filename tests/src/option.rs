@@ -321,10 +321,7 @@ fn check_struct_none_repr() {
         &[
             70, 76, 77, 1, 1, 0, 0, 0, // Header
             32, 102, 255, 35, // hash for config
-            0, // offset of config (0 = None)
+            0,  // offset of config (0 = None)
         ]
     );
-
-    
-    
 }

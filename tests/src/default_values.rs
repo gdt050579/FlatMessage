@@ -1,14 +1,11 @@
 use flat_message::*;
 
-
 macro_rules! serde {
-    ($obj:expr, $T:ty, $s:expr) => {
-        {
-            $obj.serialize_to(&mut $s, Config::default()).unwrap();
-            let r = <$T>::deserialize_from(&$s).unwrap();
-            r
-        }
-    };
+    ($obj:expr, $T:ty, $s:expr) => {{
+        $obj.serialize_to(&mut $s, Config::default()).unwrap();
+        let r = <$T>::deserialize_from(&$s).unwrap();
+        r
+    }};
 }
 
 #[test]
@@ -77,11 +74,10 @@ fn check_option_u32_default() {
         b: Option<u32>,
     }
     let mut s = Storage::default();
-    let r = serde!(Test { a: 1, b: Some(2)}, Test, s);
+    let r = serde!(Test { a: 1, b: Some(2) }, Test, s);
     assert_eq!(r.a, 1);
     assert_eq!(r.b, None); // custom default for Option<u32> is None
 }
-
 
 #[test]
 fn check_option_u32_custom_default() {
@@ -92,11 +88,10 @@ fn check_option_u32_custom_default() {
         b: Option<u32>,
     }
     let mut s = Storage::default();
-    let r = serde!(Test { a: 1, b: Some(2)}, Test, s);
+    let r = serde!(Test { a: 1, b: Some(2) }, Test, s);
     assert_eq!(r.a, 1);
     assert_eq!(r.b, Some(41)); // custom default for Option<u32> is Some(41) (41 should be provided as a string "41" in order of it to be converted into Some(41))
 }
-
 
 #[test]
 fn check_str_default() {
@@ -196,7 +191,14 @@ fn check_option_str_default() {
         b: Option<&'a str>,
     }
     let mut s = Storage::default();
-    let r = serde!(Test { a: 1, b: Some("xyz") }, Test, s);
+    let r = serde!(
+        Test {
+            a: 1,
+            b: Some("xyz")
+        },
+        Test,
+        s
+    );
     assert_eq!(r.a, 1);
     assert_eq!(r.b, None); // custom default for Option<&str> is None
 }
@@ -210,7 +212,14 @@ fn check_option_str_custom_default() {
         b: Option<&'a str>,
     }
     let mut s = Storage::default();
-    let r = serde!(Test { a: 1, b: Some("xyz") }, Test, s);
+    let r = serde!(
+        Test {
+            a: 1,
+            b: Some("xyz")
+        },
+        Test,
+        s
+    );
     assert_eq!(r.a, 1);
     assert_eq!(r.b, Some("hello")); // custom default for Option<&str> is Some("hello")
 }
@@ -224,7 +233,14 @@ fn check_option_string_custom_default() {
         b: Option<String>,
     }
     let mut s = Storage::default();
-    let r = serde!(Test { a: 1, b: Some(String::from("xyz")) }, Test, s);
+    let r = serde!(
+        Test {
+            a: 1,
+            b: Some(String::from("xyz"))
+        },
+        Test,
+        s
+    );
     assert_eq!(r.a, 1);
     assert_eq!(r.b, Some(String::from("hello"))); // custom default for Option<String> is Some(String::from("hello"))
 }
@@ -239,7 +255,14 @@ fn check_option_str_custom_default_with_constant() {
         b: Option<&'a str>,
     }
     let mut s = Storage::default();
-    let r = serde!(Test { a: 1, b: Some("xyz") }, Test, s);
+    let r = serde!(
+        Test {
+            a: 1,
+            b: Some("xyz")
+        },
+        Test,
+        s
+    );
     assert_eq!(r.a, 1);
     assert_eq!(r.b, Some("hello")); // custom default for Option<&str> is Some("hello")
 }
@@ -253,7 +276,14 @@ fn check_vector_default() {
         b: Vec<u8>,
     }
     let mut s = Storage::default();
-    let r = serde!(Test { a: 1, b: vec![1, 2, 3] }, Test, s);
+    let r = serde!(
+        Test {
+            a: 1,
+            b: vec![1, 2, 3]
+        },
+        Test,
+        s
+    );
     assert_eq!(r.a, 1);
     assert_eq!(r.b, Vec::new()); // custom default for Vec<u8> is Vec::new()
 }
@@ -267,7 +297,14 @@ fn check_vector_custom_default() {
         b: Vec<u8>,
     }
     let mut s = Storage::default();
-    let r = serde!(Test { a: 1, b: vec![1, 2, 3] }, Test, s);
+    let r = serde!(
+        Test {
+            a: 1,
+            b: vec![1, 2, 3]
+        },
+        Test,
+        s
+    );
     assert_eq!(r.a, 1);
     assert_eq!(r.b, vec![10, 20, 30]); // custom default for Vec<u8> is vec![10, 20, 30]
 }

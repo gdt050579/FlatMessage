@@ -4,7 +4,16 @@ use serde::{Deserialize, Serialize};
 
 use crate::s;
 
-#[derive(Clone, Serialize, Deserialize, FlatMessage, get_size_derive::GetSize, bincode::Encode, bincode::Decode, prost::Message)]
+#[derive(
+    Clone,
+    Serialize,
+    Deserialize,
+    FlatMessage,
+    get_size_derive::GetSize,
+    bincode::Encode,
+    bincode::Decode,
+    prost::Message,
+)]
 pub struct ProcessCreated {
     #[prost(string, tag = "1")]
     name: String,
@@ -27,7 +36,6 @@ pub struct ProcessCreated {
     #[prost(bool, tag = "11")]
     protected_process: bool,
 }
-
 
 pub fn generate() -> ProcessCreated {
     ProcessCreated {

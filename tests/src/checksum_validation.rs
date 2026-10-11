@@ -3,7 +3,6 @@ use flat_message::*;
 
 #[test]
 fn simple_check() {
-
     #[derive(FlatMessage, Debug, PartialEq)]
     #[flat_message_options(checksum = true)]
     struct ImportantData {
@@ -24,7 +23,6 @@ fn simple_check() {
 
 #[test]
 fn check_corruption_detection() {
-
     #[derive(FlatMessage, Debug, PartialEq)]
     #[flat_message_options(checksum = true)]
     struct ImportantData {
@@ -37,11 +35,13 @@ fn check_corruption_detection() {
     };
 
     let mut storage = Storage::default();
-    original.serialize_to(&mut storage, Config::default()).unwrap();
+    original
+        .serialize_to(&mut storage, Config::default())
+        .unwrap();
 
     // Simulate corruption by modifying bytes
     let mut corrupted_bytes = storage.as_slice().to_vec();
-    corrupted_bytes[10] = 0xFF;  // Corrupt a byte
+    corrupted_bytes[10] = 0xFF; // Corrupt a byte
     let corrupted_storage = Storage::from_buffer(&corrupted_bytes);
 
     // Attempt to deserialize corrupted data

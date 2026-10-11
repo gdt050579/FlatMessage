@@ -133,7 +133,6 @@ fn check_unique_id_serde() {
     });
 }
 
-
 #[test]
 fn check_timestamp_buffer() {
     #[derive(FlatMessage)]
@@ -153,14 +152,10 @@ fn check_timestamp_buffer() {
         v.as_slice(),
         &[
             // Header
-            70, 76, 77, 1, 1, 0, 0, 16, 
-            // x
-            1, 0, 0, 0, 
-            // hash for x
-            8, 80, 12, 253, 
-            // offset for x
-            8,   
-            // timestamp
+            70, 76, 77, 1, 1, 0, 0, 16, // x
+            1, 0, 0, 0, // hash for x
+            8, 80, 12, 253, // offset for x
+            8,   // timestamp
             123, 0, 0, 0, 0, 0, 0, 0
         ]
     );

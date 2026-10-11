@@ -57,7 +57,6 @@ mod v3 {
     }
 }
 
-
 #[test]
 fn check_enum() {
     #[derive(Copy, Clone, FlatMessageEnum, PartialEq, Eq, Debug)]

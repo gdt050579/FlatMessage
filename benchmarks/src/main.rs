@@ -428,10 +428,9 @@ fn add_benches<
     b!(Postcard, x, se_test_postcard, de_test_postcard, true);
     b!(Toml, x, se_test_toml, de_test_toml, false);
     // check to see if protobuf is present
-    if iteration_id == 0
-        && (all_algos || algos.contains(&AlgoKind::Protobuf)) {
-            results.push(Result::not_available(AlgoKind::Protobuf, top_test_name));
-        }
+    if iteration_id == 0 && (all_algos || algos.contains(&AlgoKind::Protobuf)) {
+        results.push(Result::not_available(AlgoKind::Protobuf, top_test_name));
+    }
 }
 
 fn add_benches_protobuf<
@@ -590,8 +589,11 @@ fn print_results_mdbook(r: &[[&dyn Display; 7]], _columns: &[(&str, Align)], fil
     fs::write(file_name, output).unwrap();
 }
 
-
-fn print_results_mdbook_packed_vs_struct(r: &[[&dyn Display; 7]], _columns: &[(&str, Align)], file_name: &str) {
+fn print_results_mdbook_packed_vs_struct(
+    r: &[[&dyn Display; 7]],
+    _columns: &[(&str, Align)],
+    file_name: &str,
+) {
     let mut output = String::with_capacity(4096);
 
     //writeln!(output, "| Algorithm | Size (b) | Serialization Time (ms) | Deserialization Time (ms) | Total Time (ms) |").unwrap();
@@ -645,7 +647,6 @@ fn print_results_mdbook_packed_vs_struct(r: &[[&dyn Display; 7]], _columns: &[(&
 
     fs::write(file_name, output).unwrap();
 }
-
 
 #[allow(clippy::manual_checked_ops)]
 fn print_results(
@@ -1045,7 +1046,7 @@ fn run_tests(args: Args, test_name: &str) {
         {
             let s = structures::nested_packed::generate();
             run!(NestedPacked, &s, i);
-        } 
+        }
         {
             let s = structures::nested_struct::generate();
             run!(NestedStruct, &s, i);
@@ -1073,10 +1074,10 @@ fn run_one_mdbook_test(test_name: &str, test_filter: &str, times: u32) {
     run_tests(a, test_name);
 }
 fn run_mdbook_tests(test_filter: &str) {
-    run_one_mdbook_test("multiple_fields", test_filter,100_000);
+    run_one_mdbook_test("multiple_fields", test_filter, 100_000);
     run_one_mdbook_test("point", test_filter, 500_000);
-    run_one_mdbook_test("long_strings", test_filter, 100_000); 
-    run_one_mdbook_test("large_vectors", test_filter, 100); 
+    run_one_mdbook_test("long_strings", test_filter, 100_000);
+    run_one_mdbook_test("large_vectors", test_filter, 100);
     run_one_mdbook_test("enum_fields", test_filter, 500_000);
     run_one_mdbook_test("option_fields", test_filter, 100_000);
     run_one_mdbook_test("variant_fields", test_filter, 50_000);

@@ -1,11 +1,11 @@
 use std::num::{NonZeroU64, NonZeroU8};
 
+use bincode::{Decode, Encode};
+use bson::doc;
 use criterion::BenchmarkId;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use flat_message::{FlatMessage, Storage};
 use serde::{Deserialize, Serialize};
-use bson::doc;
-use bincode::{Encode, Decode};
 
 #[derive(FlatMessage)]
 #[flat_message_options(version: 1)]
@@ -99,7 +99,9 @@ fn se_test_bincode(process: &ProcessCreatedS, output: &mut Vec<u8>) {
 }
 
 fn de_test_bincode(input: &[u8]) -> ProcessCreatedS {
-    bincode::decode_from_slice(input, bincode::config::standard()).unwrap().0
+    bincode::decode_from_slice(input, bincode::config::standard())
+        .unwrap()
+        .0
 }
 
 // ----------------------------------------------------------------------------

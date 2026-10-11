@@ -87,7 +87,6 @@ fn check_packed_4_bytes_alignament_required() {
         #[flat_message_item(kind = packed, align = 4)]
         d2: Data,
     }
-    
 
     #[derive(Debug, PartialEq, Eq, FlatMessage)]
     #[flat_message_options(store_name = false)]
@@ -161,29 +160,26 @@ fn check_packed_4_bytes_alignament_required_repr() {
     assert_eq!(
         s.as_slice(),
         &[
-            70, 76, 77, 1, 2, 0, 0, 0,            
-            203, 182, 210, 213, // Point structure hash            
-
+            70, 76, 77, 1, 2, 0, 0, 0, 203, 182, 210, 213, // Point structure hash
             151, 27, 83, 238, // Hash for Data (Point::d1 field)
             3, 0, 0, 0, // 3 elements in d1::data
-            1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, // d1::data[0] = 1, d1::data[1] = 2, d1::data[2] = 3
+            1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0,
+            0, // d1::data[0] = 1, d1::data[1] = 2, d1::data[2] = 3
             1, // d1::idx = 1
             0, 0, 0, // padding
-            
             151, 27, 83, 238, // Hash for Data (Point::d2 field)
             3, 0, 0, 0, // 3 elements in d2::data
-            4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, // d2::data[0] = 4, d2::data[1] = 5, d2::data[2] = 6
-            2, // d2::idx = 2
-
+            4, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0,
+            0,  // d2::data[0] = 4, d2::data[1] = 5, d2::data[2] = 6
+            2,  // d2::idx = 2
             10, // Point::x = 10
             20, // Point::y = 20
-            5, 72, 101, 108, 108, 111,// Test::x = "Hello"   
+            5, 72, 101, 108, 108, 111, // Test::x = "Hello"
             0, 0, 0, // padding
-          
             42, 108, 174, 24, // hash for point parameter
             14, 80, 12, 253, // hash for x parameter
-            8, // offset of point
-            59, // offset of x parameter
+            8,   // offset of point
+            59,  // offset of x parameter
         ]
     );
 }

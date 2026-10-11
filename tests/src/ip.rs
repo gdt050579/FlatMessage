@@ -43,7 +43,7 @@ fn check_ipv4_repr() {
             10, 0, 0, 1, // hash for ip1 (23 = ID for IPv4)
             23, 233, 1, 215, // hash for ip2 (23 = ID for IPv4)
             23, 235, 1, 216, // offset for ip1 - 8
-            8, // offset for ip2 - 12
+            8,   // offset for ip2 - 12
             12
         ]
     );
@@ -96,7 +96,7 @@ fn check_ipv6_repr() {
             // hash for ip1 (24 = ID for IPv6)
             24, 233, 1, 215, // hash for ip2 (24 = ID for IPv6)
             24, 235, 1, 216, // offset for ip1 - 8
-            8, // offset for ip2 - 24
+            8,   // offset for ip2 - 24
             24
         ]
     );
@@ -145,8 +145,8 @@ fn check_ip_repr() {
             0, 0, // padding for alignament
             25, 233, 1, 215, // hash for ip1 (
             25, 235, 1, 216, // hash for ip2,
-            8, // offset of ip1
-            13 // offset of ip2
+            8,   // offset of ip1
+            13   // offset of ip2
         ]
     );
 }

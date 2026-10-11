@@ -1,10 +1,10 @@
 use super::ConstAssertions;
-use crate::data_type::DataType;
 use crate::common::data_format::DataFormat;
+use crate::data_type::DataType;
+use crate::serde_definition::SerdeDefinition;
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::{Data, DeriveInput, Fields};
-use crate::serde_definition::SerdeDefinition;
 
 struct VariantItem {
     name: String,
@@ -257,7 +257,8 @@ impl Variant {
         let definition = serde_definition.definition;
         let size_code = self.generate_serde_size();
         let from_buffer_code = self.generate_serde_from_buffer(implicit_lifetime.clone());
-        let from_buffer_unchecked_code = self.generate_serde_from_buffer_unchecked(implicit_lifetime.clone());
+        let from_buffer_unchecked_code =
+            self.generate_serde_from_buffer_unchecked(implicit_lifetime.clone());
         let write_code = self.generate_serde_write();
         let const_assertions = self.generate_const_assertion_functions();
 

@@ -70,7 +70,8 @@ impl Flags {
             .map(|f| {
                 let flag = format_ident!("{}", f);
                 quote!(#name::#flag.0)
-            }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
         let mask = quote! {
             const MASK: #repr_type = #(#flags |)* 0;
         };
@@ -221,7 +222,7 @@ impl Flags {
                     quote! { *8 },
                     quote! { unsafe { std::slice::from_raw_parts(buf.as_ptr().add(pos+size_len) as *const #repr_type, count) }; },
                 )
-            },
+            }
             16 => {
                 // since we have the hash (4 bytes) we need aditional 12 bits
                 (
@@ -331,8 +332,7 @@ impl Flags {
                 }
             }
         }
-    }    
-
+    }
 
     pub fn generate_code(&self) -> TokenStream {
         let serde_code = self.generate_serde_implementation();

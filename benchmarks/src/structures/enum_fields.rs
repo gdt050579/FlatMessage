@@ -2,7 +2,18 @@ use crate::get_size_min::GetSize;
 use flat_message::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, bincode::Encode, bincode::Decode)]
+#[derive(
+    FlatMessageEnum,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 #[repr(u8)]
 enum Color {
     Red = 1,
@@ -13,7 +24,18 @@ enum Color {
     Magenta = 102,
 }
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, bincode::Encode, bincode::Decode)]
+#[derive(
+    FlatMessageEnum,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 #[repr(u32)]
 enum Math {
     A = 1,
@@ -22,7 +44,18 @@ enum Math {
     D = 1000000000,
 }
 
-#[derive(FlatMessageEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize, bincode::Encode, bincode::Decode)]
+#[derive(
+    FlatMessageEnum,
+    Copy,
+    Clone,
+    Debug,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 #[repr(i64)]
 enum Negative {
     A = 1,
@@ -37,7 +70,15 @@ crate::t!(Color);
 crate::t!(Negative);
 crate::t!(Math);
 
-#[derive(Clone, Serialize, Deserialize, FlatMessage, get_size_derive::GetSize, bincode::Encode, bincode::Decode)]
+#[derive(
+    Clone,
+    Serialize,
+    Deserialize,
+    FlatMessage,
+    get_size_derive::GetSize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 #[flat_message_options(store_name = false)]
 pub struct EnumFields {
     #[flat_message_item(repr = u8, kind = enum)]

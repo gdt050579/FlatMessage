@@ -2,8 +2,8 @@ use super::SerDe;
 use super::SerDeSlice;
 use super::SerDeVec;
 use super::SerDeVecType;
-use crate::size;
 use crate::common::data_format::DataFormat;
+use crate::size;
 use std::ptr;
 
 unsafe impl SerDe<'_> for bool {
@@ -55,9 +55,7 @@ unsafe impl<'a> SerDeSlice<'a> for bool {
         if end > buf.len() {
             None
         } else {
-            let slice = unsafe {
-                std::slice::from_raw_parts(buf.as_ptr().add(pos + buf_len), len)
-            };
+            let slice = unsafe { std::slice::from_raw_parts(buf.as_ptr().add(pos + buf_len), len) };
             for &b in slice {
                 if b > 1 {
                     return None;

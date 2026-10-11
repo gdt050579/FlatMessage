@@ -11,7 +11,10 @@ pub(crate) struct FieldInfo {
     pub(crate) data_type: DataType,
 }
 impl FieldInfo {
-    pub(crate) fn new(field: &Field, use_default_if_deserialize_fails: Option<bool>) -> Result<Self, String> {
+    pub(crate) fn new(
+        field: &Field,
+        use_default_if_deserialize_fails: Option<bool>,
+    ) -> Result<Self, String> {
         if field.ident.is_none() {
             return Err(format!(
                 "Field without any name is not supported => '{}' !",
@@ -43,8 +46,6 @@ impl FieldInfo {
         })
     }
 
-
-
     pub(crate) fn inner_var(&self) -> syn::Ident {
         syn::Ident::new(
             format!("inner_var_{}_{}", self.name, self.hash).as_str(),
@@ -64,4 +65,3 @@ impl FieldInfo {
         self.data_type.serialization_alignment()
     }
 }
-

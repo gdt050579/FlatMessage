@@ -34,19 +34,21 @@ fn check_string_repr() {
     let mut v = Storage::default();
     t.serialize_to(&mut v, Config::default()).unwrap();
     let buf = v.as_slice();
-    assert_eq!(buf, &[
-        70, 76, 77, 1, 2, 0, 0, 0, // Header
-        5, // size of s1 (Hello)
-        87, 111, 114, 108, 100,  // s1 - "Hello"
-        5, // size of s2 (World)
-        72, 101, 108, 108, 111, // s2 - "World"
-        14, 180, 81, 5, // hash for s1 
-        14, 184, 81, 8, // hash for s2
-        8, // offset for s1 - 8
-        14 // offset for s2 - 14
-    ]);
+    assert_eq!(
+        buf,
+        &[
+            70, 76, 77, 1, 2, 0, 0, 0, // Header
+            5, // size of s1 (Hello)
+            87, 111, 114, 108, 100, // s1 - "Hello"
+            5,   // size of s2 (World)
+            72, 101, 108, 108, 111, // s2 - "World"
+            14, 180, 81, 5, // hash for s1
+            14, 184, 81, 8,  // hash for s2
+            8,  // offset for s1 - 8
+            14  // offset for s2 - 14
+        ]
+    );
 }
-
 
 #[test]
 fn check_vector_object() {
@@ -65,7 +67,6 @@ fn check_vector_object() {
     let deserialized = Test::deserialize_from(&v).unwrap();
     assert_eq!(t, deserialized);
 }
-
 
 #[test]
 fn check_serde_string_into_str() {
@@ -154,7 +155,6 @@ fn check_serde_vec_string_and_str() {
     assert_eq!(s.v2, ds.v2);
 }
 
-
 #[test]
 fn check_serde_vec_string() {
     #[derive(Debug, PartialEq, Eq, FlatMessage)]
@@ -191,8 +191,8 @@ fn check_serde_vec_string() {
             0, 0, // padding for alignment
             3, 211, 94, 66, // hash for value (123456)
             142, 70, 74, 148, // hash for v1
-            8, // offset for value - 8
-            12  // offset for v1 - 12
+            8,   // offset for value - 8
+            12   // offset for v1 - 12
         ]
     );
 }
@@ -228,8 +228,8 @@ fn check_serde_vec_str() {
             0, 0, // padding for alignment
             3, 211, 94, 66, // hash for value (123456)
             142, 70, 74, 148, // hash for v1
-            8, // offset for value - 8
-            12 // offset for v1 - 12
+            8,   // offset for value - 8
+            12   // offset for v1 - 12
         ]
     );
 }

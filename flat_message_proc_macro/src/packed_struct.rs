@@ -1,10 +1,10 @@
+use crate::common::data_format::DataFormat;
 use crate::data_type::FieldType;
 use crate::field_info::FieldInfo;
-use crate::common::data_format::DataFormat;
+use crate::serde_definition::SerdeDefinition;
+use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use std::fmt::Write;
-use proc_macro2::TokenStream;
-use crate::serde_definition::SerdeDefinition;
 use syn::{DataStruct, DeriveInput};
 
 pub(crate) struct PackedStruct<'a> {
@@ -29,7 +29,7 @@ impl<'a> PackedStruct<'a> {
     }
     fn create_object_ctor(&self) -> TokenStream {
         let mut v = Vec::new();
-        for (index,field) in self.fields.iter().enumerate() {
+        for (index, field) in self.fields.iter().enumerate() {
             let name = field.name_ident();
             let inner_var = format_ident!("__internal__{index}_{}__", field.name);
             v.push(quote! {
@@ -59,7 +59,7 @@ impl<'a> PackedStruct<'a> {
         let ctor_code = self.create_object_ctor();
         let mut v = Vec::new();
         let mut first_field = true;
-        for (index,field) in self.fields.iter().enumerate() {
+        for (index, field) in self.fields.iter().enumerate() {
             if field.data_type.data_format.requires_padding() && !first_field {
                 let alignament = field.data_type.serialization_alignment();
                 v.push(quote! {
@@ -73,7 +73,7 @@ impl<'a> PackedStruct<'a> {
                 pos += ::flat_message::#serde_trait::size(&#inner_var);
             });
             first_field = false;
-        }        
+        }
         quote! {
             fn from_buffer(buf: &#implicit_lifetime [u8], pos: usize) -> Option<Self> {
                 if pos + 4 >= buf.len() {
@@ -95,13 +95,13 @@ impl<'a> PackedStruct<'a> {
         let ctor_code = self.create_object_ctor();
         let mut v = Vec::new();
         let mut first_field = true;
-        for (index,field) in self.fields.iter().enumerate() {
+        for (index, field) in self.fields.iter().enumerate() {
             if field.data_type.data_format.requires_padding() && !first_field {
                 let alignament = field.data_type.serialization_alignment();
                 v.push(quote! {
                     pos = (pos + #alignament - 1) & !(#alignament - 1);
                 });
-            }            
+            }
             let serde_trait = field.data_type.serde_trait();
             let inner_var = format_ident!("__internal__{index}_{}__", field.name);
             v.push(quote! {
@@ -109,7 +109,7 @@ impl<'a> PackedStruct<'a> {
                 pos += ::flat_message::#serde_trait::size(&#inner_var);
             });
             first_field = false;
-        }        
+        }
         quote! {
             unsafe fn from_buffer_unchecked(buf: &#implicit_lifetime [u8], pos: usize) -> Self {
                 let mut pos = pos + #initial_field_padding;
@@ -129,9 +129,9 @@ impl<'a> PackedStruct<'a> {
                 v.push(quote! {
                     pos = (pos + #alignament - 1) & !(#alignament - 1);
                 });
-            }            
+            }
             let serde_trait = field.data_type.serde_trait();
-            let name = field.name_ident();            
+            let name = field.name_ident();
             v.push(quote! {
                 pos = ::flat_message::#serde_trait::write(&obj.#name,p,pos);
             });
@@ -167,11 +167,11 @@ impl<'a> PackedStruct<'a> {
         quote! {
             fn size(obj: &Self) -> usize {
                 let mut size = #initial_field_padding;
-                #(#v)* 
+                #(#v)*
                 size
             }
         }
-    }    
+    }
     pub(crate) fn generate_code(&self) -> TokenStream {
         let serde_definition = SerdeDefinition::new_serde(&self.generics, self.name);
         let implicit_lifetime = serde_definition.implicit_lifetime;
@@ -179,7 +179,8 @@ impl<'a> PackedStruct<'a> {
         let df = format_ident!("{}", self.data_format.to_string());
         let size_code = self.generate_serde_size();
         let from_buffer_code = self.generate_serde_from_buffer(implicit_lifetime.clone());
-        let from_buffer_unchecked_code = self.generate_serde_from_buffer_unchecked(implicit_lifetime.clone());
+        let from_buffer_unchecked_code =
+            self.generate_serde_from_buffer_unchecked(implicit_lifetime.clone());
         let write_code = self.generate_serde_write();
         let const_assertions = self.generate_const_assertion_functions();
 

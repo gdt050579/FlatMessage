@@ -4,7 +4,15 @@ use serde::{Deserialize, Serialize};
 
 use crate::s;
 
-#[derive(Clone, Serialize, Deserialize, FlatMessage, get_size_derive::GetSize, bincode::Encode, bincode::Decode)]
+#[derive(
+    Clone,
+    Serialize,
+    Deserialize,
+    FlatMessage,
+    get_size_derive::GetSize,
+    bincode::Encode,
+    bincode::Decode,
+)]
 pub struct StringLists {
     list1: Vec<String>,
     list2: Vec<String>,

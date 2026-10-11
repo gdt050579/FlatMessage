@@ -1,42 +1,50 @@
+use super::data_type::DataType;
+use super::serde_definition::SerdeDefinition;
+use super::ConstAssertions;
+use crate::common::constants;
+use crate::common::hashes;
 use crate::config::Config;
 use crate::data_type::FieldType;
 use crate::field_info::FieldInfo;
-use crate::common::constants;
-use crate::common::hashes;
 use quote::format_ident;
 use quote::quote;
-use super::ConstAssertions;
 use syn::{DataStruct, DeriveInput};
-use super::data_type::DataType;
-use super::serde_definition::SerdeDefinition;
-
 
 mod gencode {
-    use quote::quote;
     use crate::data_type::DataType;
-    pub(super) fn search_mandatory_field(field_name_hash: u32, field_is_missing: proc_macro2::TokenStream, create_field: proc_macro2::TokenStream)-> proc_macro2::TokenStream {
+    use quote::quote;
+    pub(super) fn search_mandatory_field(
+        field_name_hash: u32,
+        field_is_missing: proc_macro2::TokenStream,
+        create_field: proc_macro2::TokenStream,
+    ) -> proc_macro2::TokenStream {
         quote! {
-            unsafe { 
+            unsafe {
                 loop {
                     if ptr_it == p_end {
                         return #field_is_missing;
                     }
                     if *ptr_it == #field_name_hash {
-                        ptr_it = ptr_it.add(1);  
+                        ptr_it = ptr_it.add(1);
                         break;
                     }
-                    p_ofs = p_ofs.add(1); 
-                    ptr_it = ptr_it.add(1);                
-                }           
+                    p_ofs = p_ofs.add(1);
+                    ptr_it = ptr_it.add(1);
+                }
             }
             let offset = unsafe { flat_message::codegen::ptr_read_unaligned_as_usize(p_ofs) };
             unsafe { p_ofs = p_ofs.add(1); }
             #create_field
-        }        
+        }
     }
-    pub(super) fn search_non_mandatory_field(inner_var: &syn::Ident,field_name_hash: u32, default_value: proc_macro2::TokenStream, create_field: proc_macro2::TokenStream)-> proc_macro2::TokenStream {
+    pub(super) fn search_non_mandatory_field(
+        inner_var: &syn::Ident,
+        field_name_hash: u32,
+        default_value: proc_macro2::TokenStream,
+        create_field: proc_macro2::TokenStream,
+    ) -> proc_macro2::TokenStream {
         quote! {
-            let create_field = loop { 
+            let create_field = loop {
                 unsafe {
                     if ptr_it == p_end {
                         break false;
@@ -44,10 +52,10 @@ mod gencode {
                     if *ptr_it >= #field_name_hash {
                         break *ptr_it == #field_name_hash;
                     }
-                    p_ofs = p_ofs.add(1); 
-                    ptr_it = ptr_it.add(1);   
-                } 
-            };   
+                    p_ofs = p_ofs.add(1);
+                    ptr_it = ptr_it.add(1);
+                }
+            };
             let #inner_var = if create_field {
                 let offset = unsafe { flat_message::codegen::ptr_read_unaligned_as_usize(p_ofs) };
                 // move to next
@@ -59,11 +67,16 @@ mod gencode {
                 // use the default value
                 #default_value
             };
-        } 
+        }
     }
-    pub(super) fn safe_init_field_strict(dt: &DataType, inner_var: &syn::Ident, invalid_field_offset: proc_macro2::TokenStream, fail_to_deserialize: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    pub(super) fn safe_init_field_strict(
+        dt: &DataType,
+        inner_var: &syn::Ident,
+        invalid_field_offset: proc_macro2::TokenStream,
+        fail_to_deserialize: proc_macro2::TokenStream,
+    ) -> proc_macro2::TokenStream {
         let serde_trait = dt.serde_trait();
-        let ty =  dt.ty.clone();
+        let ty = dt.ty.clone();
         if dt.option {
             // field is Option<T>
             quote! {
@@ -81,7 +94,7 @@ mod gencode {
                     };
                     tmp
                 };
-            }            
+            }
         } else {
             // field is T
             quote! {
@@ -94,9 +107,13 @@ mod gencode {
             }
         }
     }
-    pub(super) fn unsafe_init_field_strict(dt: &DataType, inner_var: &syn::Ident, invalid_field_offset: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    pub(super) fn unsafe_init_field_strict(
+        dt: &DataType,
+        inner_var: &syn::Ident,
+        invalid_field_offset: proc_macro2::TokenStream,
+    ) -> proc_macro2::TokenStream {
         let serde_trait = dt.serde_trait();
-        let ty =  dt.ty.clone();
+        let ty = dt.ty.clone();
         if dt.option {
             // field is Option<T>
             quote! {
@@ -109,7 +126,7 @@ mod gencode {
                 } else {
                     Some ( unsafe { flat_message::#serde_trait::from_buffer_unchecked(data_buffer, offset) })
                 };
-            }            
+            }
         } else {
             // field is T
             quote! {
@@ -119,10 +136,15 @@ mod gencode {
                 let #inner_var: #ty = unsafe { flat_message::#serde_trait::from_buffer_unchecked(data_buffer, offset) };
             }
         }
-    }    
-    pub(super) fn safe_init_field_fallback(dt: &DataType, inner_var: &syn::Ident, invalid_field_offset: proc_macro2::TokenStream, default_value: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    }
+    pub(super) fn safe_init_field_fallback(
+        dt: &DataType,
+        inner_var: &syn::Ident,
+        invalid_field_offset: proc_macro2::TokenStream,
+        default_value: proc_macro2::TokenStream,
+    ) -> proc_macro2::TokenStream {
         let serde_trait = dt.serde_trait();
-        let ty =  dt.ty.clone();
+        let ty = dt.ty.clone();
         if dt.option {
             // field is Option<T>
             quote! {
@@ -141,7 +163,7 @@ mod gencode {
                         tmp
                     }
                 };
-            }            
+            }
         } else {
             // field is T
             quote! {
@@ -151,11 +173,15 @@ mod gencode {
                 let #inner_var: #ty = flat_message::#serde_trait::from_buffer(data_buffer, offset).unwrap_or_else(|| { #default_value });
             }
         }
-    }    
+    }
 
-    pub(super) fn unsafe_init_field_fallback(dt: &DataType, inner_var: &syn::Ident, invalid_field_offset: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    pub(super) fn unsafe_init_field_fallback(
+        dt: &DataType,
+        inner_var: &syn::Ident,
+        invalid_field_offset: proc_macro2::TokenStream,
+    ) -> proc_macro2::TokenStream {
         let serde_trait = dt.serde_trait();
-        let ty =  dt.ty.clone();
+        let ty = dt.ty.clone();
         if dt.option {
             // field is Option<T>
             quote! {
@@ -168,7 +194,7 @@ mod gencode {
                 } else {
                     Some ( unsafe { flat_message::#serde_trait::from_buffer_unchecked(data_buffer, offset) })
                 };
-            }            
+            }
         } else {
             // field is T
             quote! {
@@ -178,7 +204,7 @@ mod gencode {
                 let #inner_var: #ty = unsafe { flat_message::#serde_trait::from_buffer_unchecked(data_buffer, offset) };
             }
         }
-    }   
+    }
 }
 
 pub(crate) struct StructInfo<'a> {
@@ -187,16 +213,17 @@ pub(crate) struct StructInfo<'a> {
     fields: Vec<FieldInfo>,
     unique_id: Option<FieldInfo>,
     timestamp: Option<FieldInfo>,
-    ignored_fields: Vec<FieldInfo>,  
+    ignored_fields: Vec<FieldInfo>,
     config: Config,
 }
 
-
-
 impl<'a> StructInfo<'a> {
-
     fn self_name(use_self: bool) -> proc_macro2::TokenStream {
-        let res = if use_self { format_ident!("self") } else { format_ident!("object") };
+        let res = if use_self {
+            format_ident!("self")
+        } else {
+            format_ident!("object")
+        };
         quote! { #res }
     }
     fn generate_metadata_serialization_code(&self) -> Vec<proc_macro2::TokenStream> {
@@ -207,7 +234,7 @@ impl<'a> StructInfo<'a> {
                 ptr::write_unaligned(buffer.add(metadata_offset) as *mut u64, self.#var_name.value());
                 metadata_offset += 8;
             });
-        }           
+        }
         if let Some(unique_id) = &self.unique_id {
             let var_name = unique_id.name_ident();
             lines.push(quote! {
@@ -244,20 +271,24 @@ impl<'a> StructInfo<'a> {
         }
         if self.config.checksum {
             extra_size += 4;
-            bits |= constants::FLAG_HAS_CHECKSUM;            
+            bits |= constants::FLAG_HAS_CHECKSUM;
         }
         quote! {
             flags |= #bits;
             metainfo_size += #extra_size;
         }
     }
-    fn generate_compute_size_code(&self, use_self: bool, no_flags: bool) -> Vec<proc_macro2::TokenStream> {
+    fn generate_compute_size_code(
+        &self,
+        use_self: bool,
+        no_flags: bool,
+    ) -> Vec<proc_macro2::TokenStream> {
         let self_name = StructInfo::self_name(use_self);
         let compute_size_code = self.fields.iter().map(|field| {
             let field_name = field.name_ident();
             let serialization_trait = field.data_type.serde_trait();
             let serialization_alignment = field.serialization_alignment();
-            let size_increase = if serialization_alignment>1 {
+            let size_increase = if serialization_alignment > 1 {
                 quote! {
                     size = (size + #serialization_alignment - 1) & !(#serialization_alignment - 1);
                     size += ::flat_message::#serialization_trait::size(&#self_name.#field_name);
@@ -267,7 +298,7 @@ impl<'a> StructInfo<'a> {
                     size += ::flat_message::#serialization_trait::size(&#self_name.#field_name);
                 }
             };
-            let size_increase_option = if serialization_alignment>1 {
+            let size_increase_option = if serialization_alignment > 1 {
                 quote! {
                     size = (size + #serialization_alignment - 1) & !(#serialization_alignment - 1);
                     size += ::flat_message::#serialization_trait::size(obj);
@@ -342,7 +373,11 @@ impl<'a> StructInfo<'a> {
         }
         v
     }
-    fn generate_fields_serialize_code(&self, ref_size: u8, use_self: bool) -> Vec<proc_macro2::TokenStream> {
+    fn generate_fields_serialize_code(
+        &self,
+        ref_size: u8,
+        use_self: bool,
+    ) -> Vec<proc_macro2::TokenStream> {
         let self_name = StructInfo::self_name(use_self);
         let v: Vec<_> = self.fields.iter().map(|field| {
             let field_name = syn::Ident::new(field.name.as_str(), proc_macro2::Span::call_site());
@@ -379,11 +414,11 @@ impl<'a> StructInfo<'a> {
             };
             let none_refcode = match ref_size {
                 1 => quote! { ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order) as *mut u8, 0u8); },
-                2 => quote! { ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*2) as *mut u16, 0u16); },                
+                2 => quote! { ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*2) as *mut u16, 0u16); },
                 4 => quote! { ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*4) as *mut u32, 032); },
                 _ => quote! {}
             };
-                
+
             let serialize_code = if field.data_type.option {
                 quote! {
                     if let Some(obj) = &#self_name.#field_name {
@@ -436,7 +471,7 @@ impl<'a> StructInfo<'a> {
                 } else { 0 };
             }
         } else {
-            quote!{}
+            quote! {}
         };
         quote! {
             #metadata_ptr
@@ -560,65 +595,139 @@ impl<'a> StructInfo<'a> {
         }
     }
 
-    fn generate_mandatory_strict_field_deserialize_code(&self, dt: &DataType, inner_var: &syn::Ident, field_name_hash: u32, unchecked_code: bool, return_err: bool) -> proc_macro2::TokenStream {
-        let invalid_field_offset = if return_err { quote! { Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32))) } } else { quote! { None } };
-        let fail_to_deserialize = if return_err { quote! { Err(flat_message::Error::FailToDeserialize(#field_name_hash)) }  } else { quote! { None } };
-        let field_is_missing = if return_err { quote! { Err(flat_message::Error::FieldIsMissing(#field_name_hash)) }  } else { quote! { None } };
-        let init_code = if unchecked_code { 
+    fn generate_mandatory_strict_field_deserialize_code(
+        &self,
+        dt: &DataType,
+        inner_var: &syn::Ident,
+        field_name_hash: u32,
+        unchecked_code: bool,
+        return_err: bool,
+    ) -> proc_macro2::TokenStream {
+        let invalid_field_offset = if return_err {
+            quote! { Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32))) }
+        } else {
+            quote! { None }
+        };
+        let fail_to_deserialize = if return_err {
+            quote! { Err(flat_message::Error::FailToDeserialize(#field_name_hash)) }
+        } else {
+            quote! { None }
+        };
+        let field_is_missing = if return_err {
+            quote! { Err(flat_message::Error::FieldIsMissing(#field_name_hash)) }
+        } else {
+            quote! { None }
+        };
+        let init_code = if unchecked_code {
             gencode::unsafe_init_field_strict(dt, inner_var, invalid_field_offset)
         } else {
-            gencode::safe_init_field_strict(dt, inner_var, invalid_field_offset, fail_to_deserialize)
+            gencode::safe_init_field_strict(
+                dt,
+                inner_var,
+                invalid_field_offset,
+                fail_to_deserialize,
+            )
         };
         gencode::search_mandatory_field(field_name_hash, field_is_missing, init_code)
     }
 
-    fn generate_non_mandatory_strict_field_deserialize_code(&self, dt: &DataType, inner_var: &syn::Ident, field_name_hash: u32, unchecked_code: bool, return_err: bool) -> proc_macro2::TokenStream {
-        let invalid_field_offset = if return_err { quote! { Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32))) } } else { quote! { None } };
-        let fail_to_deserialize = if return_err { quote! { Err(flat_message::Error::FailToDeserialize(#field_name_hash)) }  } else { quote! { None } };
+    fn generate_non_mandatory_strict_field_deserialize_code(
+        &self,
+        dt: &DataType,
+        inner_var: &syn::Ident,
+        field_name_hash: u32,
+        unchecked_code: bool,
+        return_err: bool,
+    ) -> proc_macro2::TokenStream {
+        let invalid_field_offset = if return_err {
+            quote! { Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32))) }
+        } else {
+            quote! { None }
+        };
+        let fail_to_deserialize = if return_err {
+            quote! { Err(flat_message::Error::FailToDeserialize(#field_name_hash)) }
+        } else {
+            quote! { None }
+        };
         let default_value = dt.default_value(false);
-        let init_code = if unchecked_code { 
+        let init_code = if unchecked_code {
             gencode::unsafe_init_field_strict(dt, inner_var, invalid_field_offset)
         } else {
-            gencode::safe_init_field_strict(dt, inner_var, invalid_field_offset, fail_to_deserialize)
+            gencode::safe_init_field_strict(
+                dt,
+                inner_var,
+                invalid_field_offset,
+                fail_to_deserialize,
+            )
         };
-        gencode::search_non_mandatory_field(inner_var, field_name_hash, default_value, init_code)        
-    }  
+        gencode::search_non_mandatory_field(inner_var, field_name_hash, default_value, init_code)
+    }
 
-    fn generate_mandatory_fallback_field_deserialize_code(&self, dt: &DataType, inner_var: &syn::Ident, field_name_hash: u32, unchecked_code: bool, return_err: bool) -> proc_macro2::TokenStream {
-        let invalid_field_offset = if return_err { quote! { Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32))) } } else { quote! { None } };
-        let field_is_missing = if return_err { quote! { Err(flat_message::Error::FieldIsMissing(#field_name_hash)) }  } else { quote! { None } };
+    fn generate_mandatory_fallback_field_deserialize_code(
+        &self,
+        dt: &DataType,
+        inner_var: &syn::Ident,
+        field_name_hash: u32,
+        unchecked_code: bool,
+        return_err: bool,
+    ) -> proc_macro2::TokenStream {
+        let invalid_field_offset = if return_err {
+            quote! { Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32))) }
+        } else {
+            quote! { None }
+        };
+        let field_is_missing = if return_err {
+            quote! { Err(flat_message::Error::FieldIsMissing(#field_name_hash)) }
+        } else {
+            quote! { None }
+        };
         let default_value = dt.default_value(false);
-        let init_code = if unchecked_code { 
+        let init_code = if unchecked_code {
             gencode::unsafe_init_field_fallback(dt, inner_var, invalid_field_offset)
         } else {
             gencode::safe_init_field_fallback(dt, inner_var, invalid_field_offset, default_value)
         };
         gencode::search_mandatory_field(field_name_hash, field_is_missing, init_code)
-    }    
+    }
 
-    fn generate_non_mandatory_fallback_field_deserialize_code(&self, dt: &DataType, inner_var: &syn::Ident, field_name_hash: u32, unchecked_code: bool, return_err: bool) -> proc_macro2::TokenStream {
-        let invalid_field_offset = if return_err { quote! { Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32))) } } else { quote! { None } };
+    fn generate_non_mandatory_fallback_field_deserialize_code(
+        &self,
+        dt: &DataType,
+        inner_var: &syn::Ident,
+        field_name_hash: u32,
+        unchecked_code: bool,
+        return_err: bool,
+    ) -> proc_macro2::TokenStream {
+        let invalid_field_offset = if return_err {
+            quote! { Err(flat_message::Error::InvalidFieldOffset((offset as u32, hash_table_offset as u32))) }
+        } else {
+            quote! { None }
+        };
         let default_value = dt.default_value(false);
-        let init_code = if unchecked_code { 
+        let init_code = if unchecked_code {
             gencode::unsafe_init_field_fallback(dt, inner_var, invalid_field_offset)
         } else {
-            gencode::safe_init_field_fallback(dt, inner_var, invalid_field_offset, default_value.clone())
+            gencode::safe_init_field_fallback(
+                dt,
+                inner_var,
+                invalid_field_offset,
+                default_value.clone(),
+            )
         };
-        gencode::search_non_mandatory_field(inner_var, field_name_hash, default_value, init_code)        
-    }     
+        gencode::search_non_mandatory_field(inner_var, field_name_hash, default_value, init_code)
+    }
 
-    
     fn generate_fields_deserialize_code(
         &self,
         ref_size: u8,
         unchecked_code: bool,
         return_err: bool,
     ) -> Vec<proc_macro2::TokenStream> {
-        struct HashAndInnerVar<'a>   {
+        struct HashAndInnerVar<'a> {
             hash: u32,
             inner_var: syn::Ident,
             mandatory: bool,
-            strict: bool,   
+            strict: bool,
             dt: &'a DataType,
         }
         let mut v = Vec::with_capacity(4);
@@ -657,16 +766,16 @@ impl<'a> StructInfo<'a> {
                         &obj.inner_var,
                         obj.hash,
                         unchecked_code,
-                        return_err
+                        return_err,
                     ));
-                },
+                }
                 (false, true) => {
                     v.push(self.generate_non_mandatory_strict_field_deserialize_code(
                         obj.dt,
                         &obj.inner_var,
                         obj.hash,
                         unchecked_code,
-                        return_err
+                        return_err,
                     ));
                 }
                 (true, false) => {
@@ -675,30 +784,33 @@ impl<'a> StructInfo<'a> {
                         &obj.inner_var,
                         obj.hash,
                         unchecked_code,
-                        return_err
+                        return_err,
                     ));
-                }      
+                }
                 (false, false) => {
                     v.push(self.generate_non_mandatory_fallback_field_deserialize_code(
                         obj.dt,
                         &obj.inner_var,
                         obj.hash,
                         unchecked_code,
-                        return_err
+                        return_err,
                     ));
-                }                             
+                }
             }
         }
         v
     }
     fn generate_default_code_for_ignored_fields(&self) -> Vec<proc_macro2::TokenStream> {
-        self.ignored_fields.iter().map(|field| {
-            let field_name = field.name_ident();
-            let default_value = field.data_type.default_value(true);
-            quote! {
-                #field_name: #default_value,
-            }
-        }).collect()
+        self.ignored_fields
+            .iter()
+            .map(|field| {
+                let field_name = field.name_ident();
+                let default_value = field.data_type.default_value(true);
+                quote! {
+                    #field_name: #default_value,
+                }
+            })
+            .collect()
     }
     fn generate_struct_construction_code(&self) -> proc_macro2::TokenStream {
         let struct_fields = self.fields.iter().map(|field| {
@@ -723,8 +835,8 @@ impl<'a> StructInfo<'a> {
             }
         } else {
             quote! {}
-        };    
-        let ignored_fields = self.generate_default_code_for_ignored_fields(); 
+        };
+        let ignored_fields = self.generate_default_code_for_ignored_fields();
         quote! {
             Self {
                 #(#struct_fields)*
@@ -741,17 +853,29 @@ impl<'a> StructInfo<'a> {
             if field.data_type.data_format.is_enum() {
                 v.push(ConstAssertions::for_enum_flags(self.name.clone(), &field.name, &field.data_type,"Validate that the type describe in the #[repr(...)] attribute of the enum is the same as the one described by the `repr` attribute from #[flag_message_items(...)]"));
             }
-            if field.data_type.data_format.is_flags() { 
+            if field.data_type.data_format.is_flags() {
                 v.push(ConstAssertions::for_enum_flags(self.name.clone(), &field.name, &field.data_type,"Validate that the underline type is the same as the one described by the `repr` attribute from #[flag_message_items(...)]"));
-            }  
+            }
             if field.data_type.data_format.is_struct() {
-                v.push(ConstAssertions::for_struct(self.name.clone(), &field.name, &field.data_type));
+                v.push(ConstAssertions::for_struct(
+                    self.name.clone(),
+                    &field.name,
+                    &field.data_type,
+                ));
             }
             if field.data_type.data_format.is_variant() {
-                v.push(ConstAssertions::for_variant(self.name.clone(), &field.name, &field.data_type));
+                v.push(ConstAssertions::for_variant(
+                    self.name.clone(),
+                    &field.name,
+                    &field.data_type,
+                ));
             }
             if field.data_type.data_format.is_packed_struct() {
-                v.push(ConstAssertions::for_packed_struct(self.name.clone(), &field.name, &field.data_type));
+                v.push(ConstAssertions::for_packed_struct(
+                    self.name.clone(),
+                    &field.name,
+                    &field.data_type,
+                ));
             }
         }
         v
@@ -848,9 +972,12 @@ impl<'a> StructInfo<'a> {
         let lifetimes = &self.generics.params;
 
         let unchecked_code = if self.config.optimized_unchecked_code {
-            let deserializaton_code_u8_unchecked = self.generate_fields_deserialize_code(1, true, true);
-            let deserializaton_code_u16_unchecked = self.generate_fields_deserialize_code(2, true, true);
-            let deserializaton_code_u32_unchecked = self.generate_fields_deserialize_code(4, true, true);
+            let deserializaton_code_u8_unchecked =
+                self.generate_fields_deserialize_code(1, true, true);
+            let deserializaton_code_u16_unchecked =
+                self.generate_fields_deserialize_code(2, true, true);
+            let deserializaton_code_u32_unchecked =
+                self.generate_fields_deserialize_code(4, true, true);
             quote! {
                 #header_deserialization_code
                 match ref_offset_size {
@@ -953,7 +1080,6 @@ impl<'a> StructInfo<'a> {
         new_code.into()
     }
 
-
     fn generate_serde_write_method(&self, hash: u32) -> proc_macro2::TokenStream {
         let fields_count = self.fields.len() as u16;
         // serialize fields
@@ -961,9 +1087,9 @@ impl<'a> StructInfo<'a> {
         let serialize_code_u16 = self.generate_fields_serialize_code(2, false);
         let serialize_code_u32 = self.generate_fields_serialize_code(4, false);
         let hash_table_code = self.generate_hash_table_code();
-        let compute_size_code = self.generate_compute_size_code(false, false);        
+        let compute_size_code = self.generate_compute_size_code(false, false);
         quote! {
-            unsafe fn write(object: &Self, p: *mut u8, pos: usize) -> usize {                
+            unsafe fn write(object: &Self, p: *mut u8, pos: usize) -> usize {
                 use ::std::ptr;
                 use ::flat_message::codegen::RefOffsetSize;
 
@@ -1003,13 +1129,13 @@ impl<'a> StructInfo<'a> {
                 pos + size
             }
         }
-    }    
+    }
     fn generate_serde_size_method(&self) -> proc_macro2::TokenStream {
         let fields_count = self.fields.len() as u16;
         // serialize fields
         let compute_size_code = self.generate_compute_size_code(false, true);
         quote! {
-            fn size(object: &Self) -> usize {                
+            fn size(object: &Self) -> usize {
                 let mut size = 8usize;
                 #(#compute_size_code)*
                 size = (size + 3) & !3;
@@ -1018,7 +1144,7 @@ impl<'a> StructInfo<'a> {
                 size
             }
         }
-    }    
+    }
     fn generate_serde_dataformat_value(&self) -> proc_macro2::TokenStream {
         let mut align = 0;
         for field in self.fields.iter() {
@@ -1064,10 +1190,10 @@ impl<'a> StructInfo<'a> {
                 if struct_len > buffer_len {
                     return None;
                 }
-                // add default values for timestamp and unique_id 
+                // add default values for timestamp and unique_id
                 const timestamp: u64 = 0;
                 const unique_id: u64 = 0;
-                
+
                 let hash_table_offset = struct_len - ref_table_size - hash_table_size;
                 let ref_table_offset = hash_table_offset + hash_table_size;
                 let data_buffer = &input[..hash_table_offset];
@@ -1075,8 +1201,6 @@ impl<'a> StructInfo<'a> {
                 let p_end = unsafe { ptr_it.add(fields_count as usize) };
         }
     }
-
-
 
     pub(crate) fn generate_serde_code(&self) -> proc_macro::TokenStream {
         // we need less than 63 fields to fit in the flags pack
@@ -1125,14 +1249,14 @@ impl<'a> StructInfo<'a> {
                             #(#deserializaton_code_u32)*
                             Some(#ctor_code)
                         }
-                    }                    
+                    }
                 }
                 #serde_write
                 #serde_size
             }
         };
         serde_code.into()
-    }    
+    }
 
     pub(crate) fn new(
         input: &'a DeriveInput,
@@ -1146,7 +1270,7 @@ impl<'a> StructInfo<'a> {
             let mut timestamp = None;
 
             for field in fields.named.iter() {
-                let field = FieldInfo::new(field,config.use_default_if_deserialize_fails)?;
+                let field = FieldInfo::new(field, config.use_default_if_deserialize_fails)?;
                 if field.data_type.unique_id {
                     if unique_id.is_some() {
                         return Err(format!("Structure {} has more than one field with UniqueID data format (for field {}) !", input.ident, field.name));
@@ -1160,14 +1284,17 @@ impl<'a> StructInfo<'a> {
                     unique_id = Some(field);
                 } else if field.data_type.timestamp {
                     if timestamp.is_some() {
-                        return Err(format!("Structure {} has more than one field with Timestamp data format !", input.ident));
+                        return Err(format!(
+                            "Structure {} has more than one field with Timestamp data format !",
+                            input.ident
+                        ));
                     }
                     if field.data_type.field_type != FieldType::Object {
                         return Err(format!("Timestamp can only be an object (not a vector or a slice) - for field {} in structure {} !", field.name, input.ident));
                     }
                     if field.data_type.option {
                         return Err(format!("Timestamp can not be an Option - you either have them or you don't - for field {} in structure {} !", field.name, input.ident));
-                    }                        
+                    }
                     timestamp = Some(field);
                 } else if field.data_type.ignore_field {
                     //println!("Warning: field {} in structure {} is a zero-sized type (ZST) ! It will be ignored !", field.name, input.ident);
@@ -1175,7 +1302,6 @@ impl<'a> StructInfo<'a> {
                 } else {
                     data_members.push(field);
                 }
-                
             }
             if data_members.len() > 0xFFFF {
                 return Err(format!("Structs with more than 65535 fields are not supported ! (Current structure has {} fields)", data_members.len()));

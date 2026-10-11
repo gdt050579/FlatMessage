@@ -260,11 +260,11 @@ fn check_simple_serde_align_16_repr() {
     assert_eq!(
         storage.as_slice(),
         &[
-            70, 76, 77, 1, 3, 0, 0, 0,  // Header for Test structure
-            0, 0, 0, 0, 0, 0, 0, 0, // alignament for d (16 bytes)            
+            70, 76, 77, 1, 3, 0, 0, 0, // Header for Test structure
+            0, 0, 0, 0, 0, 0, 0, 0, // alignament for d (16 bytes)
             146, 207, 36, 196, // Hash for MyDataV1
             8, 94, 0, 0, // MyDataV1 - > 8 >> 2 = 2 fields, size = 94 octeti
-            0, 0, 0, 0, 0, 0, 0, 0, // alignament for e (16 bytes)            
+            0, 0, 0, 0, 0, 0, 0, 0, // alignament for e (16 bytes)
             3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // number of elements in e
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // e[0]
             2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // e[1]
@@ -273,14 +273,13 @@ fn check_simple_serde_align_16_repr() {
             0, 0, 0, // Padding
             133, 34, 12, 224, // Hash for MyDataV1::e
             1, 41, 12, 228, // Hash for MyDataV1::a
-            16, // Offset of MyDataV1::e
-            80, // Offset of MyDataV1::a                        
-            5, // Test::a
-            1, // Test::x
+            16,  // Offset of MyDataV1::e
+            80,  // Offset of MyDataV1::a
+            5,   // Test::a
+            1,   // Test::x
             34, 36, 12, 225, // Hash for Test::d
             1, 41, 12, 228, // Hash for Test::a
-            1, 80, 12, 253, 
-            16, // Offset of Test::d
+            1, 80, 12, 253, 16,  // Offset of Test::d
             110, // Offset of Test::a
             111  // Offset of Test::x
         ]
@@ -293,7 +292,7 @@ fn check_simple_serde_timestamp() {
     struct MyDataV1 {
         a: u8,
         b: u32,
-        t: Timestamp
+        t: Timestamp,
     }
     #[derive(FlatMessage, Debug, PartialEq, Eq)]
     #[flat_message_options(store_name = false)]
@@ -308,7 +307,7 @@ fn check_simple_serde_timestamp() {
         d: MyDataV1 {
             a: 2,
             b: 3,
-            t: Timestamp::with_value(0x8899AABBCCDDEEFF)
+            t: Timestamp::with_value(0x8899AABBCCDDEEFF),
         },
         a: 5,
     };
@@ -329,7 +328,7 @@ fn check_simple_serde_unique_id() {
     struct MyDataV1 {
         a: u8,
         b: u32,
-        u: UniqueID
+        u: UniqueID,
     }
     #[derive(FlatMessage, Debug, PartialEq, Eq)]
     #[flat_message_options(store_name = false)]
@@ -344,7 +343,7 @@ fn check_simple_serde_unique_id() {
         d: MyDataV1 {
             a: 2,
             b: 3,
-            u: UniqueID::with_value(0x8899AABBCCDDEEFF)
+            u: UniqueID::with_value(0x8899AABBCCDDEEFF),
         },
         a: 5,
     };

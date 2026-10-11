@@ -1,7 +1,6 @@
 use super::*;
 use flat_message::*;
 
-
 mod v1 {
     use flat_message::*;
     #[derive(FlatMessageVariant, Debug, PartialEq, Eq)]
@@ -24,7 +23,7 @@ mod v1 {
             Test {
                 x: 1,
                 y: 2,
-                v: MyEnum::String(String::from("Hello"))
+                v: MyEnum::String(String::from("Hello")),
             }
         }
     }
@@ -53,7 +52,7 @@ mod v1_sealed {
             Test {
                 x: 1,
                 y: 2,
-                v: MyEnum::String(String::from("Hello"))
+                v: MyEnum::String(String::from("Hello")),
             }
         }
     }
@@ -66,7 +65,7 @@ mod v2 {
         Byte(u8),
         DWord(u32),
         String(String),
-        Vector(Vec<u8>),        
+        Vector(Vec<u8>),
         SimpleVariant,
     }
 
@@ -83,7 +82,7 @@ mod v2 {
             Test {
                 x: 1,
                 y: 2,
-                v: MyEnum::String(String::from("Hello"))
+                v: MyEnum::String(String::from("Hello")),
             }
         }
     }
@@ -926,15 +925,14 @@ fn check_option_with_some_repr() {
             1, // Test::x
             0, 0, 0, // padding
             35, 64, 12, 243, // hash for Test::v
-            2, 78, 12, 252,  // hash for Test::y
-            1, 80, 12, 253,  // hash for Test::x
-            8, // Offset of Test::v
-            22, // Offset of Test::y
-            24 // Offset of Test::x
+            2, 78, 12, 252, // hash for Test::y
+            1, 80, 12, 253, // hash for Test::x
+            8,   // Offset of Test::v
+            22,  // Offset of Test::y
+            24   // Offset of Test::x
         ]
     );
 }
-
 
 #[test]
 fn chcck_v1_in_v2() {
@@ -951,7 +949,7 @@ fn chcck_v1_in_v2() {
     match t_v2.v {
         v2::MyEnum::String(v) => assert_eq!(&v, "Hello"),
         _ => panic!("Expected String variant"),
-    }    
+    }
 }
 
 #[test]
@@ -969,7 +967,7 @@ fn chcck_v2_in_v1_same_fields() {
     match t_v1.v {
         v1::MyEnum::String(v) => assert_eq!(&v, "Hello"),
         _ => panic!("Expected String variant"),
-    }    
+    }
 }
 
 #[test]
@@ -977,13 +975,13 @@ fn chcck_v1_sealed_in_v1() {
     let t_v1_sealed = v1_sealed::Test::new();
     let mut s = Storage::default();
     t_v1_sealed.serialize_to(&mut s, Config::default()).unwrap();
-    let t_v1 = v1::Test::deserialize_from(&s);  
+    let t_v1 = v1::Test::deserialize_from(&s);
     match t_v1 {
         Ok(_) => {
             panic!("Expected error - sealed enum can't be deserialized to v1");
         }
         Err(e) => {
-            match e {   
+            match e {
                 Error::FailToDeserialize(_) => {
                     // Ok
                 }
@@ -1000,13 +998,13 @@ fn chcck_v1_in_v1_sealed() {
     let t_v1 = v1::Test::new();
     let mut s = Storage::default();
     t_v1.serialize_to(&mut s, Config::default()).unwrap();
-    let t_v1_sealed = v1_sealed::Test::deserialize_from(&s);  
+    let t_v1_sealed = v1_sealed::Test::deserialize_from(&s);
     match t_v1_sealed {
         Ok(_) => {
             panic!("Expected error - v1 enum can't be deserialized to v1_sealed");
         }
         Err(e) => {
-            match e {   
+            match e {
                 Error::FailToDeserialize(_) => {
                     // Ok
                 }
@@ -1034,7 +1032,7 @@ fn chcck_v2_in_v1_new_added_fields() {
             panic!("Expected error - v2 enum can't be deserialized to v1");
         }
         Err(e) => {
-            match e {   
+            match e {
                 Error::FailToDeserialize(_) => {
                     // Ok
                 }
@@ -1043,18 +1041,17 @@ fn chcck_v2_in_v1_new_added_fields() {
                 }
             }
         }
-    } 
+    }
 }
 
 #[test]
 fn check_lifetime() {
-
     #[derive(FlatMessageStruct)]
     pub struct VariantA {
         pub a: u32,
         pub b: u8,
     }
-    
+
     #[derive(FlatMessageStruct)]
     pub struct VariantB<'lifetimefortest> {
         pub a: &'lifetimefortest str,
@@ -1071,14 +1068,13 @@ fn check_lifetime() {
         D,
     }
 
-    
     #[derive(FlatMessage)]
     #[flat_message_options(optimized_unchecked_code = false)]
     pub struct Thing<'lifetimefortest> {
         pub d: &'lifetimefortest str,
         #[flat_message_item(kind = variant, align = 4)]
         pub variant: Variant<'lifetimefortest>,
-    }    
+    }
 
     let t = Thing {
         d: "Hello",

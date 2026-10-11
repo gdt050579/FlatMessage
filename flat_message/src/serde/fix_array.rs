@@ -1,6 +1,6 @@
 use super::{SerDe, SerDeSlice, SerDeVec, SerDeVecType};
-use crate::size;
 use crate::common::data_format::DataFormat;
+use crate::size;
 
 unsafe impl<'a, const N: usize> SerDe<'a> for [u8; N] {
     const DATA_FORMAT: DataFormat = DataFormat::FixArray;
@@ -59,12 +59,14 @@ unsafe impl<'a, const N: usize> SerDeSlice<'a> for [u8; N] {
         if count != N {
             return None;
         }
-        let (count, slen2) = unsafe { size::read(
-            buf.as_ptr(),
-            pos + slen1,
-            buf.len(),
-            size::Format::U8withExtension,
-        )? };
+        let (count, slen2) = unsafe {
+            size::read(
+                buf.as_ptr(),
+                pos + slen1,
+                buf.len(),
+                size::Format::U8withExtension,
+            )?
+        };
         let end = pos + count * N + slen1 + slen2;
         if end > buf.len() {
             None
@@ -103,7 +105,9 @@ unsafe impl<'a, const N: usize> SerDeSlice<'a> for [u8; N] {
     }
 }
 
-unsafe impl<'a, const N: usize, TVecType: SerDeVecType<[u8; N]>> SerDeVec<'a, TVecType> for [u8; N] {
+unsafe impl<'a, const N: usize, TVecType: SerDeVecType<[u8; N]>> SerDeVec<'a, TVecType>
+    for [u8; N]
+{
     const DATA_FORMAT: DataFormat = DataFormat::FixArray;
     #[inline(always)]
     unsafe fn from_buffer_unchecked(buf: &[u8], pos: usize) -> TVecType {
@@ -143,13 +147,13 @@ unsafe impl<'a, const N: usize> SerDe<'a> for &'a [u8; N] {
         Self: Sized,
     {
         let (count, slen) =
-            unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? } ;
+            unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
         if count != N {
             None
         } else {
             unsafe {
                 let ptr = buf.as_ptr().add(pos + slen) as *const [u8; N];
-                Some(&*ptr )
+                Some(&*ptr)
             }
         }
     }

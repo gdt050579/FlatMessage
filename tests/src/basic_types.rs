@@ -657,8 +657,7 @@ fn check_u128_repr() {
     assert_eq!(
         storage.as_slice(),
         &[
-            70, 76, 77, 1, 3, 0, 0, 0, 
-            0, 0, 0, 0, 0, 0, 0, 0, // alignament for d (16 bytes)            
+            70, 76, 77, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // alignament for d (16 bytes)
             3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // number of elements in d
             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // d[0]
             2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // d[1]
@@ -669,9 +668,9 @@ fn check_u128_repr() {
             133, 36, 12, 225, // Hash for Test::d
             1, 41, 12, 228, // Hash for Test::a
             1, 80, 12, 253, // Hash for Test::x
-            16, // Offset of Test::d
-            80, // Offset of Test::a
-            81  // Offset of Test::x
+            16,  // Offset of Test::d
+            80,  // Offset of Test::a
+            81   // Offset of Test::x
         ]
     );
 }
