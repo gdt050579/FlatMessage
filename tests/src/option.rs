@@ -325,3 +325,43 @@ fn check_struct_none_repr() {
         ]
     );
 }
+
+#[test]
+fn check_none_16_byte_aligned_field_followed_by_other_fields() {
+    // A `None` field with 16-byte alignment must not shift the fields that follow it.
+    #[derive(Debug, PartialEq, Eq, FlatMessage)]
+    struct Test {
+        n16: Option<Vec<u128>>,
+        x8: Vec<u64>,
+        s: String,
+    }
+    validate_correct_serde(Test {
+        n16: Some(vec![1u128]),
+        x8: vec![],
+        s: "hello world".to_string(),
+    });
+    validate_correct_serde(Test {
+        n16: None,
+        x8: vec![],
+        s: "hello world".to_string(),
+    });
+}
+
+#[test]
+fn check_none_in_message_over_64kb() {
+    // Messages >= 64KB use 32-bit offsets; a `None` field must still be stored as offset 0.
+    #[derive(Debug, PartialEq, Eq, FlatMessage)]
+    struct Test {
+        a: Option<String>,
+        b: Vec<u8>,
+    }
+    let t = Test {
+        a: None,
+        b: vec![7u8; 70_000],
+    };
+    let mut s = Storage::default();
+    t.serialize_to(&mut s, Config::default()).unwrap();
+    let t2 = Test::deserialize_from(&s).unwrap();
+    assert_eq!(t2.a, None);
+    assert!(t2.b == t.b, "field `b` was not deserialized correctly");
+}
