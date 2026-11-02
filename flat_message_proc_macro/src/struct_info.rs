@@ -415,13 +415,14 @@ impl<'a> StructInfo<'a> {
             let none_refcode = match ref_size {
                 1 => quote! { ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order) as *mut u8, 0u8); },
                 2 => quote! { ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*2) as *mut u16, 0u16); },
-                4 => quote! { ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*4) as *mut u32, 032); },
+                4 => quote! { ptr::write_unaligned(buffer.add(ref_offset + #hash_table_order*4) as *mut u32, 0u32); },
                 _ => quote! {}
             };
 
             let serialize_code = if field.data_type.option {
                 quote! {
                     if let Some(obj) = &#self_name.#field_name {
+                        #alignament_code
                         #refcode
                         buf_pos = ::flat_message::#serde_trait::write(obj, buffer, buf_pos);
                     } else {
@@ -430,14 +431,12 @@ impl<'a> StructInfo<'a> {
                 }
             } else {
                 quote! {
+                    #alignament_code
                     #refcode
                     buf_pos = ::flat_message::#serde_trait::write(&#self_name.#field_name, buffer, buf_pos);
                 }
             };
-            quote! {
-                #alignament_code
-                #serialize_code
-            }
+            serialize_code
         }).collect();
         v
     }
