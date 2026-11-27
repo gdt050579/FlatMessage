@@ -21,7 +21,7 @@ unsafe impl<'a, const N: usize> SerDe<'a> for [u8; N] {
     {
         let (count, slen) =
             unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
-        if count != N {
+        if count != N || buf.len() - (pos + slen) < N {
             None
         } else {
             unsafe {
@@ -67,7 +67,8 @@ unsafe impl<'a, const N: usize> SerDeSlice<'a> for [u8; N] {
                 size::Format::U8withExtension,
             )?
         };
-        let end = pos + count * N + slen1 + slen2;
+        let data_len = count.checked_mul(N)?;
+        let end = (pos + slen1 + slen2).checked_add(data_len)?;
         if end > buf.len() {
             None
         } else {
@@ -148,7 +149,7 @@ unsafe impl<'a, const N: usize> SerDe<'a> for &'a [u8; N] {
     {
         let (count, slen) =
             unsafe { size::read(buf.as_ptr(), pos, buf.len(), size::Format::U8withExtension)? };
-        if count != N {
+        if count != N || buf.len() - (pos + slen) < N {
             None
         } else {
             unsafe {
