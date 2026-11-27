@@ -255,3 +255,78 @@ fn check_simple_array_ref_repr() {
         ]
     );
 }
+
+#[test]
+fn check_array_from_buffer_bounds() {
+    // Truncated: length prefix matches N=4, but fewer than 4 bytes remain
+    assert_eq!(<[u8; 4] as SerDe>::from_buffer(&[4], 0), None);
+    assert_eq!(<[u8; 4] as SerDe>::from_buffer(&[4, 1, 2, 3], 0), None);
+    assert_eq!(<[u8; 4] as SerDe>::from_buffer(&[0, 0, 4, 1, 2, 3], 2), None);
+
+    assert_eq!(<&[u8; 4] as SerDe>::from_buffer(&[4], 0), None);
+    assert_eq!(<&[u8; 4] as SerDe>::from_buffer(&[4, 1, 2, 3], 0), None);
+    assert_eq!(<&[u8; 4] as SerDe>::from_buffer(&[0, 0, 4, 1, 2, 3], 2), None);
+
+    // Count mismatch even when enough bytes exist
+    assert_eq!(<[u8; 4] as SerDe>::from_buffer(&[3, 1, 2, 3, 4], 0), None);
+    assert_eq!(<&[u8; 4] as SerDe>::from_buffer(&[3, 1, 2, 3, 4], 0), None);
+
+    // Exact boundary succeeds
+    assert_eq!(
+        <[u8; 4] as SerDe>::from_buffer(&[4, 1, 2, 3, 4], 0),
+        Some([1, 2, 3, 4])
+    );
+    assert_eq!(
+        <&[u8; 4] as SerDe>::from_buffer(&[4, 1, 2, 3, 4], 0),
+        Some(&[1, 2, 3, 4])
+    );
+
+    // Extended length prefix (U8withExtension: 0xFE + u16 little-endian)
+    let mut buf = vec![0xFE];
+    buf.extend_from_slice(&260u16.to_le_bytes());
+    buf.extend(std::iter::repeat_n(0xABu8, 259));
+    assert_eq!(<[u8; 260] as SerDe>::from_buffer(&buf, 0), None);
+    assert_eq!(<&[u8; 260] as SerDe>::from_buffer(&buf, 0), None);
+
+    buf.push(0xAB);
+    assert_eq!(<[u8; 260] as SerDe>::from_buffer(&buf, 0), Some([0xAB; 260]));
+    assert_eq!(
+        <&[u8; 260] as SerDe>::from_buffer(&buf, 0),
+        Some(&[0xAB; 260])
+    );
+}
+
+#[test]
+fn check_array_slice_from_buffer_bounds_and_overflow() {
+    // Truncated slice payload: N=4, count=2, only 7 bytes of payload
+    assert_eq!(
+        <[u8; 4] as SerDeSlice>::from_buffer(&[4, 2, 1, 2, 3, 4, 5, 6, 7], 0),
+        None
+    );
+
+    // Element size mismatch
+    assert_eq!(
+        <[u8; 4] as SerDeSlice>::from_buffer(&[3, 2, 1, 2, 3, 4, 5, 6], 0),
+        None
+    );
+
+    // Exact slice payload succeeds
+    assert_eq!(
+        <[u8; 4] as SerDeSlice>::from_buffer(&[4, 2, 1, 2, 3, 4, 5, 6, 7, 8], 0),
+        Some(&[[1, 2, 3, 4], [5, 6, 7, 8]][..])
+    );
+
+    // Huge count (u32::MAX) should return None without overflowing or panicking
+    let huge_count = [4, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF];
+    assert_eq!(<[u8; 4] as SerDeSlice>::from_buffer(&huge_count, 0), None);
+
+    // Large N (0x1_0000) with large count (0x1_0000) overflows usize on 32-bit and exceeds buf.len() on 64-bit
+    let mut large_n_and_count = vec![0xFF];
+    large_n_and_count.extend_from_slice(&0x1_0000u32.to_le_bytes());
+    large_n_and_count.push(0xFF);
+    large_n_and_count.extend_from_slice(&0x1_0000u32.to_le_bytes());
+    assert_eq!(
+        <[u8; 0x1_0000] as SerDeSlice>::from_buffer(&large_n_and_count, 0),
+        None
+    );
+}
